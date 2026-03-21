@@ -2,10 +2,10 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, Menu } from 'lucide-react'
 import { useSocieteStore } from '@/stores/societeStore'
 
-export function Header() {
+export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) => void }) {
   const router = useRouter()
   const { currentSociete } = useSocieteStore()
 
@@ -17,8 +17,15 @@ export function Header() {
 
   return (
     <header className="flex shrink-0 h-16 w-full items-center justify-center border-b bg-white shadow-sm z-10">
-      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto flex w-full max-w-[2000px] items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsMobileOpen?.(true)}
+            className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          
           {/* Breadcrumb ou société active par exemple */}
           {currentSociete ? (
             <div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-800 border">

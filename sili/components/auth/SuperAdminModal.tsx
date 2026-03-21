@@ -78,7 +78,7 @@ export function SuperAdminModal({ isOpen, onClose }: SuperAdminModalProps) {
     setLoading(true)
 
     // 1. Inscription classique
-    const { error: signUpError } = await supabase.auth.signUp({ 
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ 
       email, 
       password,
       options: { data: { full_name: nom } }
@@ -102,10 +102,12 @@ export function SuperAdminModal({ isOpen, onClose }: SuperAdminModalProps) {
     setSuccess(true)
     setLoading(false)
     
-    // Redirection après succès
+    const adminId = signUpData?.user?.id?.substring(0, 5) || 'admin'
+
+    // Redirection après succès vers l'interface Super Admin
     setTimeout(() => {
       onClose()
-      router.push('/dashboard') // Route admin ou dashboard central
+      router.push(`/admin/${adminId}/dashboard`)
     }, 3000)
   }
 
@@ -226,7 +228,7 @@ export function SuperAdminModal({ isOpen, onClose }: SuperAdminModalProps) {
                       {hasNumber ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />} 1 chiffre
                     </div>
                     <div className={`flex items-center gap-1 ${hasSpecial ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {hasSpecial ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />} 1 caractère spécial
+                      {hasSpecial ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />} {'1 caractère spécial (!@#$%^&*(),.?":{}|<>)'}
                     </div>
                   </div>
                 )}

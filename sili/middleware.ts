@@ -40,7 +40,31 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthRoute) {
     if (session) {
-      return NextResponse.redirect(new URL(`/${userLocale}/dashboard`, request.url));
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_super_admin, tenant_id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile?.is_super_admin) {
+        return NextResponse.redirect(new URL(`/${userLocale}/admin/${session.user.id.substring(0, 5)}/dashboard`, request.url));
+      }
+
+      if (profile?.tenant_id) {
+        const { data: tenant } = await supabase
+          .from('tenants')
+          .select('slug')
+          .eq('id', profile.tenant_id)
+          .single();
+
+        if (tenant?.slug) {
+          const shortId = profile.tenant_id.substring(0, 8);
+          return NextResponse.redirect(new URL(`/${userLocale}/${tenant.slug}/${shortId}/dashboard`, request.url));
+        }
+      }
+
+      // Fallback si aucun tenant ou rôle n'est trouvé
+      return NextResponse.redirect(new URL(`/${userLocale}/unauthorized`, request.url));
     }
     return response;
   }

@@ -1,10 +1,17 @@
 {
   "layout": {
     "title": "Administration Maître",
+    "nav_group": "Navigation",
+    "tools_group": "Outils d'Administration",
     "dashboard": "Tableau de Bord",
-    "tenants": "Sociétés (Tenants)",
-    "users": "Utilisateurs Globaux",
-    "settings": "Paramètres Système",
+    "organization": "Organisation (Tenant)",
+    "bi_reports": "Rapport BI",
+    "modules": "Modules",
+    "diagnostic": "Outil De Diagnostic",
+    "recovery": "Outil De Récupération",
+    "logs": "Outil De Journalisation",
+    "validation": "Outil De Validation",
+    "errors": "Outil Des Erreurs",
     "logout": "Déconnexion"
   },
   "dashboard": {

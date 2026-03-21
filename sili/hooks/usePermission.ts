@@ -16,6 +16,19 @@ export function usePermission(module: ModuleKey, societeId?: string) {
   const { data: permission = 'aucun' } = useQuery({
     queryKey: ['permission', module, societeId],
     queryFn: async () => {
+      // 1. Vérification "Planétaire" (Super Admin)
+      const { data: sysModule, error: sysError } = await supabase
+        .from('sys_modules')
+        .select('is_active')
+        .eq('key', module)
+        .maybeSingle()
+        
+      // Si le Super Admin a désactivé le module globalement, on coupe tout accès
+      if (sysModule && !sysModule.is_active) {
+        return 'aucun'
+      }
+
+      // 2. Vérification locale (Tenant / Société)
       const { data, error } = await supabase.rpc('get_user_permission', {
         p_module: module,
         p_societe_id: societeId ?? null,

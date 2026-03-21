@@ -1,10 +1,17 @@
 {
   "layout": {
     "title": "Master Administration",
+    "nav_group": "Navigation",
+    "tools_group": "Admin Tools",
     "dashboard": "Dashboard",
-    "tenants": "Companies (Tenants)",
-    "users": "Global Users",
-    "settings": "System Settings",
+    "organization": "Organization (Tenant)",
+    "bi_reports": "BI Reports",
+    "modules": "Modules",
+    "diagnostic": "Diagnostic Tool",
+    "recovery": "Recovery Tool",
+    "logs": "Logging Tool",
+    "validation": "Validation Tool",
+    "errors": "Errors Tool",
     "logout": "Sign Out"
   },
   "dashboard": {
