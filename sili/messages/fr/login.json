@@ -1,0 +1,11 @@
+{
+  "title": "Connexion",
+  "subtitle": "Accédez à votre espace ERP",
+  "email_label": "Email",
+  "email_placeholder": "m@example.com",
+  "password_label": "Mot de passe",
+  "submit_button": "Se connecter",
+  "need_account": "Vous n'avez pas d'espace entreprise ?",
+  "create_account": "Inscrire ma société",
+  "submit_retry": "Réessayer"
+}

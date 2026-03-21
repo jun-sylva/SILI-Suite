@@ -1,0 +1,11 @@
+{
+  "title": "Login",
+  "subtitle": "Access your ERP workspace",
+  "email_label": "Corporate Email address",
+  "email_placeholder": "m@example.com",
+  "password_label": "Password",
+  "submit_retry": "Retry",
+  "submit_button": "Sign In",
+  "need_account": "Don't have a company space?",
+  "create_account": "Register my company"
+}

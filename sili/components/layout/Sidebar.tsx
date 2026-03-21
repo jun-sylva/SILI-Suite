@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -51,8 +52,8 @@ function SidebarLink({ item, isActive }: { item: NavItem, isActive: boolean }) {
       href={item.href}
       className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
         isActive 
-          ? 'bg-zinc-800 text-white' 
-          : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+          ? 'bg-indigo-600 text-white shadow-sm' 
+          : 'text-indigo-200 hover:bg-indigo-800/50 hover:text-white'
       }`}
     >
       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -65,10 +66,19 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full w-64 flex-col bg-zinc-950 text-white border-r border-zinc-800">
-      <div className="flex h-16 items-center px-6 text-xl font-bold border-b border-zinc-800">
-        <div className="h-8 w-8 rounded bg-white text-black flex items-center justify-center mr-3 text-sm">S</div>
-        SILI Suite
+    <div className="hidden md:flex h-full shrink-0 w-64 xl:w-72 flex-col bg-indigo-950 text-slate-50 border-r border-indigo-900/50">
+      <div className="flex h-16 items-center px-6 text-xl font-bold border-b border-indigo-900/50">
+        <div className="relative h-8 w-8 mr-3">
+          <Image 
+            src="https://bgjrbhzrwfxweidkxiyc.supabase.co/storage/v1/object/sign/img/bg-removed-result.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83NjRiOGEyZC0zZjAwLTQyYWQtYjlmNy1iODAwODBjMWQ1NjciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvYmctcmVtb3ZlZC1yZXN1bHQucG5nIiwiaWF0IjoxNzc0MTExNjE5LCJleHAiOjMzMjc4NTc1NjE5fQ.ayB7A8-QO35h0sC8KhDzgMdwj-6OW0-JmHA5tgJhCNQ"
+            alt="SILI Logo"
+            fill
+            sizes="32px"
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+        SILI
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
         {modules.map((item) => {
@@ -79,8 +89,8 @@ export function Sidebar() {
           return <SidebarLink key={item.href} item={item} isActive={isActive} />
         })}
       </nav>
-      <div className="p-4 border-t border-zinc-800">
-        <Link href="/settings" className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">
+      <div className="p-4 border-t border-indigo-900/50">
+        <Link href="/settings" className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition-colors">
           <Settings className="mr-3 h-5 w-5" /> Paramètres
         </Link>
       </div>

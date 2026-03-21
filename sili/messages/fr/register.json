@@ -1,0 +1,19 @@
+{
+  "title": "Créer votre espace société",
+  "subtitle": "Rejoignez le réseau SILI Suite en quelques minutes.",
+  "company_details": "Informations de l'Entreprise",
+  "company_name": "Raison Sociale",
+  "currency": "Devise Principale",
+  "admin_details": "Informations de l'Administrateur",
+  "fullname": "Nom complet de l'administrateur",
+  "email": "Adresse Email",
+  "password": "Mot de passe d'accès",
+  "confirm_password": "Confirmez le mot de passe",
+  "submit": "Créer mon espace",
+  "submitting": "Création en cours...",
+  "success_title": "Demande Reçue avec Succès !",
+  "success_msg": "Votre compte société a bien été enregistré. Pour des raisons de sécurité, votre espace système est actuellement en attente d'activation par un Super Admin. Vous recevrez un email un fois homologué.",
+  "back_login": "Retour à la connexion",
+  "error_password": "Les mots de passe ne correspondent pas.",
+  "error_generic": "Une erreur est survenue lors de l'inscription."
+}

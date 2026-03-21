@@ -1,0 +1,32 @@
+{
+  "layout": {
+    "title": "Administration Maître",
+    "dashboard": "Tableau de Bord",
+    "tenants": "Sociétés (Tenants)",
+    "users": "Utilisateurs Globaux",
+    "settings": "Paramètres Système",
+    "logout": "Déconnexion"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue, {name}",
+    "subtitle": "Vue globale du système SaaS SILI Suite",
+    "stats_tenants": "Sociétés Actives",
+    "stats_pending": "En attente de validation",
+    "stats_users": "Utilisateurs Totaux",
+    "stats_revenue": "Revenu MRR",
+    "recent_activity": "Activité Récente",
+    "no_activity": "Aucune activité récente pour le moment."
+  },
+  "tenants": {
+    "title": "Gestion des Sociétés",
+    "subtitle": "Validez et gérez les espaces de travail (Tenants)",
+    "add_tenant": "Nouvelle Société",
+    "search": "Rechercher une société...",
+    "table_name": "Raison Sociale",
+    "table_status": "Statut",
+    "table_created": "Date de création",
+    "table_actions": "Actions",
+    "status_active": "Actif",
+    "status_pending": "En attente"
+  }
+}

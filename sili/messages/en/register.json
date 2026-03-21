@@ -1,0 +1,19 @@
+{
+  "title": "Create your company space",
+  "subtitle": "Join the SILI Suite network in a few minutes.",
+  "company_details": "Company Information",
+  "company_name": "Company Name",
+  "currency": "Main Currency",
+  "admin_details": "Administrator Information",
+  "fullname": "Administrator Full Name",
+  "email": "Email Address",
+  "password": "Access Password",
+  "confirm_password": "Confirm password",
+  "submit": "Create my space",
+  "submitting": "Creating...",
+  "success_title": "Registration Successful",
+  "success_msg": "Your company account has been registered. For security reasons, your system space is currently pending activation by a Super Admin. You will receive an email once approved.",
+  "back_login": "Back to login",
+  "error_password": "Passwords do not match.",
+  "error_generic": "An error occurred during registration."
+}

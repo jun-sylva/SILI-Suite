@@ -16,13 +16,14 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 w-full items-center justify-between border-b bg-white px-6 shadow-sm">
-      <div className="flex items-center gap-4">
-        {/* Breadcrumb ou société active par exemple */}
-        {currentSociete ? (
-          <div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-800 border">
-            🏢 {currentSociete.raison_sociale}
-          </div>
+    <header className="flex shrink-0 h-16 w-full items-center justify-center border-b bg-white shadow-sm z-10">
+      <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-4">
+          {/* Breadcrumb ou société active par exemple */}
+          {currentSociete ? (
+            <div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-800 border">
+              🏢 <span className="hidden sm:inline">{currentSociete.raison_sociale}</span>
+            </div>
         ) : (
           <div className="text-sm text-zinc-500 italic">Aucune société sélectionnée</div>
         )}
@@ -42,8 +43,9 @@ export function Header() {
           title="Se déconnecter"
         >
           <LogOut className="h-4 w-4" />
-          Déconnexion
+          <span className="hidden sm:inline">Déconnexion</span>
         </button>
+      </div>
       </div>
     </header>
   )

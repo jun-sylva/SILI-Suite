@@ -1,0 +1,32 @@
+{
+  "layout": {
+    "title": "Master Administration",
+    "dashboard": "Dashboard",
+    "tenants": "Companies (Tenants)",
+    "users": "Global Users",
+    "settings": "System Settings",
+    "logout": "Sign Out"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "subtitle": "SILI Suite SaaS Global Overview",
+    "stats_tenants": "Active Companies",
+    "stats_pending": "Pending Validation",
+    "stats_users": "Total Users",
+    "stats_revenue": "MRR Revenue",
+    "recent_activity": "Recent Activity",
+    "no_activity": "No recent activity at the moment."
+  },
+  "tenants": {
+    "title": "Companies Management",
+    "subtitle": "Validate and manage workspaces (Tenants)",
+    "add_tenant": "New Company",
+    "search": "Search a company...",
+    "table_name": "Company Name",
+    "table_status": "Status",
+    "table_created": "Creation Date",
+    "table_actions": "Actions",
+    "status_active": "Active",
+    "status_pending": "Pending"
+  }
+}
