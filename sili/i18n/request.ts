@@ -8,7 +8,7 @@ export default getRequestConfig(async ({requestLocale}) => {
   }
 
   // Permet de séparer les fichiers JSON par namespace (page)
-  const namespaces = ['login', 'register', 'sidebar', 'common', 'superadmin', 'auth'];
+  const namespaces = ['login', 'register', 'sidebar', 'common', 'superadmin', 'auth', 'diagnostic', 'recovery', 'logs', 'validation', 'errors', 'remediation'];
   const messages: Record<string, any> = {};
 
   for (const ns of namespaces) {

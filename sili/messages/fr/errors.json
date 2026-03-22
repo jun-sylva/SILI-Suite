@@ -1,0 +1,22 @@
+{
+  "title": "Gestionnaire d'Exceptions",
+  "subtitle": "Flux d'erreurs de production en temps réel — Stack traces et gestion du cycle de vie des incidents.",
+  "kpi_reliability": "Fiabilité (24h)",
+  "kpi_active": "Exceptions Actives",
+  "kpi_resolved": "Incidents Résolus",
+  "table_title": "Journal des exceptions",
+  "table_open_count": "{count} ouvertes",
+  "col_timestamp": "Horodatage",
+  "col_type": "Type",
+  "col_status": "Statut",
+  "col_last_seen": "Vu il y a",
+  "status_open": "Actif",
+  "status_resolved": "Résolu",
+  "status_ignored": "Ignoré",
+  "action_resolve": "Marquer comme résolu",
+  "action_ignore": "Ignorer",
+  "action_reopen": "Réouvrir l'incident",
+  "stack_trace_header": "Stack Trace",
+  "empty_title": "Aucune exception de production détectée.",
+  "empty_subtitle": "Les erreurs applicatives remonteront automatiquement ici."
+}

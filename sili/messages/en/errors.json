@@ -16,5 +16,7 @@
   "action_resolve": "Mark as resolved",
   "action_ignore": "Ignore",
   "action_reopen": "Reopen incident",
-  "stack_trace_header": "Stack Trace"
+  "stack_trace_header": "Stack Trace",
+  "empty_title": "No production exceptions detected.",
+  "empty_subtitle": "Application errors will surface here automatically."
 }

@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from '@/i18n/routing'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
-import { ShieldAlert, Building2, LogOut, LayoutDashboard, BarChart3, Box, ActivitySquare, RefreshCcw, ScrollText, CheckCircle, AlertTriangle, Wrench, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ShieldAlert, Building2, LogOut, LayoutDashboard, BarChart3, Box, ActivitySquare, RefreshCcw, ScrollText, CheckCircle, AlertTriangle, Wrench, Menu, X, ChevronLeft, ChevronRight, ChevronDown, User, Settings } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
@@ -18,6 +18,29 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('profiles').select('full_name').eq('id', data.user.id).single().then(({ data: p }) => {
+          setProfile({ full_name: p?.full_name ?? null, email: data.user.email ?? null })
+        })
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -179,7 +202,49 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             </button>
             <h1 className="text-lg font-semibold text-slate-800 truncate">{t('title')}</h1>
           </div>
-          <LanguageSwitcher />
+
+          {/* Right side: Lang + Profile */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="topbar" />
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setIsProfileOpen(prev => !prev)}
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
+              >
+                <div className="h-7 w-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center shrink-0 group-hover:bg-emerald-700 transition-colors">
+                  {profile?.full_name ? profile.full_name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase() : 'SA'}
+                </div>
+                <span className="text-sm font-semibold text-slate-700 hidden sm:block max-w-[110px] truncate">
+                  {profile?.full_name ?? 'Super Admin'}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isProfileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                    <p className="text-xs font-bold text-slate-800 truncate">{profile?.full_name ?? 'Super Admin'}</p>
+                    <p className="text-xs text-slate-400 truncate mt-0.5">{profile?.email}</p>
+                  </div>
+                  <div className="p-1.5 space-y-0.5">
+                    <button onClick={() => { setIsProfileOpen(false); router.push('/profile') }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                      <User className="h-4 w-4 text-slate-400" /> Mon Profil
+                    </button>
+                    <button onClick={() => { setIsProfileOpen(false); router.push('/settings') }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                      <Settings className="h-4 w-4 text-slate-400" /> Paramètres
+                    </button>
+                  </div>
+                  <div className="p-1.5 border-t border-slate-100">
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                      <LogOut className="h-4 w-4" /> Déconnexion
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         {/* Support écrans ultra larges */}
