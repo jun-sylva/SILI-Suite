@@ -1,0 +1,8 @@
+{
+  "title": "Moteur des Modules",
+  "subtitle": "Activer ou désactiver un module impacte son accessibilité mondiale pour toutes les sociétés clientes (Tenants).",
+  "loading": "Chargement des modules...",
+  "db_error_title": "Base de données non synchronisée",
+  "status_offline": "Hors ligne",
+  "toggle_aria": "Activer/désactiver le module"
+}

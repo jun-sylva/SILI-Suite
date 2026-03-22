@@ -1,0 +1,8 @@
+{
+  "title": "Module Engine",
+  "subtitle": "Enabling or disabling a module affects its global availability for all client companies (Tenants).",
+  "loading": "Loading modules...",
+  "db_error_title": "Database not synchronized",
+  "status_offline": "Offline",
+  "toggle_aria": "Toggle module"
+}
