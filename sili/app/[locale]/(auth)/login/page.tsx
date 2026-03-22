@@ -31,6 +31,9 @@ export default function UnifiedAuthPage() {
   const [devise, setDevise] = useState('XAF')
   const [nom, setNom] = useState('')
   const [phone, setPhone] = useState('')
+  const [phoneCode, setPhoneCode] = useState('+237')
+  const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false)
+  const isPhoneValid = phone.length === 9 && /^\d{9}$/.test(phone)
   const [regEmail, setRegEmail] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -88,9 +91,16 @@ export default function UnifiedAuthPage() {
       if (profile?.tenant_id) {
         const { data: tenant } = await supabase
           .from('tenants')
-          .select('slug')
+          .select('slug, status')
           .eq('id', profile.tenant_id)
           .single()
+
+        if (tenant?.status === 'bloqué') {
+          await supabase.auth.signOut()
+          setLoginError("Accès suspendu. Veuillez contacter l'administrateur de la plateforme pour plus d'informations.")
+          setLoginLoading(false)
+          return
+        }
 
         if (tenant?.slug) {
           const shortId = profile.tenant_id.substring(0, 8)
@@ -141,7 +151,7 @@ export default function UnifiedAuthPage() {
       p_raison_sociale: raisonSociale,
       p_devise: devise,
       p_admin_name: nom,
-      p_phone: phone
+      p_phone: `${phoneCode}${phone}`
     })
 
     if (rpcError) {
@@ -212,9 +222,54 @@ export default function UnifiedAuthPage() {
             <label className="text-[11px] uppercase tracking-wider font-bold text-slate-500">{tReg('fullname')} *</label>
             <input type="text" required value={nom} onChange={e => setNom(e.target.value)} className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm focus:border-indigo-500 focus:ring-1 outline-none shadow-sm" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 relative">
             <label className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Téléphone *</label>
-            <input type="tel" required value={phone} onChange={e => setPhone(e.target.value)} className="w-full h-10 rounded-lg border border-slate-200 px-3 text-sm focus:border-indigo-500 focus:ring-1 outline-none shadow-sm" />
+            <div className="flex relative items-center shadow-sm">
+              <div className="relative shrink-0">
+                <button 
+                  type="button" 
+                  onClick={() => setPhoneDropdownOpen(!phoneDropdownOpen)} 
+                  className="w-[60px] h-10 flex flex-col items-center justify-center rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
+                >
+                  <span className="text-[15px] leading-none mb-0.5">{phoneCode === '+237' ? '🇨🇲' : '🇫🇷'}</span>
+                  <span className="text-[9px] font-bold text-slate-500 leading-none">{phoneCode}</span>
+                </button>
+                {phoneDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setPhoneDropdownOpen(false)}></div>
+                    <div className="absolute top-11 left-0 w-24 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden">
+                      <button type="button" onClick={() => { setPhoneCode('+237'); setPhoneDropdownOpen(false) }} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 text-xs font-bold text-slate-600 border-b border-slate-100 transition-colors">
+                        <span>🇨🇲</span> <span>+237</span>
+                      </button>
+                      <button type="button" onClick={() => { setPhoneCode('+33'); setPhoneDropdownOpen(false) }} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 text-xs font-bold text-slate-600 transition-colors">
+                        <span>🇫🇷</span> <span>+33</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              <input 
+                type="tel" 
+                maxLength={9}
+                placeholder="Ex: 6XXXXXXXX"
+                required 
+                value={phone} 
+                onChange={e => setPhone(e.target.value.replace(/\D/g, ''))} 
+                className={`w-full min-w-0 h-10 rounded-r-lg border px-3 pr-10 text-sm outline-none transition-colors ${
+                  phone.length > 0 && !isPhoneValid 
+                    ? 'border-orange-300 bg-orange-50/50 focus:border-orange-400 focus:ring-1 focus:ring-orange-400' 
+                    : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                }`} 
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                {isPhoneValid && <Check className="h-5 w-5 text-emerald-500 drop-shadow-sm" />}
+              </div>
+            </div>
+            {phone.length > 0 && !isPhoneValid && (
+              <p className="text-[10px] text-orange-500 font-medium absolute -bottom-4 left-0">
+                Format invalide : 9 chiffres requis.
+              </p>
+            )}
           </div>
         </div>
         <div className="space-y-1">
@@ -302,7 +357,7 @@ export default function UnifiedAuthPage() {
                <div className="text-center mb-8">
                  <div className="flex justify-center items-center mb-4">
                    <div className="relative w-40 h-12 shrink-0">
-                     <Image src="https://bgjrbhzrwfxweidkxiyc.supabase.co/storage/v1/object/sign/img/logo.webp?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83NjRiOGEyZC0zZjAwLTQyYWQtYjlmNy1iODAwODBjMWQ1NjciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvbG9nby53ZWJwIiwiaWF0IjoxNzc0MTA0NzQ5LCJleHAiOjMzMjc4NTY4NzQ5fQ.M17asTuCg79nEU3YWlxMl_UA4ROorgdC27SPSl46OUY" alt="SILI Logo" fill sizes="160px" className="object-contain" unoptimized />
+                     <Image src="https://bgjrbhzrwfxweidkxiyc.supabase.co/storage/v1/object/sign/img/logo.webp?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83NjRiOGEyZC0zZjAwLTQyYWQtYjlmNy1iODAwODBjMWQ1NjciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvbG9nby53ZWJwIiwiaWF0IjoxNzc0MTA0NzQ5LCJleHAiOjMzMjc4NTY4NzQ5fQ.M17asTuCg79nEU3YWlxMl_UA4ROorgdC27SPSl46OUY" alt="SILI Logo" fill sizes="160px" className="object-contain" priority unoptimized />
                    </div>
                  </div>
                  <h2 className="text-2xl font-bold text-slate-800">{tLogin('title')}</h2>
@@ -331,7 +386,7 @@ export default function UnifiedAuthPage() {
              <div className="text-center mb-10">
                <div className="flex justify-center items-center mb-6">
                  <div className="relative w-48 h-12 shrink-0">
-                   <Image src="https://bgjrbhzrwfxweidkxiyc.supabase.co/storage/v1/object/sign/img/logo.webp?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83NjRiOGEyZC0zZjAwLTQyYWQtYjlmNy1iODAwODBjMWQ1NjciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvbG9nby53ZWJwIiwiaWF0IjoxNzc0MTA0NzQ5LCJleHAiOjMzMjc4NTY4NzQ5fQ.M17asTuCg79nEU3YWlxMl_UA4ROorgdC27SPSl46OUY" alt="SILI Logo" fill sizes="192px" className="object-contain" unoptimized />
+                   <Image src="https://bgjrbhzrwfxweidkxiyc.supabase.co/storage/v1/object/sign/img/logo.webp?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV83NjRiOGEyZC0zZjAwLTQyYWQtYjlmNy1iODAwODBjMWQ1NjciLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvbG9nby53ZWJwIiwiaWF0IjoxNzc0MTA0NzQ5LCJleHAiOjMzMjc4NTY4NzQ5fQ.M17asTuCg79nEU3YWlxMl_UA4ROorgdC27SPSl46OUY" alt="SILI Logo" fill sizes="192px" className="object-contain" priority unoptimized />
                  </div>
                </div>
                <h2 className="text-3xl font-bold text-slate-800">{tLogin('title')}</h2>
