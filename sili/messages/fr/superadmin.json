@@ -12,6 +12,7 @@
     "logs": "Outil De Journalisation",
     "validation": "Outil De Validation",
     "errors": "Outil Des Erreurs",
+    "remediation": "Outil De Remédiation",
     "logout": "Déconnexion"
   },
   "dashboard": {

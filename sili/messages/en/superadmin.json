@@ -12,6 +12,7 @@
     "logs": "Logging Tool",
     "validation": "Validation Tool",
     "errors": "Errors Tool",
+    "remediation": "Remediation Tool",
     "logout": "Sign Out"
   },
   "dashboard": {

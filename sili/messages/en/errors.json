@@ -1,0 +1,20 @@
+{
+  "title": "Exception Manager",
+  "subtitle": "Real-time production error feed — Stack traces and incident lifecycle management.",
+  "kpi_reliability": "Reliability (24h)",
+  "kpi_active": "Active Exceptions",
+  "kpi_resolved": "Incidents Resolved",
+  "table_title": "Exception log",
+  "table_open_count": "{count} open",
+  "col_timestamp": "Timestamp",
+  "col_type": "Type",
+  "col_status": "Status",
+  "col_last_seen": "Last Seen",
+  "status_open": "Active",
+  "status_resolved": "Resolved",
+  "status_ignored": "Ignored",
+  "action_resolve": "Mark as resolved",
+  "action_ignore": "Ignore",
+  "action_reopen": "Reopen incident",
+  "stack_trace_header": "Stack Trace"
+}

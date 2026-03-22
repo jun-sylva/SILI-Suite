@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from '@/i18n/routing'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { ShieldAlert, Building2, LogOut, LayoutDashboard, BarChart3, Box, ActivitySquare, RefreshCcw, ScrollText, CheckCircle, AlertTriangle, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ShieldAlert, Building2, LogOut, LayoutDashboard, BarChart3, Box, ActivitySquare, RefreshCcw, ScrollText, CheckCircle, AlertTriangle, Wrench, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
@@ -37,6 +37,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     { name: t('logs'), href: `/admin/${adminId}/tools/logs`, icon: ScrollText },
     { name: t('validation'), href: `/admin/${adminId}/tools/validation`, icon: CheckCircle },
     { name: t('errors'), href: `/admin/${adminId}/tools/errors`, icon: AlertTriangle },
+    { name: t('remediation'), href: `/admin/${adminId}/tools/remediation`, icon: Wrench },
   ]
 
   return (

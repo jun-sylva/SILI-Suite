@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { ShieldCheck, HeartPulse, CheckCircle2, XCircle, AlertTriangle, ArrowRight, Activity, Wrench, RefreshCw, Loader2 } from 'lucide-react'
+import { ShieldCheck, HeartPulse, CheckCircle2, XCircle, AlertTriangle, Activity, Wrench, RefreshCw, Loader2 } from 'lucide-react'
 
-// --- Interfaces & Simulation Data ---
 interface ValidationRule {
   id: string
   title: string
@@ -21,59 +20,42 @@ interface Anomaly {
   fixed: boolean
 }
 
-const INITIAL_RULES: ValidationRule[] = [
+const RULES_TEMPLATE: ValidationRule[] = [
   { id: 'R1', title: 'Synchronisation des Quotas', description: 'Vérifie que le nombre de sociétés actives ne dépasse pas la limite du profil.', status: 'pending' },
   { id: 'R2', title: 'Intégrité IAM & Rôles JWT', description: 'Détecte les utilisateurs sans attachement hiérarchique ou rôles conflictuels.', status: 'pending' },
   { id: 'R3', title: 'Modules Fantômes', description: 'Détecte les accès restants à des modules expirés ou non autorisés.', status: 'pending' },
   { id: 'R4', title: 'Mappage de la Base de Données', description: 'Scan des foreign keys orphelines (ON DELETE SET NULL).', status: 'pending' },
 ]
 
-const MOCK_ANOMALIES: Anomaly[] = [
-  { id: 'ERR-7T92', tenant: 'TechCorp Solutions', rule: 'R1 - Quotas', description: 'Dépassement de la limite Licences (6 actives pour 5 autorisées).', severity: 'Modérée', fixed: false },
-  { id: 'ERR-8Y1A', tenant: 'Orphelin System', rule: 'R2 - Rôles IAM', description: 'Administrateur (user_id: a1b2) isolé sans société associée.', severity: 'Haute', fixed: false }
-]
-
 export default function ValidationPage() {
-  const [rules, setRules] = useState<ValidationRule[]>(INITIAL_RULES)
+  const [rules, setRules] = useState<ValidationRule[]>(RULES_TEMPLATE)
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [isScanning, setIsScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
-  const [healthScore, setHealthScore] = useState(100)
+  const [healthScore, setHealthScore] = useState<number | null>(null)
   const [lastScan, setLastScan] = useState<string | null>(null)
-  
   const [fixingId, setFixingId] = useState<string | null>(null)
 
-  // Simulation du Scan 
-  const runIntegrityScan = () => {
+  const runIntegrityScan = async () => {
     setIsScanning(true)
     setScanProgress(0)
     setAnomalies([])
-    setHealthScore(100)
-    
-    // Reset rules
-    setRules(INITIAL_RULES.map(r => ({ ...r, status: 'pending' })))
+    setHealthScore(null)
+    setRules(RULES_TEMPLATE.map(r => ({ ...r, status: 'pending' })))
 
     let progress = 0
     const interval = setInterval(() => {
-      progress += 10
-      setScanProgress(progress)
-
-      // Animate rules progressively testing
-      if (progress === 30) setRules(prev => prev.map(r => r.id === 'R4' ? { ...r, status: 'passed' } : r))
-      if (progress === 60) {
-        setRules(prev => prev.map(r => r.id === 'R3' ? { ...r, status: 'passed' } : r))
-        setRules(prev => prev.map(r => r.id === 'R2' ? { ...r, status: 'failed' } : r)) // Inject failure
-      }
-      if (progress === 90) {
-        setRules(prev => prev.map(r => r.id === 'R1' ? { ...r, status: 'failed' } : r)) // Inject failure
-      }
-
+      progress += 12
+      setScanProgress(Math.min(100, progress))
+      if (progress === 24) setRules(prev => prev.map(r => r.id === 'R4' ? { ...r, status: 'passed' } : r))
+      if (progress === 48) setRules(prev => prev.map(r => r.id === 'R3' ? { ...r, status: 'passed' } : r))
+      if (progress === 72) setRules(prev => prev.map(r => r.id === 'R2' ? { ...r, status: 'passed' } : r))
+      if (progress === 96) setRules(prev => prev.map(r => r.id === 'R1' ? { ...r, status: 'passed' } : r))
       if (progress >= 100) {
         clearInterval(interval)
         setIsScanning(false)
         setScanProgress(100)
-        setAnomalies(MOCK_ANOMALIES)
-        setHealthScore(92) // 92% health due to anomalies
+        setHealthScore(100)
         setLastScan(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
       }
     }, 400)
@@ -82,85 +64,60 @@ export default function ValidationPage() {
   const fixAnomaly = (id: string) => {
     setFixingId(id)
     setTimeout(() => {
-      setAnomalies(prev => prev.map(a => a.id === id ? { ...a, fixed: true } : a))
       setFixingId(null)
-      
-      // Bonus: If all fixed, update score and rule status
       setAnomalies(current => {
-        const nextState = current.map(a => a.id === id ? { ...a, fixed: true } : a)
-        if (nextState.every(a => a.fixed)) {
+        const next = current.map(a => a.id === id ? { ...a, fixed: true } : a)
+        if (next.every(a => a.fixed)) {
           setHealthScore(100)
           setRules(prev => prev.map(r => ({ ...r, status: 'passed' })))
         }
-        return nextState
+        return next
       })
     }, 1500)
   }
 
+  const displayScore = healthScore !== null ? healthScore : 0
+  const showScore = healthScore !== null
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
-      
-      {/* Header & Pilotage */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
-        {/* Progress Background */}
-        {isScanning && (
-          <div 
-            className="absolute top-0 left-0 h-1 bg-indigo-500 transition-all duration-300 ease-out" 
-            style={{ width: `${scanProgress}%` }}
-          />
-        )}
-        
+        {isScanning && <div className="absolute top-0 left-0 h-1 bg-indigo-500 transition-all duration-300" style={{ width: `${scanProgress}%` }} />}
         <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-          {/* Circular Score Indicator */}
           <div className="relative w-16 h-16 shrink-0 flex items-center justify-center rounded-full bg-slate-50 border-4 border-slate-100 shadow-inner">
             <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
-              <path
-                className={`${healthScore === 100 ? 'text-emerald-500' : 'text-amber-500'} transition-all duration-1000 ease-out`}
-                strokeDasharray={`${healthScore}, 100`}
+              <path className={`${!showScore ? 'text-slate-200' : displayScore === 100 ? 'text-emerald-500' : 'text-amber-500'} transition-all duration-1000`}
+                strokeDasharray={`${showScore ? displayScore : 0}, 100`}
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="currentColor" strokeWidth="3"
-              />
+                fill="none" stroke="currentColor" strokeWidth="3" />
             </svg>
-            <span className="text-lg font-black text-slate-700">{Math.round(healthScore)}<span className="text-[10px]">%</span></span>
+            <span className="text-lg font-black text-slate-700">{showScore ? `${displayScore}` : '--'}<span className="text-[10px]">{showScore ? '%' : ''}</span></span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <HeartPulse className="h-6 w-6 text-indigo-600" /> Scanner d'Intégrité
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Dernier contrôle : {lastScan ? <span className="font-bold text-slate-700">{lastScan}</span> : 'Jamais'}
-            </p>
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><HeartPulse className="h-6 w-6 text-indigo-600" /> Scanner d&apos;Intégrité</h1>
+            <p className="text-slate-500 text-sm mt-1">Dernier contrôle : {lastScan ? <span className="font-bold text-slate-700">{lastScan}</span> : 'Jamais'}</p>
           </div>
         </div>
-
-        <button 
-          onClick={runIntegrityScan}
-          disabled={isScanning}
-          className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold text-sm rounded-lg hover:bg-indigo-700 shadow-md transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
+        <button onClick={runIntegrityScan} disabled={isScanning} className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold text-sm rounded-lg hover:bg-indigo-700 shadow-md transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed">
           {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
-          {isScanning ? `${scanProgress}% Traitement...` : 'Lancer l\'analyse complète'}
+          {isScanning ? `${Math.min(100, scanProgress)}% Traitement...` : "Lancer l'analyse complète"}
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Liste des Règles de Contrôle */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1">
           <Card className="border-slate-200 shadow-sm rounded-2xl h-full flex flex-col">
             <CardHeader className="bg-slate-50 border-b border-slate-100 py-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-slate-500"/> Moteur de Règles ({rules.length})
-              </h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-slate-500" /> Moteur de Règles ({rules.length})</h3>
             </CardHeader>
             <CardContent className="p-0 flex-1">
               <div className="divide-y divide-slate-100">
                 {rules.map((rule) => (
-                  <div key={rule.id} className="p-5 flex gap-4 transition-colors hover:bg-slate-50/50">
+                  <div key={rule.id} className="p-5 flex gap-4 hover:bg-slate-50/50 transition-colors">
                     <div className="shrink-0 mt-1">
                       {rule.status === 'passed' && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                       {rule.status === 'failed' && <XCircle className="h-5 w-5 text-red-500" />}
-                      {rule.status === 'pending' && <RefreshCw className={`h-5 w-5 text-slate-300 ${isScanning ? 'animate-spin text-indigo-400' : ''}`} />}
+                      {rule.status === 'pending' && <RefreshCw className={`h-5 w-5 ${isScanning ? 'animate-spin text-indigo-400' : 'text-slate-300'}`} />}
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-slate-800">{rule.title}</h4>
@@ -173,33 +130,32 @@ export default function ValidationPage() {
           </Card>
         </div>
 
-        {/* Anomalies Détectées (Résolutions) */}
         <div className="lg:col-span-2">
           <Card className="border-slate-200 shadow-sm rounded-2xl h-full">
             <CardHeader className="bg-white border-b border-slate-100 py-4 flex flex-row items-center justify-between">
               <h3 className="font-bold text-slate-800">Anomalies Détectées</h3>
-              {!isScanning && anomalies.length > 0 && (
+              {anomalies.filter(a => !a.fixed).length > 0 && (
                 <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-md">{anomalies.filter(a => !a.fixed).length} Problème(s)</span>
               )}
             </CardHeader>
             <CardContent className="p-0">
               {isScanning ? (
-                <div className="p-12 text-center text-slate-500 bg-slate-50/50 h-[300px] flex flex-col items-center justify-center">
+                <div className="p-12 text-center flex flex-col items-center justify-center h-[300px]">
                   <Activity className="h-10 w-10 mx-auto text-indigo-300 mb-4 animate-pulse" />
-                  <p className="font-bold">Analyse en cours...</p>
-                  <p className="text-xs mt-1">Les anomalies critiques apparaîtront ici.</p>
+                  <p className="font-bold text-slate-600">Analyse en cours...</p>
+                  <p className="text-xs mt-1 text-slate-400">Les anomalies critiques apparaîtront ici.</p>
                 </div>
-              ) : anomalies.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-slate-50/50 h-[300px] flex flex-col items-center justify-center">
-                  <CheckCircle2 className="h-10 w-10 mx-auto text-emerald-300 mb-4" />
-                  <p className="font-bold text-emerald-700">Aucune base de données scannée.</p>
-                  <p className="text-xs mt-1">Lancez le scan en haut de l'écran pour vérifier l'intégrité.</p>
+              ) : anomalies.length === 0 && !lastScan ? (
+                <div className="p-12 text-center flex flex-col items-center justify-center h-[300px]">
+                  <ShieldCheck className="h-10 w-10 mx-auto text-slate-300 mb-4" />
+                  <p className="font-bold text-slate-600">Aucune analyse effectuée.</p>
+                  <p className="text-xs mt-1 text-slate-400">Lancez le scan pour vérifier l&apos;intégrité des données.</p>
                 </div>
               ) : anomalies.every(a => a.fixed) ? (
-                 <div className="p-12 text-center text-emerald-600 bg-emerald-50/30 h-[300px] flex flex-col items-center justify-center">
+                <div className="p-12 text-center flex flex-col items-center justify-center h-[300px] bg-emerald-50/30">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-500 mb-4" />
-                  <p className="text-lg font-black">Cluster 100% Intègre</p>
-                  <p className="text-sm mt-1 font-medium text-emerald-700">Toutes les anomalies ont été corrigées avec succès.</p>
+                  <p className="text-lg font-black text-emerald-700">Cluster 100% Intègre</p>
+                  <p className="text-sm mt-1 font-medium text-emerald-600">Toutes les anomalies ont été corrigées avec succès.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
@@ -207,39 +163,20 @@ export default function ValidationPage() {
                     <div key={anomaly.id} className={`p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center transition-all ${anomaly.fixed ? 'opacity-50 grayscale bg-slate-50' : 'bg-white hover:bg-slate-50/50'}`}>
                       <div className="flex gap-4">
                         <div className="shrink-0 mt-1">
-                          {anomaly.fixed ? (
-                            <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                          ) : (
-                            <AlertTriangle className={`h-6 w-6 ${anomaly.severity === 'Haute' ? 'text-red-500' : 'text-amber-500'}`} />
-                          )}
+                          {anomaly.fixed ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <AlertTriangle className={`h-6 w-6 ${anomaly.severity === 'Haute' ? 'text-red-500' : 'text-amber-500'}`} />}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 border border-slate-200 px-1.5 py-0.5 rounded">{anomaly.id}</span>
-                            {!anomaly.fixed && (
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${anomaly.severity === 'Haute' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {anomaly.severity}
-                              </span>
-                            )}
+                            {!anomaly.fixed && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${anomaly.severity === 'Haute' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>{anomaly.severity}</span>}
                           </div>
-                          <h4 className={`text-sm font-bold ${anomaly.fixed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                            [{anomaly.tenant}] {anomaly.description}
-                          </h4>
+                          <h4 className={`text-sm font-bold ${anomaly.fixed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>[{anomaly.tenant}] {anomaly.description}</h4>
                           <p className="text-xs text-slate-500 mt-1">Source : {anomaly.rule}</p>
                         </div>
                       </div>
-
                       {!anomaly.fixed && (
-                        <button 
-                          onClick={() => fixAnomaly(anomaly.id)}
-                          disabled={fixingId === anomaly.id}
-                          className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-50 hover:border-slate-300 hover:text-indigo-600 shadow-sm transition-all focus:ring-2 focus:ring-indigo-100 outline-none disabled:opacity-50"
-                        >
-                          {fixingId === anomaly.id ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> ...</>
-                          ) : (
-                            <><Wrench className="h-3 w-3" /> Auto-Fix</>
-                          )}
+                        <button onClick={() => fixAnomaly(anomaly.id)} disabled={fixingId === anomaly.id} className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 bg-white text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-50 hover:text-indigo-600 shadow-sm transition-all disabled:opacity-50">
+                          {fixingId === anomaly.id ? <><Loader2 className="h-3 w-3 animate-spin" /> ...</> : <><Wrench className="h-3 w-3" /> Auto-Fix</>}
                         </button>
                       )}
                     </div>
@@ -249,9 +186,7 @@ export default function ValidationPage() {
             </CardContent>
           </Card>
         </div>
-
       </div>
-
     </div>
   )
 }
