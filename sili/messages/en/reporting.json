@@ -1,0 +1,22 @@
+{
+  "title": "Consolidated Reporting",
+  "subtitle": "Overview of all your companies' activity.",
+  "loading": "Loading data...",
+  "card_total_companies": "Active Companies",
+  "card_total_users": "Users",
+  "card_active_modules": "Active Modules",
+  "card_total_storage": "Allocated Storage",
+  "card_storage_allocated": "Plan capacity",
+  "per_company_title": "Company Overview",
+  "per_company_subtitle": "Key indicators per company.",
+  "company_status_active": "Active",
+  "company_status_inactive": "Inactive",
+  "company_devise": "Currency",
+  "company_created": "Created",
+  "no_companies": "No companies configured",
+  "no_companies_desc": "Create a company in 'Company Management' to see data here.",
+  "quota_title": "Quota Usage",
+  "quota_companies": "Companies used",
+  "quota_users": "Licenses used",
+  "quota_storage": "Storage (GB)"
+}

@@ -21,8 +21,12 @@ export default getRequestConfig(async ({requestLocale}) => {
     'recovery',
     'register',
     'remediation',
+    'reporting',
+    'societes',
     'superadmin',
+    'tenant_settings',
     'tenants',
+    'utilisateurs',
     'validation',
   ];
   const messages: Record<string, any> = {};

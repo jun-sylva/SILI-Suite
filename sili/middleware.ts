@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
 
         if (tenant?.slug) {
           const shortId = profile.tenant_id.substring(0, 8);
-          return NextResponse.redirect(new URL(`/${userLocale}/${tenant.slug}/${shortId}/dashboard`, request.url));
+          return NextResponse.redirect(new URL(`/${userLocale}/${tenant.slug}/${shortId}/${session.user.id}/dashboard`, request.url));
         }
       }
 

@@ -1,0 +1,22 @@
+{
+  "title": "Reporting Consolidé",
+  "subtitle": "Vue d'ensemble de l'activité de toutes vos sociétés.",
+  "loading": "Chargement des données...",
+  "card_total_companies": "Sociétés Actives",
+  "card_total_users": "Utilisateurs",
+  "card_active_modules": "Modules Actifs",
+  "card_total_storage": "Stockage Alloué",
+  "card_storage_allocated": "Capacité du plan",
+  "per_company_title": "Aperçu par Société",
+  "per_company_subtitle": "Indicateurs clés de chaque société.",
+  "company_status_active": "Active",
+  "company_status_inactive": "Inactive",
+  "company_devise": "Devise",
+  "company_created": "Créée le",
+  "no_companies": "Aucune société configurée",
+  "no_companies_desc": "Créez une société dans 'Gestion Sociétés' pour voir les données ici.",
+  "quota_title": "Utilisation des Quotas",
+  "quota_companies": "Sociétés utilisées",
+  "quota_users": "Licences utilisées",
+  "quota_storage": "Stockage (Go)"
+}

@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 
 export default function SocieteDashboardPage() {
   const t = useTranslations('dashboard')
+  const navT = useTranslations('navigation')
   const params = useParams()
   const societeSlug = params.societe_slug as string
   const societeName = societeSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
@@ -98,7 +99,6 @@ export default function SocieteDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
              {['vente', 'stock', 'comptabilite'].map(modKey => {
-               const navT = useTranslations('navigation')
                return (
                 <div key={modKey} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-3">
