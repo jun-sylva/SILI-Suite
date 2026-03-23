@@ -3,8 +3,10 @@
 import { useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, Users, ShoppingCart, CircleDollarSign, ArrowUpRight, TrendingUp } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function SocieteDashboardPage() {
+  const t = useTranslations('dashboard')
   const params = useParams()
   const societeSlug = params.societe_slug as string
   const societeName = societeSlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
@@ -18,13 +20,13 @@ export default function SocieteDashboardPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{societeName}</h1>
-            <p className="text-slate-500 text-sm mt-1">Tableau de bord de performance et indicateurs clés.</p>
+            <p className="text-slate-500 text-sm mt-1">{t('societe_performance_subtitle')}</p>
           </div>
         </div>
         <div className="flex gap-2">
           <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs font-bold text-emerald-700">Flux Temps Réel</span>
+            <span className="text-xs font-bold text-emerald-700">{t('real_time_flux')}</span>
           </div>
         </div>
       </div>
@@ -32,7 +34,7 @@ export default function SocieteDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Chiffre d'Affaires</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('revenue')}</CardTitle>
             <CircleDollarSign className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
@@ -46,34 +48,34 @@ export default function SocieteDashboardPage() {
 
         <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Nouveaux Clients</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('new_clients')}</CardTitle>
             <Users className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">+0</div>
-            <p className="text-xs text-slate-400 mt-1">Objectif : 50/mois</p>
+            <p className="text-xs text-slate-400 mt-1">{t('monthly_objective')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ventes du jour</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('daily_sales')}</CardTitle>
             <ShoppingCart className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">0</div>
-            <p className="text-xs text-slate-400 mt-1">Commandes en attente</p>
+            <p className="text-xs text-slate-400 mt-1">{t('sales_waiting')}</p>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">Stock Critique</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('critical_stock')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">0</div>
-            <p className="text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full inline-block mt-1">Alerte rupture</p>
+            <p className="text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full inline-block mt-1">{t('stock_alert')}</p>
           </CardContent>
         </Card>
       </div>
@@ -81,31 +83,34 @@ export default function SocieteDashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Activité Récente</CardTitle>
-            <CardDescription>Les dernières actions menées sur vos modules.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('recent_activity')}</CardTitle>
+            <CardDescription>{t('recent_activity_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="h-48 flex items-center justify-center border-t border-slate-50 bg-slate-50/30 rounded-b-2xl">
-            <p className="text-slate-400 text-sm font-medium italic">Aucune activité récente pour le moment.</p>
+            <p className="text-slate-400 text-sm font-medium italic">{t('no_recent_activity')}</p>
           </CardContent>
         </Card>
         
         <Card className="border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Raccourcis Modules</CardTitle>
-            <CardDescription>Accédez rapidement à vos outils préférés.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('module_shortcuts')}</CardTitle>
+            <CardDescription>{t('shortcuts_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-             {['Ventes', 'Stocks', 'Comptabilité'].map(mod => (
-               <div key={mod} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group">
-                 <div className="flex items-center gap-3">
-                   <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                     <ArrowUpRight className="h-4 w-4" />
-                   </div>
-                   <span className="font-bold text-slate-700">{mod}</span>
-                 </div>
-                 <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
-               </div>
-             ))}
+             {['vente', 'stock', 'comptabilite'].map(modKey => {
+               const navT = useTranslations('navigation')
+               return (
+                <div key={modKey} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
+                    <span className="font-bold text-slate-700">{navT(modKey)}</span>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                </div>
+               )
+             })}
           </CardContent>
         </Card>
       </div>

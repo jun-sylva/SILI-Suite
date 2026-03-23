@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
@@ -33,23 +34,23 @@ type NavItem = {
 }
 
 const navGroup1: NavItem[] = [
-  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Gestion Sociétés', href: '/societes', icon: Briefcase },
-  { name: 'Utilisateurs & Accès', href: '/utilisateurs', icon: Users },
-  { name: 'Reporting Consolidé', href: '/reporting', icon: FileText },
-  { name: 'Paramètres Tenant', href: '/settings', icon: Settings },
+  { name: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'manage_societes', href: '/societes', icon: Briefcase },
+  { name: 'users_access', href: '/utilisateurs', icon: Users },
+  { name: 'consolidated_reporting', href: '/reporting', icon: FileText },
+  { name: 'tenant_settings', href: '/settings', icon: Settings },
 ]
 
 const navGroup2: NavItem[] = [
-  { name: 'Vente', href: '/vente', icon: ShoppingCart, moduleKey: 'vente' },
-  { name: 'Achat', href: '/achat', icon: PackageSearch, moduleKey: 'achat' },
-  { name: 'Stock', href: '/stock', icon: Building2, moduleKey: 'stock' },
-  { name: 'RH', href: '/rh', icon: Users, moduleKey: 'rh' },
-  { name: 'CRM', href: '/crm', icon: HardHat, moduleKey: 'crm' },
-  { name: 'Comptabilité', href: '/comptabilite', icon: CircleDollarSign, moduleKey: 'comptabilite' },
-  { name: 'Teams', href: '/teams', icon: MessageSquare, moduleKey: 'teams' },
-  { name: 'Rapports', href: '/rapports', icon: FileText, moduleKey: 'rapports' },
-  { name: 'Sécurité', href: '/securite', icon: Shield, moduleKey: 'securite' },
+  { name: 'vente', href: '/vente', icon: ShoppingCart, moduleKey: 'vente' },
+  { name: 'achat', href: '/achat', icon: PackageSearch, moduleKey: 'achat' },
+  { name: 'stock', href: '/stock', icon: Building2, moduleKey: 'stock' },
+  { name: 'rh', href: '/rh', icon: Users, moduleKey: 'rh' },
+  { name: 'crm', href: '/crm', icon: HardHat, moduleKey: 'crm' },
+  { name: 'comptabilite', href: '/comptabilite', icon: CircleDollarSign, moduleKey: 'comptabilite' },
+  { name: 'teams', href: '/teams', icon: MessageSquare, moduleKey: 'teams' },
+  { name: 'rapports', href: '/rapports', icon: FileText, moduleKey: 'rapports' },
+  { name: 'securite', href: '/securite', icon: Shield, moduleKey: 'securite' },
 ]
 
 interface ProtectedSidebarItemProps {
@@ -75,10 +76,13 @@ interface SidebarLinkProps {
 }
 
 function SidebarLink({ item, isActive, isCollapsed, onClick }: SidebarLinkProps) {
+  const t = useTranslations('navigation')
+  const label = t(item.name)
+
   return (
     <Link
       href={item.href}
-      title={isCollapsed ? item.name : undefined}
+      title={isCollapsed ? label : undefined}
       onClick={onClick}
       className={`flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
         isActive 
@@ -87,8 +91,8 @@ function SidebarLink({ item, isActive, isCollapsed, onClick }: SidebarLinkProps)
       } ${isCollapsed ? 'md:justify-center' : ''}`}
     >
       <item.icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? '' : 'md:mr-3'} mr-3 md:mr-0`} />
-      {!isCollapsed && <span className="truncate hidden md:block">{item.name}</span>}
-      <span className="truncate md:hidden">{item.name}</span>
+      {!isCollapsed && <span className="truncate hidden md:block">{label}</span>}
+      <span className="truncate md:hidden">{label}</span>
     </Link>
   )
 }
@@ -101,6 +105,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
+  const t = useTranslations('navigation')
   const pathname = usePathname()
   const params = useParams()
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -170,7 +175,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
           {!isCompanyLevel && (userRole === 'tenant_admin' || userRole === 'super_admin') ? (
             <div>
               {!isCollapsed && (
-                <h3 className="px-3 text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-3 italic">Espace Tenant</h3>
+                <h3 className="px-3 text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-3 italic">{t('tenant_group')}</h3>
               )}
               <ul className="space-y-1">
                 {navGroup1.map((item) => {
@@ -196,18 +201,18 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
                 className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-indigo-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-4 border border-white/5"
               >
                 <ChevronLeft className="h-4 w-4" />
-                {!isCollapsed && <span>Retour au Tenant</span>}
+                {!isCollapsed && <span>{t('return_to_tenant')}</span>}
               </Link>
 
               {/* Section Société */}
               <div>
                 {!isCollapsed && (
-                  <h3 className="px-3 text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-3 italic">Espace Société</h3>
+                  <h3 className="px-3 text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-3 italic">{t('societe_group')}</h3>
                 )}
                 <ul className="space-y-1">
                   {/* Dashboard Société */}
                   <SidebarLink 
-                    item={{ name: 'Tableau de bord', href: societeBase + '/dashboard', icon: LayoutDashboard }}
+                    item={{ name: 'dashboard', href: societeBase + '/dashboard', icon: LayoutDashboard }}
                     isActive={pathname === societeBase + '/dashboard'}
                     isCollapsed={isCollapsed!}
                     onClick={closeMobile}

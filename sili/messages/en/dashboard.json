@@ -1,0 +1,22 @@
+{
+  "tenant_title": "Welcome to your Workspace",
+  "tenant_subtitle": "Manage your account and prepare for your activities launch.",
+  "no_societe_title": "No company has been configured yet",
+  "no_societe_subtitle": "Start by creating your first company to access business modules.",
+  "create_first_societe": "Create my first company",
+  "societe_performance_title": "Performance Dashboard",
+  "societe_performance_subtitle": "Key indicators and real-time activity monitoring.",
+  "revenue": "Revenue",
+  "new_clients": "New Clients",
+  "daily_sales": "Daily Sales",
+  "critical_stock": "Critical Stock",
+  "recent_activity": "Recent Activity",
+  "no_recent_activity": "No recent activity at the moment.",
+  "module_shortcuts": "Module Shortcuts",
+  "real_time_flux": "Real-time Flux",
+  "recent_activity_desc": "Latest actions taken on your modules.",
+  "shortcuts_desc": "Quickly access your favorite tools.",
+  "stock_alert": "Stockout alert",
+  "sales_waiting": "Pending orders",
+  "monthly_objective": "Goal: 50/month"
+}

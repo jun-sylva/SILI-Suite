@@ -6,8 +6,10 @@ import { supabase } from '@/lib/supabase/client'
 import { useSocieteStore, Societe } from '@/stores/societeStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, Loader2, LayoutDashboard, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function TenantDashboardPage() {
+  const t = useTranslations('dashboard')
   const [societes, setLocalSocietes] = useState<Societe[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -58,8 +60,8 @@ export default function TenantDashboardPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bienvenue dans votre Espace de Travail</h1>
-          <p className="text-slate-500 text-sm mt-1">Gérez votre compte et préparez le lancement de vos activités.</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('tenant_title')}</h1>
+          <p className="text-slate-500 text-sm mt-1">{t('tenant_subtitle')}</p>
         </div>
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
           <LayoutDashboard className="h-6 w-6 text-indigo-600" />
@@ -69,13 +71,13 @@ export default function TenantDashboardPage() {
       <div className="grid gap-6">
         <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
           <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-slate-800">Aucune société n'a encore été configurée</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t('no_societe_title')}</h2>
           <p className="text-slate-500 text-sm mt-1 mb-8 max-w-sm mx-auto">
-            Commencez par créer votre première société pour accéder aux modules métier.
+            {t('no_societe_subtitle')}
           </p>
           <button className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg">
             <Plus className="h-5 w-5" />
-            Créer ma première société
+            {t('create_first_societe')}
           </button>
         </div>
       </div>

@@ -7,8 +7,24 @@ export default getRequestConfig(async ({requestLocale}) => {
     locale = routing.defaultLocale;
   }
 
-  // Permet de séparer les fichiers JSON par namespace (page)
-  const namespaces = ['login', 'register', 'sidebar', 'common', 'superadmin', 'auth', 'diagnostic', 'recovery', 'logs', 'validation', 'errors', 'remediation', 'tenants', 'modules'];
+  // Charge uniquement les namespaces réellement utilisés et présents
+  // dans les dossiers messages/<locale>.
+  const namespaces = [
+    'auth',
+    'dashboard',
+    'diagnostic',
+    'errors',
+    'login',
+    'logs',
+    'modules',
+    'navigation',
+    'recovery',
+    'register',
+    'remediation',
+    'superadmin',
+    'tenants',
+    'validation',
+  ];
   const messages: Record<string, any> = {};
 
   for (const ns of namespaces) {

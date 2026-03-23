@@ -1,0 +1,23 @@
+{
+  "tenant_group": "Espace Tenant",
+  "societe_group": "Espace Société",
+  "return_to_tenant": "Retour au Tenant",
+  "dashboard": "Tableau de bord",
+  "manage_societes": "Gestion Sociétés",
+  "users_access": "Utilisateurs & Accès",
+  "consolidated_reporting": "Reporting Consolidé",
+  "tenant_settings": "Paramètres Tenant",
+  "my_profile": "Mon Profil",
+  "settings": "Paramètres",
+  "logout": "Déconnexion",
+  "admin_portal": "Portail Super Admin",
+  "vente": "Vente",
+  "achat": "Achat",
+  "stock": "Stock",
+  "rh": "RH",
+  "crm": "CRM",
+  "comptabilite": "Comptabilité",
+  "teams": "Teams",
+  "rapports": "Rapports",
+  "securite": "Sécurité"
+}

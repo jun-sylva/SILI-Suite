@@ -1,0 +1,22 @@
+{
+  "tenant_title": "Bienvenue dans votre Espace de Travail",
+  "tenant_subtitle": "Gérez votre compte et préparez le lancement de vos activités.",
+  "no_societe_title": "Aucune société n'a encore été configurée",
+  "no_societe_subtitle": "Commencez par créer votre première société pour accéder aux modules métier.",
+  "create_first_societe": "Créer ma première société",
+  "societe_performance_title": "Tableau de bord de performance",
+  "societe_performance_subtitle": "Indicateurs clés et suivi de l'activité en temps réel.",
+  "revenue": "Chiffre d'Affaires",
+  "new_clients": "Nouveaux Clients",
+  "daily_sales": "Ventes du jour",
+  "critical_stock": "Stock Critique",
+  "recent_activity": "Activité Récente",
+  "no_recent_activity": "Aucune activité récente pour le moment.",
+  "module_shortcuts": "Raccourcis Modules",
+  "real_time_flux": "Flux Temps Réel",
+  "recent_activity_desc": "Les dernières actions menées sur vos modules.",
+  "shortcuts_desc": "Accédez rapidement à vos outils préférés.",
+  "stock_alert": "Alerte rupture",
+  "sales_waiting": "Commandes en attente",
+  "monthly_objective": "Objectif : 50/mois"
+}

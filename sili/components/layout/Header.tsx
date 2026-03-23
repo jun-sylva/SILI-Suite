@@ -6,8 +6,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { LogOut, User, Menu, ChevronDown, Settings } from 'lucide-react'
 import { useSocieteStore } from '@/stores/societeStore'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) => void }) {
+  const t = useTranslations('navigation')
   const router = useRouter()
   const { currentSociete } = useSocieteStore()
   const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(null)
@@ -109,14 +111,14 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                     >
                       <User className="h-4 w-4 text-slate-400" />
-                      Mon Profil
+                      {t('my_profile')}
                     </button>
                     <button
                       onClick={() => { setIsProfileOpen(false); router.push(tenantBase + '/settings') }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                     >
                       <Settings className="h-4 w-4 text-slate-400" />
-                      Paramètres
+                      {t('settings')}
                     </button>
                   </div>
 
@@ -127,7 +129,7 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
-                    Déconnexion
+                    {t('logout')}
                   </button>
                 </div>
               </div>
