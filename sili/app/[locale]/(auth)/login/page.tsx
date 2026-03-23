@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link } from '@/i18n/routing'
 import { supabase } from '@/lib/supabase/client'
@@ -12,6 +12,8 @@ import { SuperAdminModal } from '@/components/auth/SuperAdminModal'
 
 export default function UnifiedAuthPage() {
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
   const tLogin = useTranslations('login')
   const tReg = useTranslations('register')
   const tAuth = useTranslations('auth')
@@ -103,8 +105,9 @@ export default function UnifiedAuthPage() {
         }
 
         if (tenant?.slug) {
-          const shortId = profile.tenant_id.substring(0, 8)
-          router.push(`/${tenant.slug}/${shortId}/dashboard`)
+          const shortTenantId = profile.tenant_id.substring(0, 8)
+          const shortUserId = data.user.id.substring(0, 8)
+          router.push(`/${tenant.slug}/${shortTenantId}/${shortUserId}/dashboard`)
           router.refresh()
           return
         }
@@ -130,7 +133,7 @@ export default function UnifiedAuthPage() {
 
     setRegLoading(true)
 
-    const { error: signUpError } = await supabase.auth.signUp({ 
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ 
       email: regEmail, 
       password: regPassword,
       options: {
@@ -147,18 +150,34 @@ export default function UnifiedAuthPage() {
       return
     }
 
-    const { error: rpcError } = await supabase.rpc('register_new_tenant', { 
+    const { data: tenantResult, error: rpcError } = await supabase.rpc('register_new_tenant', { 
       p_raison_sociale: raisonSociale,
       p_devise: devise,
       p_admin_name: nom,
-      p_phone: `${phoneCode}${phone}`
+      p_phone: `${phoneCode}${phone}`,
+      p_user_id: signUpData?.user?.id 
     })
 
-    if (rpcError) {
-      console.error(rpcError)
+    if (rpcError || !tenantResult) {
+      console.error('Détails RPC Error:', rpcError)
       setRegError(tReg('error_generic'))
       setRegLoading(false)
       return
+    }
+
+    // Le résultat contient { id, slug } ✅
+    const { id: tenantId, slug } = tenantResult as { id: string, slug: string }
+
+    if (signUpData?.user && tenantId) {
+       // Succès : On renvoie vers la vue de connexion au lieu d'entrer directement
+       // pour s'assurer que la session et les droits sont bien synchronisés.
+       setIsLoginView(true)
+       setRegStep(1)
+       setLoginEmail(regEmail)
+       setLoginPassword('')
+       setLoginError('Compte créé avec succès ! Veuillez vous connecter.')
+       setRegLoading(false)
+       return
     }
 
     setRegLoading(false)
