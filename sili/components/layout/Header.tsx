@@ -65,13 +65,11 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
               <Menu className="h-6 w-6" />
             </button>
   
-            {currentSociete ? (
+            {currentSociete && (
               <div className="flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-1.5">
                 <span className="text-base">🏢</span>
                 <span className="text-sm font-semibold text-slate-700 hidden sm:block truncate max-w-[180px]">{currentSociete.raison_sociale}</span>
               </div>
-            ) : (
-              <span className="text-sm text-slate-400 italic hidden sm:block">Sélectionnez une société</span>
             )}
           </div>
   

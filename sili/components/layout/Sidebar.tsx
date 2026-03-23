@@ -1,8 +1,10 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -32,10 +34,10 @@ type NavItem = {
 
 const navGroup1: NavItem[] = [
   { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Sociétés', href: '/societes', icon: Briefcase },
-  { name: 'Utilisateurs', href: '/utilisateurs', icon: Users },
-  { name: 'Applications', href: '/applications', icon: Grid },
-  { name: 'Paramètres', href: '/settings', icon: Settings },
+  { name: 'Gestion Sociétés', href: '/societes', icon: Briefcase },
+  { name: 'Utilisateurs & Accès', href: '/utilisateurs', icon: Users },
+  { name: 'Reporting Consolidé', href: '/reporting', icon: FileText },
+  { name: 'Paramètres Tenant', href: '/settings', icon: Settings },
 ]
 
 const navGroup2: NavItem[] = [
@@ -101,12 +103,23 @@ interface SidebarProps {
 export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname()
   const params = useParams()
+  const [userRole, setUserRole] = useState<string | null>(null)
   
   const tenantSlug = params.tenant_slug as string
   const tenantId = params.tenant_id as string
   const userId = params.user_id as string
   const societeSlug = params.societe_slug as string
   const societeId = params.societe_id as string
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
+          setUserRole(p?.role ?? null)
+        })
+      }
+    })
+  }, [])
 
   const isCompanyLevel = !!societeId
   const closeMobile = () => setIsMobileOpen?.(false)
@@ -153,8 +166,8 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto overflow-x-hidden scrollbar-hide space-y-6">
-          {/* Section Tenant (Toujours visible ou prioritaire si pas en société) */}
-          {!isCompanyLevel ? (
+          {/* Section Tenant (Visible uniquement pour les admins) */}
+          {!isCompanyLevel && (userRole === 'tenant_admin' || userRole === 'super_admin') ? (
             <div>
               {!isCollapsed && (
                 <h3 className="px-3 text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-3 italic">Espace Tenant</h3>

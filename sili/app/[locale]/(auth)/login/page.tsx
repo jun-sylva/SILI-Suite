@@ -25,6 +25,7 @@ export default function UnifiedAuthPage() {
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [loginSuccess, setLoginSuccess] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
 
   // --- Register State ---
@@ -63,6 +64,7 @@ export default function UnifiedAuthPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginError('')
+    setLoginSuccess('')
     setLoginLoading(true)
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -175,7 +177,7 @@ export default function UnifiedAuthPage() {
        setRegStep(1)
        setLoginEmail(regEmail)
        setLoginPassword('')
-       setLoginError('Compte créé avec succès ! Veuillez vous connecter.')
+       setLoginSuccess('Compte créé avec succès ! Veuillez vous connecter.')
        setRegLoading(false)
        return
     }
@@ -198,6 +200,7 @@ export default function UnifiedAuthPage() {
           className="w-full h-11 rounded-lg border border-slate-200 px-4 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-sm" />
       </div>
       {loginError && <p className="text-sm text-red-500 font-medium bg-red-50 p-3 rounded-lg border border-red-100">{loginError}</p>}
+      {loginSuccess && <p className="text-sm text-emerald-600 font-medium bg-emerald-50 p-3 rounded-lg border border-emerald-100">{loginSuccess}</p>}
       <button type="submit" disabled={loginLoading}
         className="w-full h-11 rounded-lg bg-indigo-600 font-bold text-white shadow hover:bg-indigo-700 transition">
         {loginLoading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : tLogin('submit_button')}
