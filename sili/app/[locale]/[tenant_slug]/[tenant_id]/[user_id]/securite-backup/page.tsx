@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
-import 'dayjs/locale/fr'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
