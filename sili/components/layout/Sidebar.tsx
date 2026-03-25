@@ -14,7 +14,6 @@ import {
   Building2,
   FileText,
   MessageSquare,
-  Shield,
   Settings,
   CircleDollarSign,
   HardHat,
@@ -52,7 +51,6 @@ const navGroup2: NavItem[] = [
   { name: 'comptabilite', href: '/comptabilite', icon: CircleDollarSign, moduleKey: 'comptabilite' },
   { name: 'teams', href: '/teams', icon: MessageSquare, moduleKey: 'teams' },
   { name: 'rapports', href: '/rapports', icon: FileText, moduleKey: 'rapports' },
-  { name: 'securite', href: '/securite', icon: Shield, moduleKey: 'securite' },
 ]
 
 interface ProtectedSidebarItemProps {

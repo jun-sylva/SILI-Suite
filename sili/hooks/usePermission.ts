@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 
 export type PermissionLevel = 'aucun' | 'lecteur' | 'contributeur' | 'gestionnaire' | 'admin'
-export type ModuleKey = 'comptabilite' | 'vente' | 'achat' | 'stock' | 'rh' | 'crm' | 'teams' | 'workflow' | 'rapports' | 'securite' | 'sauvegarde' | 'presence'
+export type ModuleKey = 'comptabilite' | 'vente' | 'achat' | 'stock' | 'rh' | 'crm' | 'teams' | 'workflow' | 'rapports' | 'sauvegarde' | 'presence'
 
 const PERMISSION_HIERARCHY: Record<PermissionLevel, number> = {
   aucun: 0,
