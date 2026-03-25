@@ -6,6 +6,11 @@ import { routing } from './i18n/routing';
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
+  // Les routes API n'ont pas de locale — ne pas les passer dans next-intl
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
   // First, run next-intl middleware to get the localized response
   const response = intlMiddleware(request);
 

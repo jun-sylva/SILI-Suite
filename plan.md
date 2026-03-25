@@ -8,6 +8,7 @@
 ```
 /[locale]/[tenant_slug]/[tenant_id]/[user_id]/                     ← espace tenant
 /[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/[module]  ← espace société
+/[locale]/admin/[adminId]/                                          ← espace Master (is_super_admin)
 ```
 
 **⚠️ Bug connu — UUID tronqué dans l'URL** :
@@ -26,154 +27,203 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.societes` | Sociétés d'un tenant. Colonnes : `id`, `tenant_id`, `raison_sociale`, `is_active`, `rccm`, `numero_contribuable`, `storage_gb`, `devise`, `site_web`, `capital_social` |
 | `public.user_societes` | Liaison utilisateur ↔ société (accès). Colonnes : `user_id`, `societe_id`, `is_active` |
 | `public.user_module_permissions` | Permissions par module. Colonnes : `user_id`, `societe_id`, `module`, `permission` (none/viewer/contributor/manager/admin) |
-| `public.sys_modules` | Modules disponibles du système |
+| `public.sys_modules` | Modules disponibles du système (géré par Master) |
+| `public.tenant_modules` | Modules activés par tenant. Colonnes : `id`, `tenant_id`, `module`, `is_active`, `config`, `activated_at`. Contrainte unique : `(tenant_id, module)` |
 | `public.tenant_settings` | Paramètres du tenant |
+| `public.notifications` | Notifications in-app. Colonnes : `id`, `tenant_id`, `user_id`, `type`, `titre`, `message`, `data`, `is_read`, `read_at`, `created_at` |
+| `public.audit_logs` | Journal d'audit général. Colonnes : `id`, `tenant_id`, `user_id`, `action`, `resource_type`, `resource_id`, `metadata`, `ip_address`, `user_agent`, `created_at` |
+| `public.master_audit_logs` | Journal d'audit des comptes Master uniquement. Colonnes : `id`, `actor_id`, `action`, `level` (info/warning/error), `service` (auth/system/database/network), `resource_type`, `resource_id`, `message` (texte lisible pré-calculé), `metadata`, `ip_address`, `created_at`. Pas de FK tenant_id. |
+| `public.tenant_backups` | Sauvegardes. Colonnes : `id`, `tenant_id`, `status`, `size_mb`, `triggered_by`, `storage_path`, `created_at`, `expires_at`, `completed_at` |
 
 ### Rôles globaux (`global_role` enum)
-- `super_admin` — accès total à tout
+- `super_admin` — accès total à tout *(non utilisé en pratique — remplacé par `is_super_admin`)*
 - `tenant_admin` — accès à son tenant + toutes ses sociétés
 - `tenant_user` — accès uniquement aux sociétés assignées via `user_societes`
 
+### Compte Master
+- `profiles.role = 'user'` + `profiles.is_super_admin = true` + `profiles.tenant_id = NULL`
+- URL : `/[locale]/admin/[adminId]/` où `adminId = user.id.substring(0, 5)`
+- Middleware : redirige vers `/admin/[adminId]/dashboard` si `is_super_admin = true`
+
 ### Rôles par module (`user_module_permissions`)
 `none` | `viewer` | `contributor` | `manager` | `admin`
-Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabilite, rapports, securite), **pas** sur la liaison société.
+Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabilite, rapports), **par société**.
+⚠️ Le module `securite` a été **supprimé** — remplacé par la page tenant "Sécurité & Backup".
 
 ---
 
 ## RLS (Row Level Security) en place
 
 ### `public.tenants`
-- `tenant_admin` lit uniquement le tenant auquel son `profiles.tenant_id` correspond
-- `super_admin` lit tout
-- Policy : `tenants_read_admin`
+- `tenant_admin` lit uniquement son propre tenant (`profiles.tenant_id`)
+- `super_admin/is_super_admin` lit et **met à jour** tout — policy `tenants_super_admin_update`
+- Policy lecture : `tenants_read_admin`
 
 ### `public.societes`
-- `tenant_admin` lit toutes les sociétés de son tenant (`profiles.tenant_id = societes.tenant_id`)
-- `tenant_user` lit uniquement ses sociétés assignées (via `user_societes`) — **à implémenter**
+- `tenant_admin` lit toutes les sociétés de son tenant
+- `tenant_user` : RLS à implémenter (lecture sociétés assignées via `user_societes`)
 - Policy : `societes_admin_policy`
 
 ### `public.user_societes`
-- `tenant_user` lit ses propres lignes (`user_id = auth.uid()`)
-- `tenant_admin` lit toutes les lignes des sociétés de son tenant
+- `tenant_user` lit ses propres lignes
+- `tenant_admin` lit toutes les lignes du tenant
 - Écriture : service role uniquement (API route `/api/admin/create-user`)
+
+### `public.tenant_modules`
+- Policies larges existantes : `tenant_modules_read_policy` + `tenant_modules_update_policy` (`using (true)`)
+- Contrainte unique ajoutée : `(tenant_id, module)` — nécessaire pour upsert
+
+### `public.notifications`
+- SELECT/UPDATE : `user_id = auth.uid()` (tous comptes)
+- INSERT : `is_super_admin = true` (Masters insèrent les notifs pour tous les Masters)
+
+### `public.audit_logs`
+- SELECT : `is_super_admin` ou `tenant_admin` (son propre tenant)
+- INSERT : `is_super_admin` (Master écrit depuis client)
+
+### `public.tenant_backups`
+- SELECT/INSERT : `tenant_admin` de son propre tenant + `is_super_admin`
 
 ---
 
 ## Pages implémentées
 
-### `/[locale]/[tenant_slug]/[tenant_id]/[user_id]/societes`
-**Fichier** : `sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/societes/page.tsx`
+### Espace Tenant
 
-Fonctionnalités :
-- Liste des sociétés du tenant avec statut actif/inactif
-- Indicateur quota : `X / max_societes sociétés` dans la carte header
-- Création de société : modal avec champs `raison_sociale`, `devise`, `rccm`, `numero_contribuable`, `storage_gb`
-  - `storage_gb` : bordure verte si valide, rouge si dépasse quota restant, bouton désactivé si invalide
-  - Quota restant = `max_storage_gb` (tenant) − somme des `storage_gb` existants
-- Lignes cliquables → `SocieteDetailModal` avec tous les détails
-- Colonne Actions : toggle actif/inactif (stopPropagation)
-- **Pattern clé** : `checkSessionAndFetch` → fetch `profiles.tenant_id` (UUID complet) → `fetchAll(realTenantId)`
+#### `/[user_id]/societes`
+- Liste des sociétés + statut actif/inactif + indicateur quota
+- Création société : modal avec storage_gb validé contre quota restant
+- **Pattern clé** : `checkSessionAndFetch` → `profiles.tenant_id` (UUID complet) → `fetchAll`
 
-### `/[locale]/[tenant_slug]/[tenant_id]/[user_id]/utilisateurs`
-**Fichier** : `sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/utilisateurs/page.tsx`
+#### `/[user_id]/utilisateurs`
+- Liste utilisateurs + quota licences
+- Création : rôle admin ou user, si `tenant_user` → assignation sociétés obligatoire
+- Appel API : `POST /api/admin/create-user`
 
-Fonctionnalités :
-- Liste de tous les utilisateurs du tenant avec rôle et statut
-- Indicateur quota : `X / max_licences utilisateurs`
-- Bouton "Nouvel Utilisateur" → dropdown choix rôle (Administrateur / Utilisateur)
-- Modal création :
-  - Champs : `full_name`, `email`, `phone`, `password`
-  - Si `tenant_user` : sélection obligatoire de sociétés (checkboxes, au moins 1)
-  - Appel API : `POST /api/admin/create-user`
-- Lignes cliquables → `UserDetailModal`
+#### `/[user_id]/securite-backup`
+**Fichier** : `sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/securite-backup/page.tsx`
+- 3 onglets : Journal d'activité (`audit_logs`) / Permissions (`user_module_permissions`) / Sauvegardes (`tenant_backups`)
+- Accessible uniquement aux `tenant_admin` (pas de permission module requise)
+- Bouton "Déclencher une sauvegarde" → insert dans `tenant_backups`
 
-### `/[locale]/[tenant_slug]/[tenant_id]/[user_id]/dashboard`
-- CompanySwitcher dans la TopBar
-- Label "Accéder à une Société" pour le menu société
+#### `/[user_id]/dashboard`, `/[user_id]/settings`, `/[user_id]/reporting`
+
+### Espace Société
+- `/[societe_id]/dashboard`, `/[societe_id]/vente`, `/[societe_id]/rh`, `/[societe_id]/crm`
+
+### Espace Master (`/admin/[adminId]/`)
+
+#### `tenants/page.tsx`
+- Liste tous les tenants + bloc/débloc/suppression
+- Modal Paramètres → 2 onglets :
+  - **Permissions Modulaires** : toggles par module → upsert `tenant_modules` (colonne `module`, conflit `tenant_id,module`)
+  - **Réglages & Quotas** : `max_societes`, `max_licences`, `max_storage_gb` → update `tenants`
+- Après chaque action : `writeAuditLog()` + `notifyAllMasters()` (notif à tous les `is_super_admin`)
+
+#### `tools/logs/page.tsx`
+- Connecté à `master_audit_logs` (données réelles, 200 derniers logs)
+- `level` et `service` lus directement depuis la table — plus de mapping client
+- `message` pré-calculé stocké en base, passé par l'appelant
+- Filtres niveau + service + recherche texte
 
 ---
 
 ## Composants
 
 ### `Header.tsx` (`sili/components/layout/Header.tsx`)
-- **CompanySwitcher** : visible si `societes.length >= 1`
+- **CompanySwitcher** :
+  - En **espace tenant** (`params.societe_id` absent) : affiche toujours `t('select_company')` — jamais de nom persistant
+  - En **espace société** : affiche le nom de la société active (basé sur URL uniquement, pas le store Zustand)
   - `tenant_admin/super_admin` : charge toutes les sociétés actives du tenant
   - `tenant_user` : charge uniquement les sociétés assignées via `user_societes`
-  - Clic sur société → navigation `/${locale}${tenantBase}/${toSlug(raison_sociale)}/${id}/dashboard`
-  - Lien "Gérer les sociétés" pour admins seulement
+  - "Gérer les sociétés" : visible uniquement pour `tenant_admin/super_admin`
+- **NotificationBell** : cloche avec badge rouge, dropdown, realtime Supabase, marquer lu
 - **ProfileDropdown** : profil, paramètres, déconnexion
 
+### `NotificationBell.tsx` (`sili/components/ui/NotificationBell.tsx`)
+- Fetch `notifications` filtrée par `user_id = auth.uid()` (fonctionne pour Master ET Tenant)
+- Realtime : souscription INSERT Supabase en temps réel
+- Masters : `tenant_id = NULL` dans leurs notifications
+- Intégré dans `Header.tsx` (tenant) ET `admin/[adminId]/layout.tsx` (Master)
+
+### `Sidebar.tsx`
+- `navGroup1` (espace tenant, admins uniquement) : dashboard, societes, utilisateurs, reporting, **securite-backup**, settings
+- `navGroup2` (espace société, avec `usePermission`) : vente, achat, stock, rh, crm, comptabilite, teams, rapports
+- ⚠️ Module `securite` **supprimé** de `navGroup2` et de `ModuleKey` dans `usePermission.ts`
+
 ### `middleware.ts`
-- Authentification Supabase SSR
-- `tenant_user` connecté → redirigé vers sa première société assignée (via `user_societes`)
-- Fallback : dashboard tenant si aucune société assignée
+- `is_super_admin` → `/admin/[adminId]/dashboard`
+- `tenant_admin` → `/[slug]/[shortId]/[userId]/dashboard`
+- `tenant_user` → première société assignée ou dashboard tenant
 
 ---
 
 ## API Routes
 
 ### `POST /api/admin/create-user`
-**Fichier** : `sili/app/api/admin/create-user/route.ts`
-
 Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
-
-Flow :
-1. `supabase.auth.admin.createUser({ email, password, ... })`
-2. `upsert` dans `profiles` (role, tenant_id, full_name, phone)
-3. Si `tenant_user` : `insert` dans `user_societes` pour chaque société sélectionnée
-4. Rollback : supprime l'auth user si étape 2 ou 3 échoue
+1. `supabase.auth.admin.createUser`
+2. `upsert` dans `profiles`
+3. Si `tenant_user` : `insert` dans `user_societes`
+4. Rollback si étape 2 ou 3 échoue
 
 ---
 
 ## Migrations SQL
 
-| Fichier | Description |
-|---|---|
-| `20260321_sys_modules_manual.sql` | Création table `sys_modules` |
-| `20260321_tenant_settings_manual.sql` | Création table `tenant_settings` |
-| `20260322_fix_link_table_manual.sql` | Ancienne liaison (révisée — references user_societes) |
-| `20260322_fix_roles_and_permissions.sql` | RLS pour `user_module_permissions` |
-| `20260322_fix_rpc_phone_manual.sql` | Fix RPC phone |
-| `20260322_fix_rpc_tenant_status_manual.sql` | Fix statut tenant dans RPC |
-| `20260322_normalize_roles_english.sql` | Normalisation rôles en anglais (tenant_admin, tenant_user) |
-| `20260322_normalize_roles_english_v2.sql` | V2 normalisation rôles |
-| `20260324_fix_tenants_rls.sql` | Fix RLS `tenants` (tenant_admin lit uniquement son propre tenant) |
-| `20260324_fix_tenants_quotas_notnull.sql` | Fix valeurs NULL sur max_societes/max_licences/max_storage_gb |
-| `20260324_societes_storage_cleanup.sql` | Nettoyage colonnes storage societes |
-| `20260324_create_user_societes.sql` | **Recréation propre de `user_societes`** (DROP + CREATE) — **À EXÉCUTER** |
+| Fichier | Description | Statut |
+|---|---|---|
+| `20260321_sys_modules_manual.sql` | Création table `sys_modules` | ✅ |
+| `20260321_tenant_settings_manual.sql` | Création table `tenant_settings` | ✅ |
+| `20260322_fix_link_table_manual.sql` | Ancienne liaison user_societes | ✅ |
+| `20260322_fix_roles_and_permissions.sql` | RLS `user_module_permissions` | ✅ |
+| `20260322_fix_rpc_phone_manual.sql` | Fix RPC phone | ✅ |
+| `20260322_fix_rpc_tenant_status_manual.sql` | Fix statut tenant dans RPC | ✅ |
+| `20260322_normalize_roles_english.sql` | Normalisation rôles en anglais | ✅ |
+| `20260322_normalize_roles_english_v2.sql` | V2 normalisation rôles | ✅ |
+| `20260324_fix_tenants_rls.sql` | RLS `tenants` pour tenant_admin | ✅ |
+| `20260324_fix_tenants_quotas_notnull.sql` | Fix NULL sur quotas | ✅ |
+| `20260324_societes_storage_cleanup.sql` | Nettoyage colonnes storage | ✅ |
+| `20260324_create_user_societes.sql` | Recréation propre `user_societes` | ⚠️ À exécuter |
+| `20260325_notifications_rls.sql` | RLS `notifications` (SELECT/UPDATE par user_id, INSERT super_admin) | ⚠️ À exécuter |
+| `20260325_create_audit_logs.sql` | Table `audit_logs` + RLS | ⚠️ À exécuter |
+| `20260325_create_tenant_backups.sql` | Table `tenant_backups` + RLS | ⚠️ À exécuter |
+| `20260325_remove_securite_module.sql` | Suppression module `securite` de `sys_modules` + `user_module_permissions` | ⚠️ À exécuter |
+| `20260325_fix_rls_master_operations.sql` | Contrainte unique `tenant_modules(tenant_id,module)` + policies UPDATE tenants / INSERT audit_logs / INSERT notifications pour super_admin | ⚠️ À exécuter |
+| `20260325_create_master_audit_logs.sql` | Table `master_audit_logs` + index + RLS SELECT pour super_admin | ⚠️ À exécuter |
 
 ---
 
-## i18n — Clés de traduction ajoutées
+## i18n — Namespaces chargés (`i18n/request.ts`)
+`auth`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `securite`, `societes`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`
 
-### `navigation.json`
-- `select_company` — "Accéder à une Société" / "Access a Company"
-- `company_switcher_title` — "Mes Sociétés" / "My Companies"
-- `manage_companies` — "Gérer les sociétés" / "Manage companies"
-
-### `societes.json`
-- `field_numero_contribuable`, `field_numero_rccm`
-- `storage_*` — quota stockage
-- `quota_*` — indicateurs quota
-- `detail_*` — champs de détail dans le modal
-
-### `utilisateurs.json`
-- `new_user`, `quota_label`, `quota_reached`
-- `role_admin_desc`, `role_user_desc`
-- `modal_create_title`, `field_*`, `placeholder_*`
-- `password_hint`, `btn_*`, `toast_*`, `error_*`
-- `field_societes`, `no_societes_available`, `societes_selected`, `error_societe_required`
-- `detail_phone`, `detail_created_at`
+### Clés notables
+- `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
+- `securite.json` : page complète Sécurité & Backup (tabs audit/permissions/backups)
 
 ---
 
 ## À faire / Prochaines étapes
 
-- [ ] **Exécuter** `20260324_create_user_societes.sql` dans Supabase (table existe mais vide)
+### Migrations SQL à exécuter dans Supabase (dans l'ordre)
+- [ ] `20260324_create_user_societes.sql` — recréation propre `user_societes`
+- [ ] `20260324_fix_tenants_quotas_notnull.sql` — fix NULL sur quotas
+- [ ] `20260324_fix_tenants_rls.sql` — RLS `tenants` pour tenant_admin
+- [ ] `20260324_societes_storage_cleanup.sql` — nettoyage colonnes storage
+- [ ] `20260325_notifications_rls.sql` — RLS notifications (SELECT/UPDATE par user_id, INSERT super_admin)
+- [ ] `20260325_create_audit_logs.sql` — table `audit_logs` + RLS (si pas encore exécutée)
+- [ ] `20260325_create_tenant_backups.sql` — table `tenant_backups` + RLS
+- [ ] `20260325_remove_securite_module.sql` — suppression module `securite` de `sys_modules`
+- [ ] `20260325_fix_rls_master_operations.sql` — contrainte unique `tenant_modules(tenant_id,module)` + policies UPDATE tenants + INSERT notifications
+- [ ] `20260325_create_master_audit_logs.sql` — table `master_audit_logs` + index + RLS SELECT super_admin
+
+### Environnement
 - [ ] **Ajouter** `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`
-- [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées (à faire lors du travail sur les permissions modules)
-- [ ] **`user_module_permissions`** : UI de gestion des permissions par module (none/viewer/contributor/manager/admin) pour chaque utilisateur dans chaque société
-- [ ] **Modules** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports, Sécurité
+
+### Fonctionnalités
+- [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
+- [ ] **`user_module_permissions`** : UI de gestion des permissions par module pour chaque utilisateur dans chaque société
+- [ ] **Modules métier** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports
 
 ---
 
@@ -181,6 +231,9 @@ Flow :
 
 1. **UUID tronqué dans URL** : `params.tenant_id` = 8 chars. Toujours utiliser `profiles.tenant_id`.
 2. **`user_societes` n'a pas de colonne `role`** — les rôles sont dans `user_module_permissions`.
-3. **Écriture dans `user_societes`** : service role uniquement (pas de policy client INSERT/UPDATE/DELETE).
-4. **`utilisateurs_societe`** : ancienne table qui n'a jamais existé correctement — remplacée par `user_societes`.
-5. **`toSlug(str)`** : fonction de conversion `raison_sociale` → slug URL, utilisée partout pour la navigation société.
+3. **Écriture dans `user_societes`** : service role uniquement.
+4. **`tenant_modules` — colonne `module`** (pas `module_key`) + conflit upsert sur `(tenant_id, module)`.
+5. **Compte Master** : `role = 'user'` + `is_super_admin = true` + `tenant_id = NULL`. Ne pas confondre avec `role = 'super_admin'` (enum non utilisé).
+6. **`toSlug(str)`** : conversion `raison_sociale` → slug URL, utilisée partout pour la navigation société.
+7. **`dayjs/locale/fr`** : ne pas importer — incompatible Turbopack (CJS). Utiliser `dayjs` seul avec format `DD/MM/YY HH:mm`.
+8. **Module `securite`** : supprimé de `navGroup2`, `ModuleKey`, `sys_modules`. La page "Sécurité & Backup" est dans l'espace tenant à `/securite-backup`, non soumise aux permissions modules.
