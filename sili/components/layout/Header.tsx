@@ -115,9 +115,8 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
     ? profile.full_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
     : '??'
 
-  // Société affichée dans le switcher
-  const activeSociete = societes.find(s => s.id === currentSocieteId)
-    ?? (currentSocieteId ? null : currentSociete ? societes.find(s => s.id === currentSociete.id) ?? null : null)
+  // Société affichée dans le switcher — uniquement basé sur l'URL (pas le store)
+  const activeSociete = currentSocieteId ? (societes.find(s => s.id === currentSocieteId) ?? null) : null
 
   return (
     <header className="flex shrink-0 h-16 w-full items-center justify-center border-b bg-white shadow-sm z-10">
@@ -141,7 +140,7 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
               >
                 <span className="text-base shrink-0">🏢</span>
                 <span className="text-sm font-semibold text-slate-700 hidden sm:block truncate max-w-[180px]">
-                  {activeSociete?.raison_sociale ?? currentSociete?.raison_sociale ?? t('select_company')}
+                  {activeSociete?.raison_sociale ?? t('select_company')}
                 </span>
                 {societes.length >= 1 && (
                   <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${isSocieteOpen ? 'rotate-180' : ''}`} />
@@ -158,7 +157,7 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
                   {/* Liste des sociétés */}
                   <div className="py-1 max-h-64 overflow-y-auto">
                     {societes.map(s => {
-                      const isActive = s.id === (currentSocieteId ?? currentSociete?.id)
+                      const isActive = s.id === currentSocieteId
                       return (
                         <button
                           key={s.id}
