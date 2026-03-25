@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Briefcase,
-  Grid
+  Grid,
+  ShieldCheck
 } from 'lucide-react'
 import { usePermission, ModuleKey } from '@/hooks/usePermission'
 
@@ -38,6 +39,7 @@ const navGroup1: NavItem[] = [
   { name: 'manage_societes', href: '/societes', icon: Briefcase },
   { name: 'users_access', href: '/utilisateurs', icon: Users },
   { name: 'consolidated_reporting', href: '/reporting', icon: FileText },
+  { name: 'security_backup', href: '/securite-backup', icon: ShieldCheck },
   { name: 'tenant_settings', href: '/settings', icon: Settings },
 ]
 

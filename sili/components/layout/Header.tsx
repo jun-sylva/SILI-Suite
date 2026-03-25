@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { LogOut, User, Menu, ChevronDown, Settings, Building2, Check } from 'lucide-react'
 import { useSocieteStore } from '@/stores/societeStore'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { NotificationBell } from '@/components/ui/NotificationBell'
 
 function toSlug(str: string) {
   return str
@@ -194,6 +195,7 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
 
         {/* Right: Lang switcher + Profile dropdown */}
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <LanguageSwitcher variant="topbar" />
 
           {/* Profile Dropdown */}

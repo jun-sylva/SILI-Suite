@@ -20,7 +20,12 @@
   "teams": "Teams",
   "rapports": "Rapports",
   "securite": "Sécurité",
+  "security_backup": "Sécurité & Backup",
   "select_company": "Accéder à une Société",
   "company_switcher_title": "Mes Sociétés",
-  "manage_companies": "Gérer les sociétés"
+  "manage_companies": "Gérer les sociétés",
+  "notifications": "Notifications",
+  "notifications_empty": "Aucune notification",
+  "notifications_mark_all_read": "Tout marquer comme lu",
+  "notifications_mark_read": "Marquer comme lu"
 }

@@ -8,6 +8,7 @@ import { ShieldAlert, Building2, LogOut, LayoutDashboard, BarChart3, Box, Activi
 import { supabase } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import { NotificationBell } from '@/components/ui/NotificationBell'
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('superadmin.layout')
@@ -203,8 +204,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <h1 className="text-lg font-semibold text-slate-800 truncate">{t('title')}</h1>
           </div>
 
-          {/* Right side: Lang + Profile */}
+          {/* Right side: Lang + Notifications + Profile */}
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <LanguageSwitcher variant="topbar" />
 
             {/* Profile Dropdown */}

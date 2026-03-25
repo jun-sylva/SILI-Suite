@@ -22,6 +22,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'register',
     'remediation',
     'reporting',
+    'securite',
     'societes',
     'superadmin',
     'tenant_settings',
