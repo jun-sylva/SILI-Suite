@@ -77,14 +77,14 @@ DROP POLICY IF EXISTS "societes_membership_policy" ON public.societes;
 CREATE POLICY "societes_membership_policy" ON public.societes FOR SELECT
 USING (
   EXISTS (
-    SELECT 1 FROM public.utilisateurs_societe 
-    WHERE utilisateur_id = auth.uid() 
+    SELECT 1 FROM public.user_societes 
+    WHERE user_id = auth.uid() 
     AND societe_id = public.societes.id
   )
 );
 
 -- 3. Autoriser la lecture de ses propres associations sociétés
-ALTER TABLE public.utilisateurs_societe ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "utilisateurs_societe_membership_policy" ON public.utilisateurs_societe;
-CREATE POLICY "utilisateurs_societe_membership_policy" ON public.utilisateurs_societe FOR SELECT
-USING (utilisateur_id = auth.uid());
+ALTER TABLE public.user_societes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "user_societes_membership_policy" ON public.user_societes;
+CREATE POLICY "user_societes_membership_policy" ON public.user_societes FOR SELECT
+USING (user_id = auth.uid());

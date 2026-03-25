@@ -8,6 +8,7 @@
   "col_devise": "Currency",
   "col_status": "Status",
   "col_created": "Created",
+  "col_storage": "Storage",
   "col_actions": "Actions",
   "status_active": "Active",
   "status_inactive": "Inactive",
@@ -47,5 +48,17 @@
   "toast_delete_error": "Error deleting the company",
   "toast_toggle_success": "Status updated",
   "confirm_delete": "Are you sure you want to delete this company? This action cannot be undone.",
-  "error_raison_sociale_required": "Company name is required"
+  "error_raison_sociale_required": "Company name is required",
+  "quota_societes_reached": "Company quota reached for this tenant",
+  "field_storage_gb": "Allocated Storage (GB)",
+  "placeholder_storage_gb": "Available storage: {available} GB",
+  "storage_hint": "Remaining available storage: {available} GB",
+  "storage_error_exceeded": "Allocated storage exceeds available quota ({available} GB)",
+  "storage_error_zero": "Allocated storage must be greater than 0",
+  "field_numero_contribuable": "Tax Number (NIU)",
+  "field_numero_rccm": "RCCM Number",
+  "placeholder_numero_contribuable": "E.g: M123456789",
+  "placeholder_numero_rccm": "E.g: RC/YAO/2024/B/1234",
+  "detail_site_web": "Website",
+  "detail_capital_social": "Share Capital"
 }

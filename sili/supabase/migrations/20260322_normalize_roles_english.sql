@@ -1,7 +1,7 @@
 -- Migration : Normalisation des Rôles et Permissions en Anglais
 -- 1. Mise à jour de l'ENUM global_role
 -- 2. Mise à jour de l'ENUM permission_level (si utilisé)
--- 3. Mise à jour de la table utilisateurs_societe
+-- 3. Mise à jour de la table user_societes
 -- 4. Mise à jour de la RPC register_new_tenant
 
 -- 1. ENUM global_role : Ajout des nouveaux rôles
@@ -20,13 +20,13 @@ UPDATE public.profiles SET role = 'tenant_user' WHERE role::text IN ('utilisateu
 
 -- 3. UTILISATEURS_SOCIETE : Rôles en anglais
 -- On s'assure que la colonne supporte les nouvelles valeurs (VARCHAR pour flexibilité ou ENUM)
-ALTER TABLE public.utilisateurs_societe ALTER COLUMN role SET DEFAULT 'viewer';
+ALTER TABLE public.user_societes ALTER COLUMN role SET DEFAULT 'viewer';
 
 -- Migration des données existantes si besoin
-UPDATE public.utilisateurs_societe SET role = 'viewer' WHERE role = 'Lecteur';
-UPDATE public.utilisateurs_societe SET role = 'contributor' WHERE role = 'Contributeur';
-UPDATE public.utilisateurs_societe SET role = 'manager' WHERE role = 'Gestionnaire';
-UPDATE public.utilisateurs_societe SET role = 'admin' WHERE role = 'Admin';
+UPDATE public.user_societes SET role = 'viewer' WHERE role = 'Lecteur';
+UPDATE public.user_societes SET role = 'contributor' WHERE role = 'Contributeur';
+UPDATE public.user_societes SET role = 'manager' WHERE role = 'Gestionnaire';
+UPDATE public.user_societes SET role = 'admin' WHERE role = 'Admin';
 
 -- 4. RPC Mise à jour : Utilisation de 'tenant_admin'
 CREATE OR REPLACE FUNCTION public.register_new_tenant(
@@ -90,9 +90,9 @@ USING (
   )
 );
 
-DROP POLICY IF EXISTS "utilisateurs_societe_membership_policy" ON public.utilisateurs_societe;
-CREATE POLICY "utilisateurs_societe_membership_policy" ON public.utilisateurs_societe FOR SELECT
-USING (utilisateur_id = auth.uid() OR EXISTS (
+DROP POLICY IF EXISTS "user_societes_membership_policy" ON public.user_societes;
+CREATE POLICY "user_societes_membership_policy" ON public.user_societes FOR SELECT
+USING (user_id = auth.uid() OR EXISTS (
     SELECT 1 FROM public.profiles 
     WHERE public.profiles.id = auth.uid() 
     AND public.profiles.role = 'tenant_admin'

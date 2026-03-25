@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     if (session) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('is_super_admin, tenant_id')
+        .select('is_super_admin, tenant_id, role')
         .eq('id', session.user.id)
         .single();
 
@@ -59,6 +59,33 @@ export async function middleware(request: NextRequest) {
 
         if (tenant?.slug) {
           const shortId = profile.tenant_id.substring(0, 8);
+
+          // tenant_user → rediriger vers sa première société assignée
+          if (profile.role === 'tenant_user') {
+            const { data: us } = await supabase
+              .from('user_societes')
+              .select('societe_id, societes!inner(raison_sociale)')
+              .eq('user_id', session.user.id)
+              .eq('is_active', true)
+              .limit(1)
+              .single();
+
+            if (us?.societe_id && (us as any).societes?.raison_sociale) {
+              const soc = (us as any).societes as { raison_sociale: string };
+              const societeSlug = soc.raison_sociale
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+              return NextResponse.redirect(new URL(
+                `/${userLocale}/${tenant.slug}/${shortId}/${session.user.id}/${societeSlug}/${us.societe_id}/dashboard`,
+                request.url
+              ));
+            }
+          }
+
+          // tenant_admin (ou tenant_user sans société) → tableau de bord tenant
           return NextResponse.redirect(new URL(`/${userLocale}/${tenant.slug}/${shortId}/${session.user.id}/dashboard`, request.url));
         }
       }

@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Search, Users, X, Loader2, Shield, UserCheck, UserX,
-  MoreHorizontal, Building2,
+  MoreHorizontal, Plus, ChevronDown, Key, Building2,
+  Phone, Calendar, Clock, CheckCircle2, XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
@@ -15,6 +16,7 @@ import dayjs from 'dayjs'
 interface Profile {
   id: string
   full_name: string | null
+  email: string | null
   phone: string | null
   role: string
   is_active: boolean
@@ -27,11 +29,17 @@ interface Societe {
   raison_sociale: string
 }
 
-interface UserSociete {
-  utilisateur_id: string
-  societe_id: string
-  role: string
-  is_active: boolean
+type CreateForm = {
+  fullName: string
+  email: string
+  phone: string
+  password: string
+  role: 'tenant_admin' | 'tenant_user'
+  assignedSocietes: string[]
+}
+
+const defaultForm: CreateForm = {
+  fullName: '', email: '', phone: '', password: '', role: 'tenant_user', assignedSocietes: [],
 }
 
 export default function UtilisateursPage() {
@@ -41,20 +49,27 @@ export default function UtilisateursPage() {
   const tenantId = params.tenant_id as string
 
   const [users, setUsers] = useState<Profile[]>([])
-  const [societes, setSocietes] = useState<Societe[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
-  const [accessModal, setAccessModal] = useState<Profile | null>(null)
-  const [userSocietes, setUserSocietes] = useState<UserSociete[]>([])
-  const [accessLoading, setAccessLoading] = useState(false)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createForm, setCreateForm] = useState<CreateForm>(defaultForm)
+  const [saving, setSaving] = useState(false)
+  const [maxLicences, setMaxLicences] = useState(0)
+  const [fullTenantId, setFullTenantId] = useState('')
+  const [societes, setSocietes] = useState<Societe[]>([])
+  const [detailUser, setDetailUser] = useState<Profile | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const addMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     checkAndFetch()
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
         setDropdownOpen(null)
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node))
+        setAddMenuOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -63,29 +78,82 @@ export default function UtilisateursPage() {
   async function checkAndFetch() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, tenant_id')
+      .eq('id', session.user.id)
+      .single()
     if (profile?.role !== 'tenant_admin' && profile?.role !== 'super_admin') { router.push('/login'); return }
-    fetchUsers()
-    fetchSocietes()
+    const tid = profile?.tenant_id ?? ''
+    setFullTenantId(tid)
+    await fetchAll(tid)
   }
 
-  async function fetchUsers() {
+  async function fetchAll(tid?: string) {
+    const realTid = tid ?? fullTenantId
+    if (!realTid) return
     setLoading(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, phone, role, is_active, last_login_at, created_at')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false })
-    setUsers(data || [])
+
+    const [tenantRes, usersRes, societesRes] = await Promise.all([
+      supabase.from('tenants').select('max_licences').eq('id', realTid).single(),
+      supabase
+        .from('profiles')
+        .select('id, full_name, phone, role, is_active, last_login_at, created_at')
+        .eq('tenant_id', realTid)
+        .in('role', ['tenant_admin', 'tenant_user'])
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('societes')
+        .select('id, raison_sociale')
+        .eq('tenant_id', realTid)
+        .eq('is_active', true)
+        .order('raison_sociale'),
+    ])
+
+    if (societesRes.data) setSocietes(societesRes.data)
+
+    if (tenantRes.error) console.error('[tenants RLS]', tenantRes.error.message)
+    else if (tenantRes.data) setMaxLicences(Number(tenantRes.data.max_licences) || 0)
+
+    if (usersRes.error) toast.error(t('toast_load_error'))
+    else setUsers(usersRes.data || [])
+
     setLoading(false)
   }
 
-  async function fetchSocietes() {
-    const { data } = await supabase
-      .from('societes')
-      .select('id, raison_sociale')
-      .eq('tenant_id', tenantId)
-    setSocietes(data || [])
+  async function handleCreate() {
+    if (!createForm.fullName.trim()) { toast.error(t('error_fullname_required')); return }
+    if (!createForm.email.trim()) { toast.error(t('error_email_required')); return }
+    if (createForm.password.length < 8) { toast.error(t('error_password_length')); return }
+    if (createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0) {
+      toast.error(t('error_societe_required')); return
+    }
+
+    setSaving(true)
+    const res = await fetch('/api/admin/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: createForm.email,
+        password: createForm.password,
+        fullName: createForm.fullName,
+        phone: createForm.phone || null,
+        role: createForm.role,
+        tenantId: fullTenantId,
+        assignedSocieteIds: createForm.role === 'tenant_user' ? createForm.assignedSocietes : [],
+      }),
+    })
+
+    const json = await res.json()
+    if (!res.ok) {
+      toast.error(json.error || t('toast_create_error'))
+    } else {
+      toast.success(t('toast_create_success'))
+      setShowCreateModal(false)
+      setCreateForm(defaultForm)
+      await fetchAll()
+    }
+    setSaving(false)
   }
 
   async function changeRole(user: Profile) {
@@ -104,53 +172,10 @@ export default function UtilisateursPage() {
     setDropdownOpen(null)
   }
 
-  async function openAccessModal(user: Profile) {
-    setAccessModal(user)
-    setAccessLoading(true)
-    const { data } = await supabase
-      .from('utilisateurs_societe')
-      .select('utilisateur_id, societe_id, role, is_active')
-      .eq('utilisateur_id', user.id)
-    setUserSocietes(data || [])
-    setAccessLoading(false)
-    setDropdownOpen(null)
-  }
-
-  async function toggleSocieteAccess(societeId: string, currentAccess: UserSociete | undefined) {
-    if (!accessModal) return
-    if (currentAccess) {
-      const { error } = await supabase
-        .from('utilisateurs_societe')
-        .update({ is_active: !currentAccess.is_active })
-        .eq('utilisateur_id', accessModal.id)
-        .eq('societe_id', societeId)
-      if (!error) {
-        setUserSocietes(prev => prev.map(us =>
-          us.societe_id === societeId ? { ...us, is_active: !us.is_active } : us
-        ))
-        toast.success(t('toast_access_update_success'))
-      } else toast.error(t('toast_access_update_error'))
-    } else {
-      const { error } = await supabase.from('utilisateurs_societe').insert({
-        utilisateur_id: accessModal.id, societe_id: societeId, role: 'viewer', is_active: true,
-      })
-      if (!error) {
-        setUserSocietes(prev => [...prev, {
-          utilisateur_id: accessModal.id, societe_id: societeId, role: 'viewer', is_active: true,
-        }])
-        toast.success(t('toast_access_update_success'))
-      } else toast.error(t('toast_access_update_error'))
-    }
-  }
-
-  async function updateSocieteRole(societeId: string, newRole: string) {
-    if (!accessModal) return
-    const { error } = await supabase
-      .from('utilisateurs_societe')
-      .update({ role: newRole })
-      .eq('utilisateur_id', accessModal.id)
-      .eq('societe_id', societeId)
-    if (!error) setUserSocietes(prev => prev.map(us => us.societe_id === societeId ? { ...us, role: newRole } : us))
+  function openCreate(role: 'tenant_admin' | 'tenant_user') {
+    setCreateForm({ ...defaultForm, role })
+    setAddMenuOpen(false)
+    setShowCreateModal(true)
   }
 
   function getRoleBadge(role: string) {
@@ -161,6 +186,8 @@ export default function UtilisateursPage() {
     }
     return map[role] ?? { label: role, cls: 'bg-slate-100 text-slate-600' }
   }
+
+  const quotaAtteint = maxLicences > 0 && users.length >= maxLicences
 
   const filtered = users.filter(u =>
     u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -176,8 +203,65 @@ export default function UtilisateursPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('title')}</h1>
           <p className="text-sm text-slate-500 mt-1">{t('subtitle')}</p>
         </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-          <Users className="h-6 w-6 text-indigo-600" />
+        <div className="flex items-center gap-3">
+          {/* Quota licences */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
+            <Key className="h-3.5 w-3.5 text-slate-400" />
+            <span>
+              <span className={`font-bold ${quotaAtteint ? 'text-red-600' : 'text-slate-700'}`}>{users.length}</span>
+              {' / '}
+              <span className="font-bold text-slate-700">{maxLicences}</span> {t('quota_label')}
+            </span>
+          </div>
+
+          {/* Bouton Nouvel Utilisateur + dropdown choix rôle */}
+          <div className="relative" ref={addMenuRef}>
+            <button
+              onClick={() => setAddMenuOpen(v => !v)}
+              disabled={quotaAtteint}
+              title={quotaAtteint ? t('quota_reached') : undefined}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              <Plus className="h-4 w-4" />
+              {t('new_user')}
+              <ChevronDown className={`h-4 w-4 transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {addMenuOpen && (
+              <div className="absolute right-0 top-12 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+                <div className="py-1">
+                  <button
+                    onClick={() => openCreate('tenant_admin')}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-indigo-50 transition-colors"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                      <Shield className="h-4 w-4 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">{t('role_tenant_admin')}</p>
+                      <p className="text-[11px] text-slate-400">{t('role_admin_desc')}</p>
+                    </div>
+                  </button>
+                  <div className="border-t border-slate-100" />
+                  <button
+                    onClick={() => openCreate('tenant_user')}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-sky-50 transition-colors"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
+                      <Users className="h-4 w-4 text-sky-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">{t('role_tenant_user')}</p>
+                      <p className="text-[11px] text-slate-400">{t('role_user_desc')}</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
+            <Users className="h-6 w-6 text-indigo-600" />
+          </div>
         </div>
       </div>
 
@@ -227,10 +311,10 @@ export default function UtilisateursPage() {
                   ) : filtered.map(u => {
                     const badge = getRoleBadge(u.role)
                     return (
-                      <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={u.id} onClick={() => setDetailUser(u)} className="hover:bg-indigo-50/40 transition-colors cursor-pointer">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+                            <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${u.role === 'tenant_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>
                               {(u.full_name || '?')[0].toUpperCase()}
                             </div>
                             <div>
@@ -255,7 +339,7 @@ export default function UtilisateursPage() {
                             : <span className="text-slate-300 italic text-xs">{t('never_logged')}</span>
                           }
                         </td>
-                        <td className="px-6 py-4 text-center relative">
+                        <td className="px-6 py-4 text-center relative" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => setDropdownOpen(dropdownOpen === u.id ? null : u.id)}
                             className="p-1.5 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
@@ -263,25 +347,19 @@ export default function UtilisateursPage() {
                             <MoreHorizontal className="h-5 w-5" />
                           </button>
                           {dropdownOpen === u.id && (
-                            <div ref={dropdownRef} className="absolute right-6 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                            <div ref={dropdownRef} className="absolute right-6 top-12 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden text-left animate-in fade-in zoom-in-95">
                               <div className="py-1">
-                                <button onClick={() => openAccessModal(u)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
-                                  <Building2 className="h-4 w-4" /> {t('action_manage_access')}
+                                <button onClick={() => changeRole(u)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                  <Shield className="h-4 w-4" />
+                                  {u.role === 'tenant_admin' ? t('action_make_user') : t('action_make_admin')}
                                 </button>
-                                {u.role !== 'super_admin' && (
-                                  <>
-                                    <button onClick={() => changeRole(u)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 border-t border-slate-100">
-                                      <Shield className="h-4 w-4" /> {t('action_change_role')}
-                                    </button>
-                                    <button
-                                      onClick={() => toggleActive(u)}
-                                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm border-t border-slate-100 ${u.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                                    >
-                                      {u.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                                      {t('action_toggle_active')}
-                                    </button>
-                                  </>
-                                )}
+                                <button
+                                  onClick={() => toggleActive(u)}
+                                  className={`flex items-center gap-2 w-full px-4 py-2 text-sm border-t border-slate-100 ${u.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                                >
+                                  {u.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                                  {t('action_toggle_active')}
+                                </button>
                               </div>
                             </div>
                           )}
@@ -296,74 +374,282 @@ export default function UtilisateursPage() {
         </CardContent>
       </Card>
 
-      {/* Modal Accès Sociétés */}
-      {accessModal && (
+      {/* Modal Création Utilisateur */}
+      {showCreateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-indigo-950/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
 
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 p-6 bg-slate-50/50">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
-                  <Building2 className="h-6 w-6" />
+                <div className={`p-3 rounded-xl ${createForm.role === 'tenant_admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
+                  {createForm.role === 'tenant_admin' ? <Shield className="h-6 w-6" /> : <Users className="h-6 w-6" />}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">{t('modal_access_title')}</h3>
-                  <p className="text-sm text-indigo-600 font-medium">{accessModal.full_name}</p>
+                  <h3 className="text-xl font-bold text-slate-800">{t('modal_create_title')}</h3>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${createForm.role === 'tenant_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>
+                    {getRoleBadge(createForm.role).label}
+                  </span>
                 </div>
               </div>
-              <button onClick={() => setAccessModal(null)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors">
+              <button onClick={() => setShowCreateModal(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-3">
-              {accessLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                {/* Nom complet */}
+                <div className="col-span-full">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_fullname')} *</label>
+                  <input
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                    placeholder={t('placeholder_fullname')}
+                    value={createForm.fullName}
+                    onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))}
+                  />
                 </div>
-              ) : societes.length === 0 ? (
-                <p className="text-center text-slate-400 py-8 text-sm">{t('no_company_access')}</p>
-              ) : societes.map(soc => {
-                const access = userSocietes.find(us => us.societe_id === soc.id)
-                const isActive = access?.is_active ?? false
-                return (
-                  <div
-                    key={soc.id}
-                    className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isActive ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200 bg-white'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
-                        {soc.raison_sociale[0]}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">{soc.raison_sociale}</p>
-                        {isActive && access && (
-                          <select
-                            value={access.role}
-                            onChange={e => updateSocieteRole(soc.id, e.target.value)}
-                            className="text-xs text-indigo-600 bg-transparent font-medium border-none outline-none mt-0.5 cursor-pointer"
-                          >
-                            <option value="viewer">{t('company_role_viewer')}</option>
-                            <option value="contributor">{t('company_role_contributor')}</option>
-                            <option value="manager">{t('company_role_manager')}</option>
-                            <option value="admin">{t('company_role_admin')}</option>
-                          </select>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleSocieteAccess(soc.id, access)}
-                      className={`relative shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isActive ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                    >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_email')} *</label>
+                  <input
+                    type="email"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                    placeholder={t('placeholder_email')}
+                    value={createForm.email}
+                    onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+
+                {/* Téléphone */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_phone')}</label>
+                  <input
+                    type="tel"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                    placeholder={t('placeholder_phone')}
+                    value={createForm.phone}
+                    onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                  />
+                </div>
+
+                {/* Mot de passe */}
+                <div className="col-span-full">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_password')} *</label>
+                  <input
+                    type="password"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                    placeholder={t('placeholder_password')}
+                    value={createForm.password}
+                    onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">{t('password_hint')}</p>
+                </div>
+
+                {/* Rôle */}
+                <div className="col-span-full">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_role')}</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['tenant_admin', 'tenant_user'] as const).map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setCreateForm(f => ({ ...f, role: r, assignedSocietes: [] }))}
+                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${createForm.role === r
+                          ? r === 'tenant_admin'
+                            ? 'border-indigo-500 bg-indigo-50'
+                            : 'border-sky-500 bg-sky-50'
+                          : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${r === 'tenant_admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
+                          {r === 'tenant_admin' ? <Shield className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 text-xs">{t(`role_${r}` as any)}</p>
+                          <p className="text-[10px] text-slate-400">{t(r === 'tenant_admin' ? 'role_admin_desc' : 'role_user_desc')}</p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                )
-              })}
+                </div>
+
+                {/* Assignation sociétés — obligatoire pour tenant_user */}
+                {createForm.role === 'tenant_user' && (
+                  <div className="col-span-full">
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                      {t('field_societes')} *
+                    </label>
+                    {societes.length === 0 ? (
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700 font-medium">
+                        <Building2 className="h-4 w-4 shrink-0" />
+                        {t('no_societes_available')}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                        {societes.map(s => {
+                          const checked = createForm.assignedSocietes.includes(s.id)
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setCreateForm(f => ({
+                                ...f,
+                                assignedSocietes: checked
+                                  ? f.assignedSocietes.filter(id => id !== s.id)
+                                  : [...f.assignedSocietes, s.id],
+                              }))}
+                              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${checked ? 'border-sky-400 bg-sky-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                            >
+                              <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'bg-sky-500 border-sky-500' : 'border-slate-300'}`}>
+                                {checked && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                              </div>
+                              <div className={`h-7 w-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${checked ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                                {s.raison_sociale[0].toUpperCase()}
+                              </div>
+                              <span className="font-semibold text-slate-800 text-sm truncate">{s.raison_sociale}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                    {createForm.assignedSocietes.length > 0 && (
+                      <p className="text-xs text-sky-600 font-medium mt-1.5">
+                        {createForm.assignedSocietes.length} {t('societes_selected')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50/50">
+              <button onClick={() => setShowCreateModal(false)} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                {t('btn_cancel')}
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={saving || (createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0)}
+                title={createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0 ? t('error_societe_required') : undefined}
+                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t('btn_create')}
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal Détail Utilisateur */}
+      {detailUser && (
+        <UserDetailModal
+          user={detailUser}
+          onClose={() => setDetailUser(null)}
+          t={t}
+        />
+      )}
     </div>
   )
+}
+
+// ─── Modal Détail Utilisateur ────────────────────────────────────────────────
+
+interface UserDetailModalProps {
+  user: Profile
+  onClose: () => void
+  t: ReturnType<typeof useTranslations>
+}
+
+function UserDetailModal({ user, onClose, t }: UserDetailModalProps) {
+  const roleBadge = getRoleBadgeStatic(user.role, t)
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-indigo-950/60 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 p-6 bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className={`h-14 w-14 rounded-xl flex items-center justify-center font-bold text-xl shrink-0 ${user.role === 'tenant_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>
+              {(user.full_name || '?')[0].toUpperCase()}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">{user.full_name || '—'}</h3>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${roleBadge.cls}`}>
+                {roleBadge.label}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-3">
+
+          {/* Statut */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <div className="text-slate-400 shrink-0">
+              {user.is_active ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-red-400" />}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('col_status')}</p>
+              <p className={`text-sm font-semibold ${user.is_active ? 'text-emerald-700' : 'text-red-600'}`}>
+                {user.is_active ? t('status_active') : t('status_inactive')}
+              </p>
+            </div>
+          </div>
+
+          {/* Téléphone */}
+          {user.phone && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('detail_phone')}</p>
+                <p className="text-sm font-semibold text-slate-700">{user.phone}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dernière connexion */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('col_last_login')}</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {user.last_login_at
+                  ? dayjs(user.last_login_at).format('DD MMM YYYY, HH:mm')
+                  : <span className="italic text-slate-400 font-normal">{t('never_logged')}</span>
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* Créé le */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('detail_created_at')}</p>
+              <p className="text-sm font-semibold text-slate-700">{dayjs(user.created_at).format('DD MMM YYYY')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function getRoleBadgeStatic(role: string, t: ReturnType<typeof useTranslations>) {
+  const map: Record<string, { label: string; cls: string }> = {
+    super_admin: { label: t('role_super_admin'), cls: 'bg-purple-100 text-purple-700' },
+    tenant_admin: { label: t('role_tenant_admin'), cls: 'bg-indigo-100 text-indigo-700' },
+    tenant_user: { label: t('role_tenant_user'), cls: 'bg-sky-100 text-sky-700' },
+  }
+  return map[role] ?? { label: role, cls: 'bg-slate-100 text-slate-600' }
 }

@@ -28,6 +28,7 @@ export default function TenantsManagementPage() {
   const [tenantModules, setTenantModules] = useState<Record<string, boolean>>({})
   const [editSocietes, setEditSocietes] = useState(1)
   const [editLicences, setEditLicences] = useState(1)
+  const [currentSocietesCount, setCurrentSocietesCount] = useState(0)
   const [editStorage, setEditStorage] = useState(0.1)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -70,6 +71,9 @@ export default function TenantsManagementPage() {
   async function openSettings(tenant: Tenant) {
     setSettingsModal(tenant); setActiveTab('permissions')
     setEditSocietes(tenant.max_societes ?? 1); setEditLicences(tenant.max_licences ?? 1); setEditStorage(tenant.max_storage_gb ?? 0.1)
+    // Récupère le nombre actuel de sociétés pour empêcher de réduire en dessous
+    const { count } = await supabase.from('societes').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id)
+    setCurrentSocietesCount(count ?? 0)
     if (sysModules.length === 0) {
       const { data: sysData } = await supabase.from('sys_modules').select('id, key, name, description, is_active')
       if (sysData) setSysModules(sysData)
@@ -238,7 +242,7 @@ export default function TenantsManagementPage() {
                 <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                   <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto">
                     {[
-                      { icon: Briefcase, color: 'indigo', titleKey: 'quota_societes_title', descKey: 'quota_societes_desc', value: editSocietes, onChange: setEditSocietes, step: 1, min: 1 },
+                      { icon: Briefcase, color: 'indigo', titleKey: 'quota_societes_title', descKey: 'quota_societes_desc', value: editSocietes, onChange: (v: number) => setEditSocietes(Math.max(currentSocietesCount, v)), step: 1, min: Math.max(1, currentSocietesCount) },
                       { icon: Key, color: 'emerald', titleKey: 'quota_licences_title', descKey: 'quota_licences_desc', value: editLicences, onChange: setEditLicences, step: 1, min: 1 },
                       { icon: Server, color: 'blue', titleKey: 'quota_storage_title', descKey: 'quota_storage_desc', value: editStorage, onChange: setEditStorage, step: 0.1, min: 0.1 },
                     ].map(({ icon: Icon, color, titleKey, descKey, value, onChange, step, min }) => (

@@ -19,5 +19,8 @@
   "comptabilite": "Accounting",
   "teams": "Teams",
   "rapports": "Reports",
-  "securite": "Security"
+  "securite": "Security",
+  "select_company": "Access a Company",
+  "company_switcher_title": "My Companies",
+  "manage_companies": "Manage companies"
 }

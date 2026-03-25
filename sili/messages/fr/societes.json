@@ -8,6 +8,7 @@
   "col_devise": "Devise",
   "col_status": "Statut",
   "col_created": "Créée le",
+  "col_storage": "Stockage",
   "col_actions": "Actions",
   "status_active": "Active",
   "status_inactive": "Inactive",
@@ -47,5 +48,17 @@
   "toast_delete_error": "Erreur lors de la suppression",
   "toast_toggle_success": "Statut mis à jour",
   "confirm_delete": "Êtes-vous sûr de vouloir supprimer cette société ? Cette action est irréversible.",
-  "error_raison_sociale_required": "La raison sociale est obligatoire"
+  "error_raison_sociale_required": "La raison sociale est obligatoire",
+  "quota_societes_reached": "Quota de sociétés atteint pour ce tenant",
+  "field_storage_gb": "Stockage alloué (Go)",
+  "placeholder_storage_gb": "Stockage disponible : {available} Go",
+  "storage_hint": "Stockage restant disponible : {available} Go",
+  "storage_error_exceeded": "Le stockage alloué dépasse le quota disponible ({available} Go)",
+  "storage_error_zero": "Le stockage alloué doit être supérieur à 0",
+  "field_numero_contribuable": "Numéro Contribuable (NIU)",
+  "field_numero_rccm": "Numéro RCCM",
+  "placeholder_numero_contribuable": "Ex : M123456789",
+  "placeholder_numero_rccm": "Ex : RC/YAO/2024/B/1234",
+  "detail_site_web": "Site Web",
+  "detail_capital_social": "Capital Social"
 }

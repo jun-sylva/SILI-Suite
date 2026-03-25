@@ -26,7 +26,7 @@ WHERE tenant_id IS NOT NULL
   AND role::text IN ('utilisateur', 'user');
 
 -- 3. UTILISATEURS_SOCIETE : Rôles en anglais (viewer, contributor, manager, admin)
-ALTER TABLE public.utilisateurs_societe ALTER COLUMN role SET DEFAULT 'viewer';
+ALTER TABLE public.user_societes ALTER COLUMN role SET DEFAULT 'viewer';
 
 -- 4. RPC Mise à jour : Création propre sans toucher au Master
 CREATE OR REPLACE FUNCTION public.register_new_tenant(

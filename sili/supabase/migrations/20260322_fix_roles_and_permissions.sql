@@ -1,6 +1,6 @@
 -- Migration : Système de Rôles SaaS (Tenant Admin & Company Roles)
 -- 1. Ajout du rôle au profil (Niveau Tenant)
--- 2. Mise à jour de la table de liaison utilisateurs_societe (Niveau Société)
+-- 2. Mise à jour de la table de liaison user_societes (Niveau Société)
 -- 3. Mise à jour de la RPC pour auto-assigner 'administrateur' au créateur
 
 -- 1. PROFILES : Ajout du rôle global
@@ -8,19 +8,19 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'u
 
 -- 2. UTILISATEURS_SOCIETE : Mise à jour des rôles autorisés (Lecteur, Contributeur, Gestionnaire, Admin)
 -- On recrée la table si besoin avec les bons défauts
-CREATE TABLE IF NOT EXISTS public.utilisateurs_societe (
+CREATE TABLE IF NOT EXISTS public.user_societes (
   id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  utilisateur_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   societe_id     UUID REFERENCES public.societes(id) ON DELETE CASCADE,
   role           VARCHAR(50) DEFAULT 'Lecteur', -- Rôles : Lecteur, Contributeur, Gestionnaire, Admin
   is_active      BOOLEAN DEFAULT true,
   created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(utilisateur_id, societe_id)
+  UNIQUE(user_id, societe_id)
 );
 
 -- Correction du défaut si la table existait déjà
-ALTER TABLE public.utilisateurs_societe ALTER COLUMN role SET DEFAULT 'Lecteur';
+ALTER TABLE public.user_societes ALTER COLUMN role SET DEFAULT 'Lecteur';
 
 -- 3. RPC Mise à jour : Créateur = administrateur
 DROP FUNCTION IF EXISTS public.register_new_tenant(text, text, text, text, uuid);

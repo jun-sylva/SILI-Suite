@@ -58,7 +58,7 @@ BEGIN
   UPDATE public.profiles SET tenant_id = v_tenant_id WHERE id = v_user_id;
 
   -- Link user to societe
-  INSERT INTO public.utilisateurs_societe (societe_id, utilisateur_id, is_active)
+  INSERT INTO public.user_societes (societe_id, user_id, is_active)
   VALUES (v_societe_id, v_user_id, true);
 
   RETURN v_tenant_id;
