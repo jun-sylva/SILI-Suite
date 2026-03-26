@@ -111,6 +111,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
   const params = useParams()
   const [userRole, setUserRole] = useState<string | null>(null)
   const [activeModules, setActiveModules] = useState<string[]>([])
+  const [userPermissions, setUserPermissions] = useState<Record<string, string>>({})
 
   const tenantSlug = params.tenant_slug as string
   const tenantId = params.tenant_id as string
@@ -138,6 +139,25 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
       .eq('is_active', true)
       .then(({ data }) => setActiveModules(data?.map(r => r.module) ?? []))
   }, [societeId])
+
+  // Pour tenant_user : charge ses permissions sur la société courante
+  // pour filtrer le menu Applications (masquer les modules avec permission 'aucun')
+  useEffect(() => {
+    if (!societeId || userRole !== 'tenant_user') { setUserPermissions({}); return }
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return
+      supabase
+        .from('user_module_permissions')
+        .select('module, permission')
+        .eq('societe_id', societeId)
+        .eq('user_id', data.user.id)
+        .then(({ data: perms }) => {
+          const map: Record<string, string> = {}
+          perms?.forEach(p => { map[p.module] = p.permission })
+          setUserPermissions(map)
+        })
+    })
+  }, [societeId, userRole])
 
   const isCompanyLevel = !!societeId
   const closeMobile = () => setIsMobileOpen?.(false)
@@ -208,14 +228,16 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
             </div>
           ) : (
             <>
-              {/* Bouton Retour au Tenant */}
-              <Link 
-                href={tenantBase + '/dashboard'}
-                className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-indigo-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-4 border border-white/5"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {!isCollapsed && <span>{t('return_to_tenant')}</span>}
-              </Link>
+              {/* Bouton Retour au Tenant — masqué pour tenant_user */}
+              {(userRole === 'tenant_admin' || userRole === 'super_admin') && (
+                <Link
+                  href={tenantBase + '/dashboard'}
+                  className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-indigo-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-4 border border-white/5"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {!isCollapsed && <span>{t('return_to_tenant')}</span>}
+                </Link>
+              )}
 
               {/* Section Société — Dashboard */}
               <div>
@@ -252,7 +274,14 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
               {/* Groupe Applications — modules activés pour cette société */}
               {activeModules.length > 0 && (() => {
                 const navMap = Object.fromEntries(navGroup2.map(i => [i.moduleKey!, i]))
-                const items = activeModules.map(m => navMap[m]).filter(Boolean) as NavItem[]
+                const items = (activeModules.map(m => navMap[m]).filter(Boolean) as NavItem[])
+                  .filter(item => {
+                    // tenant_admin voit tous les modules actifs
+                    if (userRole !== 'tenant_user') return true
+                    // tenant_user : masquer les modules avec permission 'aucun' ou sans entrée
+                    const perm = userPermissions[item.moduleKey!]
+                    return !!perm && perm !== 'aucun'
+                  })
                 return (
                   <div>
                     {!isCollapsed && (
