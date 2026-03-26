@@ -28,6 +28,13 @@
   "btn_save": "Enregistrer",
   "toast_save_success": "Préférences enregistrées avec succès",
   "toast_save_error": "Erreur lors de la sauvegarde",
+  "section_localisation_title": "Localisation",
+  "section_localisation_subtitle": "Fuseau horaire utilisé pour l'affichage des heures dans les modules RH.",
+  "field_timezone": "Fuseau horaire",
+  "btn_save_timezone": "Enregistrer",
+  "toast_timezone_success": "Fuseau horaire mis à jour",
+  "toast_timezone_error": "Erreur lors de la mise à jour",
+
   "contact_support": "Besoin de plus de capacité ?",
   "contact_support_desc": "Pour modifier vos quotas ou changer de plan, contactez le Master de la plateforme."
 }

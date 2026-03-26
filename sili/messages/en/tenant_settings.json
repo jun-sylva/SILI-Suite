@@ -28,6 +28,13 @@
   "btn_save": "Save",
   "toast_save_success": "Preferences saved successfully",
   "toast_save_error": "Error saving preferences",
+  "section_localisation_title": "Localisation",
+  "section_localisation_subtitle": "Timezone used for displaying times in HR modules.",
+  "field_timezone": "Timezone",
+  "btn_save_timezone": "Save",
+  "toast_timezone_success": "Timezone updated",
+  "toast_timezone_error": "Error updating timezone",
+
   "contact_support": "Need more capacity?",
   "contact_support_desc": "To change your quotas or upgrade your plan, contact the platform Master."
 }

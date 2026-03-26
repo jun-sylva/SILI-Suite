@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Settings, Building2, Shield, Server, Loader2,
-  Save, CheckCircle, XCircle, Globe, Mail,
+  Save, CheckCircle, XCircle, Globe, Mail, MapPin,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import dayjs from 'dayjs'
@@ -43,6 +43,9 @@ export default function TenantSettingsPage() {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [modules, setModules] = useState<TenantModule[]>([])
   const [prefs, setPrefs] = useState<ProfilePrefs>({ preferred_language: 'fr', preferred_currency: 'XAF' })
+  const [timezone, setTimezone] = useState('Africa/Douala')
+  const [savingTimezone, setSavingTimezone] = useState(false)
+  const [fullTenantId, setFullTenantId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeSocietesCount, setActiveSocietesCount] = useState(0)
@@ -67,6 +70,7 @@ export default function TenantSettingsPage() {
 
     const fullTenantId = profile?.tenant_id
     if (!fullTenantId) return
+    setFullTenantId(fullTenantId)
 
     setPrefs({
       preferred_language: profile?.preferred_language || 'fr',
@@ -95,7 +99,25 @@ export default function TenantSettingsPage() {
     setModules(modulesRes.data || [])
     setActiveSocietesCount(socRes.count || 0)
     setUsersCount(usrRes.count || 0)
+
+    const { data: tsData } = await supabase
+      .from('tenant_settings')
+      .select('timezone')
+      .eq('tenant_id', fullTenantId)
+      .maybeSingle()
+    if (tsData?.timezone) setTimezone(tsData.timezone)
+
     setLoading(false)
+  }
+
+  async function saveTimezone() {
+    setSavingTimezone(true)
+    const { error } = await supabase
+      .from('tenant_settings')
+      .upsert({ tenant_id: fullTenantId, timezone }, { onConflict: 'tenant_id' })
+    if (error) toast.error(t('toast_timezone_error'))
+    else toast.success(t('toast_timezone_success'))
+    setSavingTimezone(false)
   }
 
   async function savePreferences() {
@@ -310,6 +332,58 @@ export default function TenantSettingsPage() {
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {t('btn_save')}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Localisation */}
+      <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-teal-100 text-teal-600 rounded-xl">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-bold text-slate-800">{t('section_localisation_title')}</CardTitle>
+              <CardDescription className="text-slate-500 text-sm">{t('section_localisation_subtitle')}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 pt-0">
+          <div className="mt-4 max-w-sm">
+            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+              {t('field_timezone')}
+            </label>
+            <select
+              value={timezone}
+              onChange={e => setTimezone(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white"
+            >
+              {[
+                { value: 'Africa/Douala',       label: 'Afrique Centrale — UTC+1 (Cameroun, Congo, Gabon, Tchad)' },
+                { value: 'Africa/Lagos',         label: 'Afrique de l\'Ouest + 1 — UTC+1 (Nigéria, Bénin, Niger, Togo)' },
+                { value: 'Africa/Abidjan',       label: 'Afrique de l\'Ouest — UTC+0 (Côte d\'Ivoire, Sénégal, Mali, Ghana)' },
+                { value: 'Africa/Nairobi',       label: 'Afrique de l\'Est — UTC+3 (Kenya, Éthiopie, Tanzanie, Ouganda)' },
+                { value: 'Africa/Johannesburg',  label: 'Afrique du Sud — UTC+2' },
+                { value: 'Africa/Cairo',         label: 'Afrique du Nord-Est — UTC+2 (Égypte)' },
+                { value: 'Africa/Casablanca',    label: 'Maroc — UTC+1' },
+                { value: 'Africa/Algiers',       label: 'Algérie / Tunisie — UTC+1' },
+                { value: 'Europe/Paris',         label: 'Europe Centrale — UTC+1/+2 (France)' },
+                { value: 'UTC',                  label: 'UTC+0' },
+              ].map(tz => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={saveTimezone}
+              disabled={savingTimezone}
+              className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-md transition-colors text-sm disabled:opacity-60"
+            >
+              {savingTimezone ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {t('btn_save_timezone')}
             </button>
           </div>
         </CardContent>
