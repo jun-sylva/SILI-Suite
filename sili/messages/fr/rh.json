@@ -1,0 +1,98 @@
+{
+  "module_title": "Ressources Humaines",
+  "nav_dashboard": "Tableau de bord",
+  "nav_employes": "Employés",
+  "nav_presences": "Présences",
+  "nav_paie": "Paie",
+  "nav_soon": "Bientôt",
+
+  "dashboard_employes_title": "Employés",
+  "dashboard_employes_desc": "Gestion du personnel et des fiches employés.",
+  "dashboard_presences_title": "Présences",
+  "dashboard_presences_desc": "Pointage, congés et absences.",
+  "dashboard_paie_title": "Paie",
+  "dashboard_paie_desc": "Bulletins de salaire et virements.",
+
+  "employes_title": "Gestion des Employés",
+  "employes_subtitle": "Fiches employés, contrats et informations RH.",
+
+  "section_avec_compte": "Employés avec Compte",
+  "section_avec_compte_desc": "Utilisateurs assignés à cette société.",
+  "section_sans_compte": "Employés sans Compte",
+  "section_sans_compte_desc": "Personnel sans accès à la plateforme.",
+
+  "fiche_complete": "Fiche complète",
+  "fiche_incomplete": "Fiche incomplète",
+  "btn_completer_fiche": "Compléter la fiche",
+  "btn_voir_fiche": "Voir / Modifier",
+  "btn_ajouter": "Ajouter un employé",
+  "btn_save": "Enregistrer",
+  "btn_cancel": "Annuler",
+
+  "modal_create_title": "Nouvel Employé",
+  "modal_edit_title": "Modifier la fiche",
+  "modal_fiche_title": "Fiche Employé",
+
+  "section_identite": "Identité",
+  "section_contact": "Contact",
+  "section_poste": "Poste & Contrat",
+  "section_documents": "Documents officiels",
+
+  "field_matricule": "Matricule",
+  "field_nom": "Nom",
+  "field_prenom": "Prénom",
+  "field_sexe": "Sexe",
+  "field_date_naissance": "Date de naissance",
+  "field_lieu_naissance": "Lieu de naissance",
+  "field_nationalite": "Nationalité",
+  "field_adresse": "Adresse",
+  "field_email": "Email",
+  "field_telephone": "Téléphone",
+  "field_poste": "Poste / Fonction",
+  "field_departement": "Département / Service",
+  "field_date_embauche": "Date d'embauche",
+  "field_type_contrat": "Type de contrat",
+  "field_salaire_base": "Salaire de base (FCFA)",
+  "field_cni_numero": "N° CNI",
+  "field_cnps_numero": "N° CNPS",
+  "field_statut": "Statut",
+
+  "sexe_m": "Masculin",
+  "sexe_f": "Féminin",
+
+  "contrat_CDI": "CDI",
+  "contrat_CDD": "CDD",
+  "contrat_Stage": "Stage",
+  "contrat_Freelance": "Freelance",
+  "contrat_Consultant": "Consultant",
+
+  "statut_actif": "Actif",
+  "statut_inactif": "Inactif",
+  "statut_suspendu": "Suspendu",
+  "statut_conge": "En congé",
+
+  "col_matricule": "Matricule",
+  "col_employe": "Employé",
+  "col_poste": "Poste",
+  "col_departement": "Département",
+  "col_contrat": "Contrat",
+  "col_embauche": "Embauché le",
+  "col_statut": "Statut",
+
+  "empty_avec_compte_title": "Aucun utilisateur assigné",
+  "empty_avec_compte_subtitle": "Assignez des utilisateurs à cette société depuis l'espace tenant.",
+  "empty_sans_compte_title": "Aucun employé sans compte",
+  "empty_sans_compte_subtitle": "Ajoutez des employés qui n'ont pas accès à la plateforme.",
+
+  "toast_create_success": "Fiche employé créée avec succès",
+  "toast_create_error": "Erreur lors de la création",
+  "toast_update_success": "Fiche mise à jour avec succès",
+  "toast_update_error": "Erreur lors de la mise à jour",
+  "toast_load_error": "Erreur lors du chargement",
+
+  "error_nom_required": "Le nom est obligatoire",
+  "error_prenom_required": "Le prénom est obligatoire",
+
+  "matricule_auto": "Généré automatiquement",
+  "salary_currency": "FCFA"
+}

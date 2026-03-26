@@ -36,6 +36,7 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.tenant_backups` | Sauvegardes. Colonnes : `id`, `tenant_id`, `status`, `size_mb`, `triggered_by`, `storage_path`, `created_at`, `expires_at`, `completed_at` |
 | `public.societe_modules` | Modules activés par société (sous-ensemble de `tenant_modules`). Colonnes : `id`, `societe_id`, `module`, `is_active`, `activated_at`. Contrainte unique : `(societe_id, module)`. |
 | `public.societe_data_sharing` | Partage de données directionnel entre sociétés, par module. Colonnes : `id`, `source_societe_id`, `target_societe_id`, `module`, `is_active`, `created_at`. Contrainte unique : `(source_societe_id, target_societe_id, module)`. Le partage est à sens unique : source partage vers target, pas l'inverse sauf config explicite. |
+| `public.rh_employes` | Employés RH. Colonnes : `id`, `tenant_id`, `societe_id`, `user_id` (nullable — NULL = sans compte plateforme), `matricule` (8 chiffres, auto-généré via trigger), `nom`, `prenom`, `sexe` ('M'/'F'), `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`, `email`, `telephone`, `poste`, `departement`, `date_embauche`, `type_contrat` ('CDI'/'CDD'/'Stage'/'Freelance'/'Consultant'), `salaire_base`, `cni_numero`, `cnps_numero`, `photo_url`, `statut` ('actif'/'inactif'/'suspendu'/'conge'), `created_by`, `created_at`, `updated_at`. RLS : SELECT (même tenant), INSERT/UPDATE/DELETE (tenant_admin uniquement). |
 
 ### Rôles globaux (`global_role` enum)
 - `super_admin` — accès total à tout *(non utilisé en pratique — remplacé par `is_super_admin`)*
@@ -116,6 +117,26 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 ### Espace Société
 - `/[societe_id]/dashboard`, `/[societe_id]/vente`, `/[societe_id]/rh`, `/[societe_id]/crm`
 - `/[societe_id]/settings` *(à créer)* — Paramètres société : 2 onglets Modules + Partage de données
+
+#### Module RH `/[societe_id]/rh`
+
+**Layout** (`rh/layout.tsx`) — navbar module RH sticky :
+- Tableau de bord → `/rh` (actif si exact match ou se termine par `/rh`)
+- Employés → `/rh/employes`
+- Présences / Paie → désactivés avec badge "Bientôt"
+
+**Dashboard** (`rh/page.tsx`) — 3 cartes :
+- Employés (cliquable → `/rh/employes`)
+- Présences (désactivé)
+- Paie (désactivé)
+
+**Page Employés** (`rh/employes/page.tsx`) :
+- **Section 1 — Employés avec Compte** : `user_societes` → `profiles` (tenant_user, is_active=true) → `rh_employes` pour enrichissement. Affiche les utilisateurs assignés à la société avec leur fiche RH si elle existe.
+- **Section 2 — Employés sans Compte** : `rh_employes WHERE user_id IS NULL AND societe_id = X`. Employés sans accès plateforme.
+- **Modal création/édition** : 4 fieldsets (Identité, Contact, Poste & Contrat, Documents officiels)
+- **Matricule** : auto-généré via trigger Postgres (8 chiffres uniques), affiché en lecture seule
+- **Statuts** : actif (emerald), inactif (slate), suspendu (red), conge (amber)
+- **i18n** : namespace `rh` (FR + EN)
 
 ### Espace Master (`/admin/[adminId]/`)
 
@@ -242,11 +263,12 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_user_module_permissions_rls.sql` | RLS `user_module_permissions` + contrainte unique `(user_id, societe_id, module)` | ✅ |
 | `20260326_tenants_rls_tenant_user.sql` | Policy SELECT `tenants` pour `tenant_user` (lecture de son propre tenant) | ✅ |
 | `20260326_storage_phase1.sql` | Bucket `sili-files` + RLS storage + table `tenant_storage_usage` + triggers auto files_mb | ✅ |
+| `20260326_rh_employes.sql` | DROP + CREATE `rh_employes` + trigger `generate_matricule()` (8 chiffres uniques) + RLS + indexes | ⚠️ À exécuter |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `securite`, `societes`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -272,6 +294,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
 - [x] `20260326_tenants_rls_tenant_user.sql` ✅ exécutée — policy SELECT `tenants` pour `tenant_user`
 - [x] `20260326_storage_phase1.sql` ✅ exécutée — bucket + RLS storage + tenant_storage_usage + triggers
+- [ ] `20260326_rh_employes.sql` ⚠️ À exécuter — table `rh_employes` + trigger matricule + RLS
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
@@ -288,7 +311,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
   - **Onglet Modules** : modules disponibles depuis `tenant_modules`, toggle → upsert `societe_modules`
   - **Onglet Partage de données** : autres sociétés du tenant, toggles par module commun → upsert `societe_data_sharing`. Seuls les modules actifs des deux côtés sont proposables.
 - [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
-- [ ] **Modules métier** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
+- [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
+- [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
 
 ---
 

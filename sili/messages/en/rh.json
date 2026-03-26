@@ -1,0 +1,98 @@
+{
+  "module_title": "Human Resources",
+  "nav_dashboard": "Dashboard",
+  "nav_employes": "Employees",
+  "nav_presences": "Attendance",
+  "nav_paie": "Payroll",
+  "nav_soon": "Soon",
+
+  "dashboard_employes_title": "Employees",
+  "dashboard_employes_desc": "Staff management and employee records.",
+  "dashboard_presences_title": "Attendance",
+  "dashboard_presences_desc": "Time tracking, leave and absences.",
+  "dashboard_paie_title": "Payroll",
+  "dashboard_paie_desc": "Pay slips and salary transfers.",
+
+  "employes_title": "Employee Management",
+  "employes_subtitle": "Employee records, contracts and HR information.",
+
+  "section_avec_compte": "Employees with Account",
+  "section_avec_compte_desc": "Users assigned to this company.",
+  "section_sans_compte": "Employees without Account",
+  "section_sans_compte_desc": "Staff without platform access.",
+
+  "fiche_complete": "Complete record",
+  "fiche_incomplete": "Incomplete record",
+  "btn_completer_fiche": "Complete record",
+  "btn_voir_fiche": "View / Edit",
+  "btn_ajouter": "Add employee",
+  "btn_save": "Save",
+  "btn_cancel": "Cancel",
+
+  "modal_create_title": "New Employee",
+  "modal_edit_title": "Edit record",
+  "modal_fiche_title": "Employee Record",
+
+  "section_identite": "Identity",
+  "section_contact": "Contact",
+  "section_poste": "Position & Contract",
+  "section_documents": "Official documents",
+
+  "field_matricule": "Employee ID",
+  "field_nom": "Last name",
+  "field_prenom": "First name",
+  "field_sexe": "Gender",
+  "field_date_naissance": "Date of birth",
+  "field_lieu_naissance": "Place of birth",
+  "field_nationalite": "Nationality",
+  "field_adresse": "Address",
+  "field_email": "Email",
+  "field_telephone": "Phone",
+  "field_poste": "Position / Job title",
+  "field_departement": "Department / Division",
+  "field_date_embauche": "Hire date",
+  "field_type_contrat": "Contract type",
+  "field_salaire_base": "Base salary (FCFA)",
+  "field_cni_numero": "ID card number",
+  "field_cnps_numero": "CNPS number",
+  "field_statut": "Status",
+
+  "sexe_m": "Male",
+  "sexe_f": "Female",
+
+  "contrat_CDI": "Permanent (CDI)",
+  "contrat_CDD": "Fixed-term (CDD)",
+  "contrat_Stage": "Internship",
+  "contrat_Freelance": "Freelance",
+  "contrat_Consultant": "Consultant",
+
+  "statut_actif": "Active",
+  "statut_inactif": "Inactive",
+  "statut_suspendu": "Suspended",
+  "statut_conge": "On leave",
+
+  "col_matricule": "ID",
+  "col_employe": "Employee",
+  "col_poste": "Position",
+  "col_departement": "Department",
+  "col_contrat": "Contract",
+  "col_embauche": "Hired on",
+  "col_statut": "Status",
+
+  "empty_avec_compte_title": "No assigned users",
+  "empty_avec_compte_subtitle": "Assign users to this company from the tenant space.",
+  "empty_sans_compte_title": "No employees without account",
+  "empty_sans_compte_subtitle": "Add employees who don't have platform access.",
+
+  "toast_create_success": "Employee record created successfully",
+  "toast_create_error": "Error creating record",
+  "toast_update_success": "Record updated successfully",
+  "toast_update_error": "Error updating record",
+  "toast_load_error": "Error loading data",
+
+  "error_nom_required": "Last name is required",
+  "error_prenom_required": "First name is required",
+
+  "matricule_auto": "Auto-generated",
+  "salary_currency": "FCFA"
+}

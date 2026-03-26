@@ -13,6 +13,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'auth',
     'blocked',
     'dashboard',
+    'rh',
     'diagnostic',
     'errors',
     'login',
