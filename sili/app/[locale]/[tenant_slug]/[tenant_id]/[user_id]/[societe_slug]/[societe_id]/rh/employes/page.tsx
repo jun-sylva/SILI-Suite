@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import {
   Users, UserCheck, Plus, Loader2, X, CheckCircle2,
-  AlertCircle, Pencil, ChevronDown,
+  AlertCircle, Pencil, ChevronDown, ShieldOff,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -100,12 +100,13 @@ export default function EmployesPage() {
 
   const societeId = params.societe_id as string
 
-  const [loading, setLoading]           = useState(true)
-  const [avecCompte, setAvecCompte]     = useState<EmployeAvecCompte[]>([])
-  const [sansCompte, setSansCompte]     = useState<RhEmploye[]>([])
-  const [fullTenantId, setFullTenantId] = useState('')
+  const [loading, setLoading]             = useState(true)
+  const [canAccessPage, setCanAccessPage] = useState(false)
+  const [avecCompte, setAvecCompte]       = useState<EmployeAvecCompte[]>([])
+  const [sansCompte, setSansCompte]       = useState<RhEmploye[]>([])
+  const [fullTenantId, setFullTenantId]   = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
-  const [canEdit, setCanEdit]           = useState(false)
+  const [canEdit, setCanEdit]             = useState(false)
 
   // Modal
   const [modalOpen, setModalOpen]   = useState(false)
@@ -131,7 +132,20 @@ export default function EmployesPage() {
 
     setFullTenantId(profile.tenant_id)
     setCurrentUserId(session.user.id)
-    setCanEdit(profile.role === 'tenant_admin' || profile.role === 'super_admin')
+
+    const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
+
+    if (isTenantAdmin) {
+      setCanEdit(true)
+      setCanAccessPage(true)
+    } else {
+      const { data: perm } = await supabase
+        .rpc('get_user_permission', { p_module: 'rh', p_societe_id: societeId })
+
+      const hasAccess = perm === 'gestionnaire' || perm === 'admin'
+      setCanAccessPage(hasAccess)
+      setCanEdit(hasAccess)
+    }
 
     await fetchAll(profile.tenant_id)
     setLoading(false)
@@ -341,6 +355,20 @@ export default function EmployesPage() {
     return (
       <div className="flex h-60 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    )
+  }
+
+  if (!canAccessPage) {
+    return (
+      <div className="flex h-80 flex-col items-center justify-center gap-4 text-center animate-in fade-in duration-500">
+        <div className="h-16 w-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
+          <ShieldOff className="h-8 w-8 text-red-400" />
+        </div>
+        <div>
+          <p className="text-lg font-bold text-slate-800">{t('acces_refuse_title')}</p>
+          <p className="text-sm text-slate-500 mt-1 max-w-sm">{t('acces_refuse_desc')}</p>
+        </div>
       </div>
     )
   }

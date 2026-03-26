@@ -94,5 +94,9 @@
   "error_prenom_required": "Le prénom est obligatoire",
 
   "matricule_auto": "Généré automatiquement",
-  "salary_currency": "FCFA"
+  "salary_currency": "FCFA",
+
+  "acces_refuse_title": "Accès refusé",
+  "acces_refuse_desc": "Vous devez avoir au minimum le rôle Gestionnaire sur le module RH pour accéder à la gestion des employés.",
+  "acces_refuse_employes_tab": "Employés (accès restreint)"
 }

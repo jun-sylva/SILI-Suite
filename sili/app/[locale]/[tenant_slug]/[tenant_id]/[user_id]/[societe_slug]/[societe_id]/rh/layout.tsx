@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, Users, Clock, Banknote } from 'lucide-react'
+import { LayoutDashboard, Users, Clock, Banknote, Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export default function RHLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('rh')
@@ -18,11 +20,39 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
 
   const base = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/rh`
 
+  const [canAccessEmployes, setCanAccessEmployes] = useState(false)
+
+  useEffect(() => {
+    async function checkAccess() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+
+      if (!profile) return
+
+      if (profile.role === 'tenant_admin' || profile.role === 'super_admin') {
+        setCanAccessEmployes(true)
+        return
+      }
+
+      const { data: perm } = await supabase
+        .rpc('get_user_permission', { p_module: 'rh', p_societe_id: societeId })
+
+      setCanAccessEmployes(perm === 'gestionnaire' || perm === 'admin')
+    }
+    checkAccess()
+  }, [societeId])
+
   const navItems = [
-    { label: t('nav_dashboard'), href: base,             icon: LayoutDashboard, exact: true  },
-    { label: t('nav_employes'),  href: `${base}/employes`, icon: Users,          exact: false },
-    { label: t('nav_presences'), href: null,             icon: Clock,            exact: false },
-    { label: t('nav_paie'),      href: null,             icon: Banknote,         exact: false },
+    { label: t('nav_dashboard'), href: base,               icon: LayoutDashboard, exact: true,  restricted: false },
+    { label: t('nav_employes'),  href: `${base}/employes`, icon: Users,           exact: false, restricted: !canAccessEmployes },
+    { label: t('nav_presences'), href: null,               icon: Clock,           exact: false, restricted: false },
+    { label: t('nav_paie'),      href: null,               icon: Banknote,        exact: false, restricted: false },
   ]
 
   return (
@@ -37,6 +67,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
                 : pathname.startsWith(item.href)
               : false
 
+            // Pas de lien (futur module)
             if (!item.href) {
               return (
                 <span
@@ -48,6 +79,21 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
                   <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full">
                     {t('nav_soon')}
                   </span>
+                </span>
+              )
+            }
+
+            // Lien existant mais accès restreint par permission
+            if (item.restricted) {
+              return (
+                <span
+                  key={item.label}
+                  className="flex items-center gap-2 px-4 py-3.5 text-sm font-medium text-slate-300 cursor-not-allowed whitespace-nowrap border-b-2 border-transparent"
+                  title={t('acces_refuse_employes_tab')}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                  <Lock className="h-3 w-3" />
                 </span>
               )
             }

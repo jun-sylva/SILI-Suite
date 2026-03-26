@@ -94,5 +94,9 @@
   "error_prenom_required": "First name is required",
 
   "matricule_auto": "Auto-generated",
-  "salary_currency": "FCFA"
+  "salary_currency": "FCFA",
+
+  "acces_refuse_title": "Access denied",
+  "acces_refuse_desc": "You need at least the Manager role on the HR module to access employee management.",
+  "acces_refuse_employes_tab": "Employees (restricted access)"
 }
