@@ -202,6 +202,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_create_societe_modules.sql` | Table `societe_modules` + RLS + contrainte unique `(societe_id, module)` | ✅ |
 | `20260326_create_societe_data_sharing.sql` | Table `societe_data_sharing` + RLS + contrainte unique `(source, target, module)` | ✅ |
 | `20260326_user_module_permissions_rls.sql` | RLS `user_module_permissions` + contrainte unique `(user_id, societe_id, module)` | ✅ |
+| `20260326_tenants_rls_tenant_user.sql` | Policy SELECT `tenants` pour `tenant_user` (lecture de son propre tenant) | ✅ |
 
 ---
 
@@ -217,7 +218,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ## À faire / Prochaines étapes
 
 ### Migrations SQL à exécuter dans Supabase (dans l'ordre)
-- [x] `20260324_create_user_societes.sql` — recréation propre `user_societes` ✅ exécutée
+- [x] `20260324_create_user_societes.sql` ✅ exécutée
 - [ ] `20260324_fix_tenants_quotas_notnull.sql` — fix NULL sur quotas
 - [ ] `20260324_fix_tenants_rls.sql` — RLS `tenants` pour tenant_admin
 - [ ] `20260324_societes_storage_cleanup.sql` — nettoyage colonnes storage
@@ -230,6 +231,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260326_create_societe_modules.sql` ✅ exécutée
 - [x] `20260326_create_societe_data_sharing.sql` ✅ exécutée
 - [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
+- [x] `20260326_tenants_rls_tenant_user.sql` ✅ exécutée — policy SELECT `tenants` pour `tenant_user`
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅

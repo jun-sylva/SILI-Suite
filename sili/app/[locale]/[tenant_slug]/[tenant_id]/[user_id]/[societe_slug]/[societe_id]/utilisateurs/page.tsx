@@ -100,27 +100,39 @@ export default function SocieteUsersPage() {
   }
 
   async function fetchUsers(tenantId: string) {
-    // Utilisateurs assignés à cette société (tenant_user uniquement)
-    const { data: assignments } = await supabase
+    // Étape 1 : user_ids assignés à cette société
+    const { data: assignments, error: assignError } = await supabase
       .from('user_societes')
-      .select('user_id, profiles!inner(full_name, tenant_id, role)')
+      .select('user_id')
       .eq('societe_id', societeId)
       .eq('is_active', true)
 
-    const filtered: AssignedUser[] = (assignments ?? [])
-      .filter((a: any) => a.profiles?.role === 'tenant_user' && a.profiles?.tenant_id === tenantId)
-      .map((a: any) => ({
-        user_id:   a.user_id,
-        full_name: a.profiles?.full_name ?? null,
-        email:     null,
-      }))
+    if (assignError) console.error('[fetchUsers] user_societes:', assignError.message)
+    if (!assignments || assignments.length === 0) { setUsers([]); return }
+
+    const userIds = assignments.map((a: any) => a.user_id)
+
+    // Étape 2 : profils de ces utilisateurs (tenant_user de ce tenant uniquement)
+    const { data: profilesData, error: profError } = await supabase
+      .from('profiles')
+      .select('id, full_name, tenant_id, role')
+      .in('id', userIds)
+      .eq('role', 'tenant_user')
+      .eq('tenant_id', tenantId)
+
+    if (profError) console.error('[fetchUsers] profiles:', profError.message)
+
+    const filtered: AssignedUser[] = (profilesData ?? []).map((p: any) => ({
+      user_id:   p.id,
+      full_name: p.full_name ?? null,
+      email:     null,
+    }))
 
     setUsers(filtered)
 
     if (filtered.length === 0) return
 
-    // Permissions existantes pour ces utilisateurs sur cette société
-    const userIds = filtered.map(u => u.user_id)
+    // Étape 3 : permissions existantes pour ces utilisateurs sur cette société
     const { data: existingPerms } = await supabase
       .from('user_module_permissions')
       .select('user_id, module, permission')
