@@ -95,8 +95,8 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      // Fallback si aucun tenant ou rôle n'est trouvé
-      return NextResponse.redirect(new URL(`/${userLocale}/unauthorized`, request.url));
+      // Fallback : profil sans tenant ou tenant sans slug → retour au login
+      return NextResponse.redirect(new URL(`/${userLocale}/login`, request.url));
     }
     return response;
   }
