@@ -192,7 +192,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260324_fix_tenants_rls.sql` | RLS `tenants` pour tenant_admin | ✅ |
 | `20260324_fix_tenants_quotas_notnull.sql` | Fix NULL sur quotas | ✅ |
 | `20260324_societes_storage_cleanup.sql` | Nettoyage colonnes storage | ✅ |
-| `20260324_create_user_societes.sql` | Recréation propre `user_societes` | ⚠️ À exécuter |
+| `20260324_create_user_societes.sql` | Recréation propre `user_societes` | ✅ |
 | `20260325_notifications_rls.sql` | RLS `notifications` (SELECT/UPDATE par user_id, INSERT super_admin) | ✅ |
 | `20260325_create_audit_logs.sql` | Table `audit_logs` + RLS | ✅ |
 | `20260325_create_tenant_backups.sql` | Table `tenant_backups` + RLS | ✅ |
@@ -217,7 +217,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ## À faire / Prochaines étapes
 
 ### Migrations SQL à exécuter dans Supabase (dans l'ordre)
-- [ ] `20260324_create_user_societes.sql` — recréation propre `user_societes`
+- [x] `20260324_create_user_societes.sql` — recréation propre `user_societes` ✅ exécutée
 - [ ] `20260324_fix_tenants_quotas_notnull.sql` — fix NULL sur quotas
 - [ ] `20260324_fix_tenants_rls.sql` — RLS `tenants` pour tenant_admin
 - [ ] `20260324_societes_storage_cleanup.sql` — nettoyage colonnes storage

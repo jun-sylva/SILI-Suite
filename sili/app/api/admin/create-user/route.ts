@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
       const rows = assignedSocieteIds.map((societeId: string) => ({
         user_id: authData.user.id,
         societe_id: societeId,
-        role: 'viewer',
         is_active: true,
       }))
       const { error: assignError } = await supabaseAdmin.from('user_societes').insert(rows)
