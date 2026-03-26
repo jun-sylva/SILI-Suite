@@ -25,6 +25,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'securite',
     'societes',
     'societe_settings',
+    'societe_users',
     'superadmin',
     'tenant_settings',
     'tenants',

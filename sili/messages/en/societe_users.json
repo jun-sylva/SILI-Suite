@@ -1,0 +1,20 @@
+{
+  "title": "User Settings",
+  "subtitle": "Define module permissions for each user assigned to this company.",
+  "empty_title": "No users assigned",
+  "empty_subtitle": "Assign users to this company from the tenant space.",
+  "empty_modules_title": "No modules activated",
+  "empty_modules_subtitle": "Activate modules in the company settings to manage permissions.",
+  "col_user": "User",
+  "permission_aucun": "None",
+  "permission_lecteur": "Viewer",
+  "permission_contributeur": "Contributor",
+  "permission_gestionnaire": "Manager",
+  "permission_admin": "Admin",
+  "btn_reset_user": "Revoke all",
+  "toast_update_success": "Permission updated",
+  "toast_update_error": "Error updating permission",
+  "toast_reset_success": "Permissions reset",
+  "toast_reset_error": "Error resetting permissions",
+  "loading": "Loading users..."
+}

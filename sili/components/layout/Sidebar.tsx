@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Briefcase,
   Grid,
-  ShieldCheck
+  ShieldCheck,
+  UserCog,
 } from 'lucide-react'
 import { usePermission, ModuleKey } from '@/hooks/usePermission'
 
@@ -228,14 +229,22 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
                     isCollapsed={isCollapsed!}
                     onClick={closeMobile}
                   />
-                  {/* Paramètres société — admins uniquement */}
+                  {/* Paramètres société + utilisateurs — admins uniquement */}
                   {(userRole === 'tenant_admin' || userRole === 'super_admin') && (
-                    <SidebarLink
-                      item={{ name: 'societe_settings', href: societeBase + '/settings', icon: Settings }}
-                      isActive={pathname === societeBase + '/settings'}
-                      isCollapsed={isCollapsed!}
-                      onClick={closeMobile}
-                    />
+                    <>
+                      <SidebarLink
+                        item={{ name: 'societe_settings', href: societeBase + '/settings', icon: Settings }}
+                        isActive={pathname === societeBase + '/settings'}
+                        isCollapsed={isCollapsed!}
+                        onClick={closeMobile}
+                      />
+                      <SidebarLink
+                        item={{ name: 'societe_users', href: societeBase + '/utilisateurs', icon: UserCog }}
+                        isActive={pathname === societeBase + '/utilisateurs'}
+                        isCollapsed={isCollapsed!}
+                        onClick={closeMobile}
+                      />
+                    </>
                   )}
                 </ul>
               </div>

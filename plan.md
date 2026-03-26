@@ -197,6 +197,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 | `20260325_create_master_audit_logs.sql` | Table `master_audit_logs` + index + RLS SELECT pour super_admin | ✅ |
 | `20260326_create_societe_modules.sql` | Table `societe_modules` + RLS + contrainte unique `(societe_id, module)` | ✅ |
 | `20260326_create_societe_data_sharing.sql` | Table `societe_data_sharing` + RLS + contrainte unique `(source, target, module)` | ✅ |
+| `20260326_user_module_permissions_rls.sql` | RLS `user_module_permissions` + contrainte unique `(user_id, societe_id, module)` | ✅ |
 
 ---
 
@@ -224,13 +225,14 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 - [x] `20260325_create_master_audit_logs.sql` ✅ exécutée
 - [x] `20260326_create_societe_modules.sql` ✅ exécutée
 - [x] `20260326_create_societe_data_sharing.sql` ✅ exécutée
+- [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
 
 ### Environnement
 - [ ] **Ajouter** `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`
 
 ### Fonctionnalités
 - [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
-- [ ] **`user_module_permissions`** : UI de gestion des permissions par module pour chaque utilisateur dans chaque société
+- [x] **`user_module_permissions`** : UI implémentée — page `/[societe_id]/utilisateurs` (tableau croisé utilisateurs × modules). Migration RLS ⚠️ À exécuter.
 
 #### Modules par société (implémenté)
 - [x] **Migration** `20260326_create_societe_modules.sql` ✅ exécutée

@@ -1,0 +1,20 @@
+{
+  "title": "Paramètres Utilisateurs",
+  "subtitle": "Définissez les permissions par module pour chaque utilisateur assigné à cette société.",
+  "empty_title": "Aucun utilisateur assigné",
+  "empty_subtitle": "Assignez des utilisateurs à cette société depuis l'espace tenant.",
+  "empty_modules_title": "Aucun module activé",
+  "empty_modules_subtitle": "Activez des modules dans les paramètres de la société pour gérer les permissions.",
+  "col_user": "Utilisateur",
+  "permission_aucun": "Aucun",
+  "permission_lecteur": "Lecteur",
+  "permission_contributeur": "Contributeur",
+  "permission_gestionnaire": "Gestionnaire",
+  "permission_admin": "Admin",
+  "btn_reset_user": "Tout désactiver",
+  "toast_update_success": "Permission mise à jour",
+  "toast_update_error": "Erreur lors de la mise à jour",
+  "toast_reset_success": "Permissions réinitialisées",
+  "toast_reset_error": "Erreur lors de la réinitialisation",
+  "loading": "Chargement des utilisateurs..."
+}
