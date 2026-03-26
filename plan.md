@@ -165,6 +165,44 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 
 ---
 
+## Stockage fichiers (`sili-files`)
+
+### Architecture bucket
+Bucket unique `sili-files`, isolation par chemin :
+```
+{tenant_id}/societes/{societe_id}/documents/   ← fichiers métier
+{tenant_id}/societes/{societe_id}/exports/      ← exports générés
+{tenant_id}/societes/{societe_id}/imports/      ← fichiers importés
+{tenant_id}/backups/                            ← sauvegardes
+{tenant_id}/shared/                             ← fichiers partagés
+```
+RLS : chaque utilisateur ne peut accéder qu'aux fichiers sous son `tenant_id`.
+
+### Suivi du stockage (`tenant_storage_usage`)
+| Colonne | Source | Mise à jour |
+|---|---|---|
+| `files_mb` | Bucket `sili-files` | Trigger automatique INSERT/DELETE sur `storage.objects` |
+| `database_mb` | Postgres (tables tenant) | Batch quotidien (Phase 3) |
+| `logs_mb` | `audit_logs` | Batch quotidien (Phase 3) |
+| `backups_mb` | `tenant_backups.size_mb` | Batch quotidien (Phase 3) |
+
+Vue `tenant_storage_summary` : expose `total_mb = sum(files_mb + database_mb + logs_mb + backups_mb)`.
+
+### Utilitaire client (`lib/storage.ts`)
+- `societeFilePath(tenantId, societeId, category, filename)` — génère le chemin
+- `uploadFile(path, file)` — upload + tracking automatique via trigger
+- `deleteFiles(paths)` — suppression + tracking automatique via trigger
+- `getSignedUrl(path, expiresIn)` — URL temporaire sécurisée
+- `getStorageUsage(tenantId)` — lit `tenant_storage_summary`
+- `checkStorageQuota(tenantId, maxGb, fileSize)` — vérifie avant upload
+
+### Phasage
+- **Phase 1** ✅ Implémentée — bucket + RLS + `tenant_storage_usage` + triggers + `lib/storage.ts`
+- **Phase 2** — UI détaillée dans Paramètres Tenant (barre de stockage par composante) — à implémenter avec le premier module métier
+- **Phase 3** — Edge Function pg_cron recalcul `database_mb` / `logs_mb` / `backups_mb` — en production
+
+---
+
 ## API Routes
 
 ### `POST /api/admin/create-user`
@@ -203,6 +241,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_create_societe_data_sharing.sql` | Table `societe_data_sharing` + RLS + contrainte unique `(source, target, module)` | ✅ |
 | `20260326_user_module_permissions_rls.sql` | RLS `user_module_permissions` + contrainte unique `(user_id, societe_id, module)` | ✅ |
 | `20260326_tenants_rls_tenant_user.sql` | Policy SELECT `tenants` pour `tenant_user` (lecture de son propre tenant) | ✅ |
+| `20260326_storage_phase1.sql` | Bucket `sili-files` + RLS storage + table `tenant_storage_usage` + triggers auto files_mb | ✅ |
 
 ---
 
@@ -232,6 +271,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260326_create_societe_data_sharing.sql` ✅ exécutée
 - [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
 - [x] `20260326_tenants_rls_tenant_user.sql` ✅ exécutée — policy SELECT `tenants` pour `tenant_user`
+- [x] `20260326_storage_phase1.sql` ✅ exécutée — bucket + RLS storage + tenant_storage_usage + triggers
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
