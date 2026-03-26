@@ -50,5 +50,15 @@
   "field_societes": "Accès aux sociétés",
   "no_societes_available": "Aucune société active disponible dans ce tenant.",
   "societes_selected": "société(s) sélectionnée(s)",
-  "error_societe_required": "Un utilisateur doit être assigné à au moins une société"
+  "error_societe_required": "Un utilisateur doit être assigné à au moins une société",
+  "field_confirm_password": "Confirmer le mot de passe",
+  "placeholder_confirm_password": "Répétez le mot de passe",
+  "password_match": "Les mots de passe correspondent",
+  "password_no_match": "Les mots de passe ne correspondent pas",
+  "password_strength_min_chars": "8 caractères minimum",
+  "password_strength_uppercase": "Une lettre majuscule",
+  "password_strength_digit": "Un chiffre",
+  "password_strength_special": "Un caractère spécial",
+  "error_password_weak": "Le mot de passe ne respecte pas les critères de sécurité",
+  "error_password_mismatch": "Les mots de passe ne correspondent pas"
 }

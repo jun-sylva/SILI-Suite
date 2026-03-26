@@ -34,12 +34,27 @@ type CreateForm = {
   email: string
   phone: string
   password: string
+  confirmPassword: string
   role: 'tenant_admin' | 'tenant_user'
   assignedSocietes: string[]
 }
 
 const defaultForm: CreateForm = {
-  fullName: '', email: '', phone: '', password: '', role: 'tenant_user', assignedSocietes: [],
+  fullName: '', email: '', phone: '', password: '', confirmPassword: '', role: 'tenant_user', assignedSocietes: [],
+}
+
+function checkPasswordStrength(pwd: string) {
+  return {
+    minLength:   pwd.length >= 8,
+    hasUppercase: /[A-Z]/.test(pwd),
+    hasDigit:     /[0-9]/.test(pwd),
+    hasSpecial:   /[^A-Za-z0-9]/.test(pwd),
+  }
+}
+
+function isPasswordStrong(pwd: string) {
+  const c = checkPasswordStrength(pwd)
+  return c.minLength && c.hasUppercase && c.hasDigit && c.hasSpecial
 }
 
 export default function UtilisateursPage() {
@@ -124,36 +139,52 @@ export default function UtilisateursPage() {
   async function handleCreate() {
     if (!createForm.fullName.trim()) { toast.error(t('error_fullname_required')); return }
     if (!createForm.email.trim()) { toast.error(t('error_email_required')); return }
-    if (createForm.password.length < 8) { toast.error(t('error_password_length')); return }
+    if (!isPasswordStrong(createForm.password)) { toast.error(t('error_password_weak')); return }
+    if (createForm.password !== createForm.confirmPassword) { toast.error(t('error_password_mismatch')); return }
     if (createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0) {
       toast.error(t('error_societe_required')); return
     }
 
     setSaving(true)
-    const res = await fetch('/api/admin/create-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: createForm.email,
-        password: createForm.password,
-        fullName: createForm.fullName,
-        phone: createForm.phone || null,
-        role: createForm.role,
-        tenantId: fullTenantId,
-        assignedSocieteIds: createForm.role === 'tenant_user' ? createForm.assignedSocietes : [],
-      }),
-    })
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30_000)
 
-    const json = await res.json()
-    if (!res.ok) {
-      toast.error(json.error || t('toast_create_error'))
-    } else {
-      toast.success(t('toast_create_success'))
-      setShowCreateModal(false)
-      setCreateForm(defaultForm)
-      await fetchAll()
+      const res = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          email: createForm.email,
+          password: createForm.password,
+          fullName: createForm.fullName,
+          phone: createForm.phone || null,
+          role: createForm.role,
+          tenantId: fullTenantId,
+          assignedSocieteIds: createForm.role === 'tenant_user' ? createForm.assignedSocietes : [],
+        }),
+      })
+      clearTimeout(timeout)
+
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || t('toast_create_error'))
+      } else {
+        toast.success(t('toast_create_success'))
+        setShowCreateModal(false)
+        setCreateForm(defaultForm)
+        await fetchAll()
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        toast.error('La requête a expiré (timeout 30s). Vérifie la configuration du serveur.')
+      } else {
+        toast.error(t('toast_create_error'))
+      }
+      console.error('[handleCreate]', err)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   async function changeRole(user: Profile) {
@@ -446,7 +477,63 @@ export default function UtilisateursPage() {
                     value={createForm.password}
                     onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                   />
-                  <p className="text-xs text-slate-400 mt-1">{t('password_hint')}</p>
+                  {/* Indicateur de robustesse */}
+                  {createForm.password.length > 0 && (() => {
+                    const s = checkPasswordStrength(createForm.password)
+                    const criteria = [
+                      { key: 'minLength',    label: t('password_strength_min_chars'), ok: s.minLength },
+                      { key: 'hasUppercase', label: t('password_strength_uppercase'), ok: s.hasUppercase },
+                      { key: 'hasDigit',     label: t('password_strength_digit'),     ok: s.hasDigit },
+                      { key: 'hasSpecial',   label: t('password_strength_special'),   ok: s.hasSpecial },
+                    ]
+                    const score = criteria.filter(c => c.ok).length
+                    const barColor = score <= 1 ? 'bg-red-500' : score === 2 ? 'bg-orange-400' : score === 3 ? 'bg-amber-400' : 'bg-emerald-500'
+                    return (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="flex gap-1">
+                          {[0,1,2,3].map(i => (
+                            <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i < score ? barColor : 'bg-slate-200'}`} />
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                          {criteria.map(c => (
+                            <span key={c.key} className={`flex items-center gap-1 text-[11px] font-medium ${c.ok ? 'text-emerald-600' : 'text-slate-400'}`}>
+                              <span className={`h-3 w-3 rounded-full flex items-center justify-center shrink-0 ${c.ok ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                {c.ok && <svg className="h-2 w-2 text-white" fill="none" viewBox="0 0 8 8"><path d="M1.5 4L3 5.5L6.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              </span>
+                              {c.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Confirmer le mot de passe */}
+                <div className="col-span-full">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_confirm_password')} *</label>
+                  <input
+                    type="password"
+                    className={`w-full border rounded-xl px-4 py-2.5 text-sm outline-none transition-all ${
+                      createForm.confirmPassword.length === 0
+                        ? 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'
+                        : createForm.password === createForm.confirmPassword
+                          ? 'border-emerald-400 focus:ring-2 focus:ring-emerald-200 bg-emerald-50/30'
+                          : 'border-red-400 focus:ring-2 focus:ring-red-200 bg-red-50/30'
+                    }`}
+                    placeholder={t('placeholder_confirm_password')}
+                    value={createForm.confirmPassword}
+                    onChange={e => setCreateForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                  />
+                  {createForm.confirmPassword.length > 0 && (
+                    <p className={`text-xs mt-1 font-medium flex items-center gap-1 ${createForm.password === createForm.confirmPassword ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {createForm.password === createForm.confirmPassword
+                        ? <><CheckCircle2 className="h-3.5 w-3.5" /> {t('password_match')}</>
+                        : <><XCircle className="h-3.5 w-3.5" /> {t('password_no_match')}</>
+                      }
+                    </p>
+                  )}
                 </div>
 
                 {/* Rôle */}
@@ -533,7 +620,7 @@ export default function UtilisateursPage() {
               </button>
               <button
                 onClick={handleCreate}
-                disabled={saving || (createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0)}
+                disabled={saving || !isPasswordStrong(createForm.password) || createForm.password !== createForm.confirmPassword || (createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0)}
                 title={createForm.role === 'tenant_user' && createForm.assignedSocietes.length === 0 ? t('error_societe_required') : undefined}
                 className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-slate-400"
               >

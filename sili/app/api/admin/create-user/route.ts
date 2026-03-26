@@ -8,6 +8,11 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[create-user] SUPABASE_SERVICE_ROLE_KEY manquant dans les variables d\'environnement')
+    return NextResponse.json({ error: 'Configuration serveur incomplète (service role key manquante)' }, { status: 500 })
+  }
+
   try {
     const { email, password, fullName, phone, role, tenantId, assignedSocieteIds } = await req.json()
 
@@ -63,6 +68,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, userId: authData.user.id })
   } catch (err) {
+    console.error('[create-user] Erreur inattendue:', err)
     return NextResponse.json({ error: 'Erreur serveur inattendue' }, { status: 500 })
   }
 }

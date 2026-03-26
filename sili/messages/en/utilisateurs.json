@@ -50,5 +50,15 @@
   "field_societes": "Company access",
   "no_societes_available": "No active company available in this tenant.",
   "societes_selected": "company(ies) selected",
-  "error_societe_required": "A user must be assigned to at least one company"
+  "error_societe_required": "A user must be assigned to at least one company",
+  "field_confirm_password": "Confirm password",
+  "placeholder_confirm_password": "Repeat the password",
+  "password_match": "Passwords match",
+  "password_no_match": "Passwords do not match",
+  "password_strength_min_chars": "At least 8 characters",
+  "password_strength_uppercase": "One uppercase letter",
+  "password_strength_digit": "One digit",
+  "password_strength_special": "One special character",
+  "error_password_weak": "Password does not meet security requirements",
+  "error_password_mismatch": "Passwords do not match"
 }
