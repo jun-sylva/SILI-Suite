@@ -24,9 +24,9 @@ export default function RHDashboard() {
       title:  t('dashboard_presences_title'),
       desc:   t('dashboard_presences_desc'),
       icon:   Clock,
-      href:   null,
-      color:  'bg-slate-50 text-slate-400 border-slate-100',
-      active: false,
+      href:   `${base}/presences`,
+      color:  'bg-teal-50 text-teal-600 border-teal-100',
+      active: true,
     },
     {
       title:  t('dashboard_paie_title'),

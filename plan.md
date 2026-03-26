@@ -36,6 +36,7 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.tenant_backups` | Sauvegardes. Colonnes : `id`, `tenant_id`, `status`, `size_mb`, `triggered_by`, `storage_path`, `created_at`, `expires_at`, `completed_at` |
 | `public.societe_modules` | Modules activés par société (sous-ensemble de `tenant_modules`). Colonnes : `id`, `societe_id`, `module`, `is_active`, `activated_at`. Contrainte unique : `(societe_id, module)`. |
 | `public.societe_data_sharing` | Partage de données directionnel entre sociétés, par module. Colonnes : `id`, `source_societe_id`, `target_societe_id`, `module`, `is_active`, `created_at`. Contrainte unique : `(source_societe_id, target_societe_id, module)`. Le partage est à sens unique : source partage vers target, pas l'inverse sauf config explicite. |
+| `public.rh_presences` | Pointage quotidien. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id` (FK → `rh_employes`), `date`, `statut` ('present'/'absent'/'retard'/'conge'/'mission'), `note`, `created_by`, `created_at`, `updated_at`. Contrainte unique : `(employe_id, date)`. RLS : SELECT/INSERT/UPDATE/DELETE pour le même tenant. |
 | `public.rh_employes` | Employés RH. Colonnes : `id`, `tenant_id`, `societe_id`, `user_id` (nullable — NULL = sans compte plateforme), `matricule` (8 chiffres, auto-généré via trigger), `nom`, `prenom`, `sexe` ('M'/'F'), `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`, `email`, `telephone`, `poste`, `departement`, `date_embauche`, `type_contrat` ('CDI'/'CDD'/'Stage'/'Freelance'/'Consultant'), `salaire_base`, `cni_numero`, `cnps_numero`, `photo_url`, `statut` ('actif'/'inactif'/'suspendu'/'conge'), `created_by`, `created_at`, `updated_at`. RLS : SELECT (même tenant), INSERT/UPDATE/DELETE (tenant_admin uniquement). |
 
 ### Rôles globaux (`global_role` enum)
@@ -263,7 +264,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_user_module_permissions_rls.sql` | RLS `user_module_permissions` + contrainte unique `(user_id, societe_id, module)` | ✅ |
 | `20260326_tenants_rls_tenant_user.sql` | Policy SELECT `tenants` pour `tenant_user` (lecture de son propre tenant) | ✅ |
 | `20260326_storage_phase1.sql` | Bucket `sili-files` + RLS storage + table `tenant_storage_usage` + triggers auto files_mb | ✅ |
-| `20260326_rh_employes.sql` | DROP + CREATE `rh_employes` + trigger `generate_matricule()` (8 chiffres uniques) + RLS + indexes | ⚠️ À exécuter |
+| `20260326_rh_employes.sql` | DROP + CREATE `rh_employes` + trigger `generate_matricule()` (8 chiffres uniques) + RLS + indexes | ✅ |
+| `20260326_rh_presences.sql` | CREATE `rh_presences` (pointage quotidien) + RLS (lecture/écriture même tenant) + indexes | ✅ |
 
 ---
 
@@ -294,7 +296,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
 - [x] `20260326_tenants_rls_tenant_user.sql` ✅ exécutée — policy SELECT `tenants` pour `tenant_user`
 - [x] `20260326_storage_phase1.sql` ✅ exécutée — bucket + RLS storage + tenant_storage_usage + triggers
-- [ ] `20260326_rh_employes.sql` ⚠️ À exécuter — table `rh_employes` + trigger matricule + RLS
+- [x] `20260326_rh_employes.sql` ✅ exécutée — table `rh_employes` + trigger matricule + RLS
+- [x] `20260326_rh_presences.sql` ✅ exécutée — table `rh_presences` + RLS + indexes
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
@@ -313,6 +316,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
 - [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
 - [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
+- [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif mensuel / Congés) — permissions : lecteur (lecture) / gestionnaire+ (pointage + approbation congés)
 
 ---
 
