@@ -254,7 +254,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
                         const fullHref = `${societeBase}${item.href}`
                         const isActive = pathname === fullHref || pathname.startsWith(fullHref)
                         return (
-                          <ProtectedSidebarItem
+                          <SidebarLink
                             key={item.href}
                             item={{ ...item, href: fullHref }}
                             isActive={isActive}
