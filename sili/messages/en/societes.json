@@ -60,5 +60,6 @@
   "placeholder_numero_contribuable": "E.g: M123456789",
   "placeholder_numero_rccm": "E.g: RC/YAO/2024/B/1234",
   "detail_site_web": "Website",
-  "detail_capital_social": "Share Capital"
+  "detail_capital_social": "Share Capital",
+  "action_settings": "Settings"
 }

@@ -109,7 +109,8 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
   const pathname = usePathname()
   const params = useParams()
   const [userRole, setUserRole] = useState<string | null>(null)
-  
+  const [activeModules, setActiveModules] = useState<string[]>([])
+
   const tenantSlug = params.tenant_slug as string
   const tenantId = params.tenant_id as string
   const userId = params.user_id as string
@@ -125,6 +126,17 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
       }
     })
   }, [])
+
+  // Charge les modules actifs de la société courante
+  useEffect(() => {
+    if (!societeId) { setActiveModules([]); return }
+    supabase
+      .from('societe_modules')
+      .select('module')
+      .eq('societe_id', societeId)
+      .eq('is_active', true)
+      .then(({ data }) => setActiveModules(data?.map(r => r.module) ?? []))
+  }, [societeId])
 
   const isCompanyLevel = !!societeId
   const closeMobile = () => setIsMobileOpen?.(false)
@@ -204,36 +216,57 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
                 {!isCollapsed && <span>{t('return_to_tenant')}</span>}
               </Link>
 
-              {/* Section Société */}
+              {/* Section Société — Dashboard */}
               <div>
                 {!isCollapsed && (
                   <h3 className="px-3 text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-3 italic">{t('societe_group')}</h3>
                 )}
                 <ul className="space-y-1">
-                  {/* Dashboard Société */}
-                  <SidebarLink 
+                  <SidebarLink
                     item={{ name: 'dashboard', href: societeBase + '/dashboard', icon: LayoutDashboard }}
                     isActive={pathname === societeBase + '/dashboard'}
                     isCollapsed={isCollapsed!}
                     onClick={closeMobile}
                   />
-                  
-                  {/* Modules Métier */}
-                  {navGroup2.map((item) => {
-                    const fullHref = `${societeBase}${item.href}`
-                    const isActive = pathname === fullHref || pathname.startsWith(fullHref)
-                    return (
-                      <ProtectedSidebarItem 
-                        key={item.href} 
-                        item={{ ...item, href: fullHref }} 
-                        isActive={isActive} 
-                        isCollapsed={isCollapsed!}
-                        onClick={closeMobile} 
-                      />
-                    )
-                  })}
+                  {/* Paramètres société — admins uniquement */}
+                  {(userRole === 'tenant_admin' || userRole === 'super_admin') && (
+                    <SidebarLink
+                      item={{ name: 'societe_settings', href: societeBase + '/settings', icon: Settings }}
+                      isActive={pathname === societeBase + '/settings'}
+                      isCollapsed={isCollapsed!}
+                      onClick={closeMobile}
+                    />
+                  )}
                 </ul>
               </div>
+
+              {/* Groupe Applications — modules activés pour cette société */}
+              {activeModules.length > 0 && (() => {
+                const navMap = Object.fromEntries(navGroup2.map(i => [i.moduleKey!, i]))
+                const items = activeModules.map(m => navMap[m]).filter(Boolean) as NavItem[]
+                return (
+                  <div>
+                    {!isCollapsed && (
+                      <h3 className="px-3 text-[11px] font-bold text-indigo-400 uppercase tracking-widest mb-3 italic">{t('applications_group')}</h3>
+                    )}
+                    <ul className="space-y-1">
+                      {items.map(item => {
+                        const fullHref = `${societeBase}${item.href}`
+                        const isActive = pathname === fullHref || pathname.startsWith(fullHref)
+                        return (
+                          <ProtectedSidebarItem
+                            key={item.href}
+                            item={{ ...item, href: fullHref }}
+                            isActive={isActive}
+                            isCollapsed={isCollapsed!}
+                            onClick={closeMobile}
+                          />
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )
+              })()}
             </>
           )}
         </nav>

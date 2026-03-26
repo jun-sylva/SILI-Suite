@@ -26,5 +26,7 @@
   "notifications": "Notifications",
   "notifications_empty": "No notifications",
   "notifications_mark_all_read": "Mark all as read",
-  "notifications_mark_read": "Mark as read"
+  "notifications_mark_read": "Mark as read",
+  "applications_group": "Applications",
+  "societe_settings": "Company Settings"
 }

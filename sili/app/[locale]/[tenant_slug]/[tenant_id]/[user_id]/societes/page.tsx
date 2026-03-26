@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Search, MoreHorizontal, Building2, Plus, X, Loader2,
-  ExternalLink, Edit2, Power, Trash2, HardDrive,
+  ExternalLink, Edit2, Power, Trash2, HardDrive, Settings,
   MapPin, Phone, Mail, Globe, Briefcase, Scale, Hash, FileText,
   Calendar, CheckCircle2, XCircle,
 } from 'lucide-react'
@@ -412,7 +412,14 @@ export default function SocietesPage() {
                         {dropdownOpen === s.id && (
                           <div ref={dropdownRef} className="absolute right-4 top-12 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden text-left animate-in fade-in zoom-in-95">
                             <div className="py-1">
-                              <button onClick={() => openEdit(s)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                              <Link
+                                href={`${tenantBase}/${toSlug(s.raison_sociale)}/${s.id}/settings`}
+                                onClick={e => e.stopPropagation()}
+                                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 font-medium"
+                              >
+                                <Settings className="h-4 w-4" /> {t('action_settings')}
+                              </Link>
+                              <button onClick={() => openEdit(s)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 border-t border-slate-100">
                                 <Edit2 className="h-4 w-4" /> {t('action_edit')}
                               </button>
                               <button onClick={() => toggleStatus(s)} className="flex items-center gap-2 w-full px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 border-t border-slate-100">

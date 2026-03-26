@@ -1,0 +1,20 @@
+{
+  "title": "Paramètres de la Société",
+  "subtitle": "Configurez les modules et le partage de données de cette société.",
+  "tab_modules": "Modules",
+  "tab_sharing": "Partage de données",
+  "modules_title": "Modules activés",
+  "modules_subtitle": "Activez les modules disponibles dans votre abonnement pour cette société.",
+  "modules_empty": "Aucun module disponible dans votre abonnement. Contactez un administrateur.",
+  "modules_active_count": "{count} module(s) activé(s)",
+  "sharing_title": "Partage de données",
+  "sharing_subtitle": "Partagez vos données avec d'autres sociétés du tenant.",
+  "sharing_direction_note": "Le partage est directionnel : vous partagez vos données vers la société de destination. Pour que la destination partage également avec vous, elle doit configurer son propre partage.",
+  "sharing_empty": "Aucune autre société active dans ce tenant.",
+  "sharing_no_common_modules": "Aucun module en commun — activez les mêmes modules dans les deux sociétés pour activer le partage.",
+  "sharing_with": "Partager avec",
+  "sharing_active_label": "Partage actif",
+  "toast_module_error": "Erreur lors de la mise à jour du module",
+  "toast_sharing_error": "Erreur lors de la mise à jour du partage",
+  "read_only_notice": "Seul un administrateur peut modifier ces paramètres."
+}

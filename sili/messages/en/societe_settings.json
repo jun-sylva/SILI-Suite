@@ -1,0 +1,20 @@
+{
+  "title": "Company Settings",
+  "subtitle": "Configure modules and data sharing for this company.",
+  "tab_modules": "Modules",
+  "tab_sharing": "Data Sharing",
+  "modules_title": "Active Modules",
+  "modules_subtitle": "Enable available modules from your subscription for this company.",
+  "modules_empty": "No modules available in your subscription. Contact an administrator.",
+  "modules_active_count": "{count} module(s) activated",
+  "sharing_title": "Data Sharing",
+  "sharing_subtitle": "Share your data with other companies in the tenant.",
+  "sharing_direction_note": "Sharing is one-directional: you share your data toward the destination company. For the destination to share back, it must configure its own sharing settings.",
+  "sharing_empty": "No other active companies in this tenant.",
+  "sharing_no_common_modules": "No common modules — enable the same modules in both companies to allow sharing.",
+  "sharing_with": "Share with",
+  "sharing_active_label": "Sharing active",
+  "toast_module_error": "Error updating module",
+  "toast_sharing_error": "Error updating sharing",
+  "read_only_notice": "Only an administrator can modify these settings."
+}

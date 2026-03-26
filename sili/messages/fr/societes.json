@@ -60,5 +60,6 @@
   "placeholder_numero_contribuable": "Ex : M123456789",
   "placeholder_numero_rccm": "Ex : RC/YAO/2024/B/1234",
   "detail_site_web": "Site Web",
-  "detail_capital_social": "Capital Social"
+  "detail_capital_social": "Capital Social",
+  "action_settings": "Paramètres"
 }

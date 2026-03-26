@@ -34,6 +34,8 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.audit_logs` | Journal d'audit général. Colonnes : `id`, `tenant_id`, `user_id`, `action`, `resource_type`, `resource_id`, `metadata`, `ip_address`, `user_agent`, `created_at` |
 | `public.master_audit_logs` | Journal d'audit des comptes Master uniquement. Colonnes : `id`, `actor_id`, `action`, `level` (info/warning/error), `service` (auth/system/database/network), `resource_type`, `resource_id`, `message` (texte lisible pré-calculé), `metadata`, `ip_address`, `created_at`. Pas de FK tenant_id. |
 | `public.tenant_backups` | Sauvegardes. Colonnes : `id`, `tenant_id`, `status`, `size_mb`, `triggered_by`, `storage_path`, `created_at`, `expires_at`, `completed_at` |
+| `public.societe_modules` | Modules activés par société (sous-ensemble de `tenant_modules`). Colonnes : `id`, `societe_id`, `module`, `is_active`, `activated_at`. Contrainte unique : `(societe_id, module)`. |
+| `public.societe_data_sharing` | Partage de données directionnel entre sociétés, par module. Colonnes : `id`, `source_societe_id`, `target_societe_id`, `module`, `is_active`, `created_at`. Contrainte unique : `(source_societe_id, target_societe_id, module)`. Le partage est à sens unique : source partage vers target, pas l'inverse sauf config explicite. |
 
 ### Rôles globaux (`global_role` enum)
 - `super_admin` — accès total à tout *(non utilisé en pratique — remplacé par `is_super_admin`)*
@@ -110,6 +112,7 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 
 ### Espace Société
 - `/[societe_id]/dashboard`, `/[societe_id]/vente`, `/[societe_id]/rh`, `/[societe_id]/crm`
+- `/[societe_id]/settings` *(à créer)* — Paramètres société : 2 onglets Modules + Partage de données
 
 ### Espace Master (`/admin/[adminId]/`)
 
@@ -149,6 +152,7 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 ### `Sidebar.tsx`
 - `navGroup1` (espace tenant, admins uniquement) : dashboard, societes, utilisateurs, reporting, **securite-backup**, settings
 - `navGroup2` (espace société, avec `usePermission`) : vente, achat, stock, rh, crm, comptabilite, teams, rapports
+- `navGroupApplications` *(à créer)* — groupe **Applications** dans l'espace société : charge dynamiquement les modules depuis `societe_modules` où `is_active = true` pour la `societe_id` courante. Chaque module → item de menu vers `/[societe_id]/[module]`.
 - ⚠️ Module `securite` **supprimé** de `navGroup2` et de `ModuleKey` dans `usePermission.ts`
 
 ### `middleware.ts`
@@ -185,12 +189,14 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 | `20260324_fix_tenants_quotas_notnull.sql` | Fix NULL sur quotas | ✅ |
 | `20260324_societes_storage_cleanup.sql` | Nettoyage colonnes storage | ✅ |
 | `20260324_create_user_societes.sql` | Recréation propre `user_societes` | ⚠️ À exécuter |
-| `20260325_notifications_rls.sql` | RLS `notifications` (SELECT/UPDATE par user_id, INSERT super_admin) | ⚠️ À exécuter |
-| `20260325_create_audit_logs.sql` | Table `audit_logs` + RLS | ⚠️ À exécuter |
-| `20260325_create_tenant_backups.sql` | Table `tenant_backups` + RLS | ⚠️ À exécuter |
-| `20260325_remove_securite_module.sql` | Suppression module `securite` de `sys_modules` + `user_module_permissions` | ⚠️ À exécuter |
-| `20260325_fix_rls_master_operations.sql` | Contrainte unique `tenant_modules(tenant_id,module)` + policies UPDATE tenants / INSERT audit_logs / INSERT notifications pour super_admin | ⚠️ À exécuter |
-| `20260325_create_master_audit_logs.sql` | Table `master_audit_logs` + index + RLS SELECT pour super_admin | ⚠️ À exécuter |
+| `20260325_notifications_rls.sql` | RLS `notifications` (SELECT/UPDATE par user_id, INSERT super_admin) | ✅ |
+| `20260325_create_audit_logs.sql` | Table `audit_logs` + RLS | ✅ |
+| `20260325_create_tenant_backups.sql` | Table `tenant_backups` + RLS | ✅ |
+| `20260325_remove_securite_module.sql` | Suppression module `securite` de `sys_modules` + `user_module_permissions` | ✅ |
+| `20260325_fix_rls_master_operations.sql` | Contrainte unique `tenant_modules(tenant_id,module)` + policies UPDATE tenants / INSERT audit_logs / INSERT notifications pour super_admin | ✅ |
+| `20260325_create_master_audit_logs.sql` | Table `master_audit_logs` + index + RLS SELECT pour super_admin | ✅ |
+| `20260326_create_societe_modules.sql` | Table `societe_modules` + RLS + contrainte unique `(societe_id, module)` | ✅ |
+| `20260326_create_societe_data_sharing.sql` | Table `societe_data_sharing` + RLS + contrainte unique `(source, target, module)` | ✅ |
 
 ---
 
@@ -210,12 +216,14 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 - [ ] `20260324_fix_tenants_quotas_notnull.sql` — fix NULL sur quotas
 - [ ] `20260324_fix_tenants_rls.sql` — RLS `tenants` pour tenant_admin
 - [ ] `20260324_societes_storage_cleanup.sql` — nettoyage colonnes storage
-- [ ] `20260325_notifications_rls.sql` — RLS notifications (SELECT/UPDATE par user_id, INSERT super_admin)
-- [ ] `20260325_create_audit_logs.sql` — table `audit_logs` + RLS (si pas encore exécutée)
-- [ ] `20260325_create_tenant_backups.sql` — table `tenant_backups` + RLS
-- [ ] `20260325_remove_securite_module.sql` — suppression module `securite` de `sys_modules`
-- [ ] `20260325_fix_rls_master_operations.sql` — contrainte unique `tenant_modules(tenant_id,module)` + policies UPDATE tenants + INSERT notifications
-- [ ] `20260325_create_master_audit_logs.sql` — table `master_audit_logs` + index + RLS SELECT super_admin
+- [x] `20260325_notifications_rls.sql` ✅ exécutée
+- [x] `20260325_create_audit_logs.sql` ✅ exécutée
+- [x] `20260325_create_tenant_backups.sql` ✅ exécutée
+- [x] `20260325_remove_securite_module.sql` ✅ exécutée
+- [x] `20260325_fix_rls_master_operations.sql` ✅ exécutée
+- [x] `20260325_create_master_audit_logs.sql` ✅ exécutée
+- [x] `20260326_create_societe_modules.sql` ✅ exécutée
+- [x] `20260326_create_societe_data_sharing.sql` ✅ exécutée
 
 ### Environnement
 - [ ] **Ajouter** `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`
@@ -223,7 +231,16 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 ### Fonctionnalités
 - [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
 - [ ] **`user_module_permissions`** : UI de gestion des permissions par module pour chaque utilisateur dans chaque société
-- [ ] **Modules métier** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports
+
+#### Modules par société (implémenté)
+- [x] **Migration** `20260326_create_societe_modules.sql` ✅ exécutée
+- [x] **Migration** `20260326_create_societe_data_sharing.sql` ✅ exécutée
+- [x] **Menu "..." sociétés** (`societes/page.tsx`) — entrée "Paramètres" ajoutée (lien vers `/[societe_slug]/[societe_id]/settings`)
+- [x] **Page** `/[societe_id]/settings/page.tsx` — 2 onglets :
+  - **Onglet Modules** : modules disponibles depuis `tenant_modules`, toggle → upsert `societe_modules`
+  - **Onglet Partage de données** : autres sociétés du tenant, toggles par module commun → upsert `societe_data_sharing`. Seuls les modules actifs des deux côtés sont proposables.
+- [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
+- [ ] **Modules métier** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
 
 ---
 
@@ -237,3 +254,5 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 6. **`toSlug(str)`** : conversion `raison_sociale` → slug URL, utilisée partout pour la navigation société.
 7. **`dayjs/locale/fr`** : ne pas importer — incompatible Turbopack (CJS). Utiliser `dayjs` seul avec format `DD/MM/YY HH:mm`.
 8. **Module `securite`** : supprimé de `navGroup2`, `ModuleKey`, `sys_modules`. La page "Sécurité & Backup" est dans l'espace tenant à `/securite-backup`, non soumise aux permissions modules.
+9. **Hiérarchie modules** : Master active dans `sys_modules` → tenant_admin active dans `tenant_modules` → tenant_admin active dans `societe_modules` → `user_module_permissions` donne accès par utilisateur. Ne jamais sauter un niveau.
+10. **Partage de données** (`societe_data_sharing`) : directionnel par module. Source partage vers target, pas l'inverse. L'effet réel sur les requêtes SQL est à implémenter module par module lors du dev des pages métier — la table ne fait que stocker la configuration.
