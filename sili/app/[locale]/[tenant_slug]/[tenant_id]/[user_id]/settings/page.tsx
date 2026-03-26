@@ -24,7 +24,7 @@ interface Tenant {
 }
 
 interface TenantModule {
-  module_key: string
+  module: string
   is_active: boolean
 }
 
@@ -56,13 +56,17 @@ export default function TenantSettingsPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
 
+    // Récupère le tenant_id UUID complet depuis profiles (params.tenant_id est tronqué à 8 chars)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, preferred_language, preferred_currency')
+      .select('role, tenant_id, preferred_language, preferred_currency')
       .eq('id', session.user.id)
       .single()
 
     if (profile?.role !== 'tenant_admin' && profile?.role !== 'super_admin') { router.push('/login'); return }
+
+    const fullTenantId = profile?.tenant_id
+    if (!fullTenantId) return
 
     setPrefs({
       preferred_language: profile?.preferred_language || 'fr',
@@ -72,18 +76,19 @@ export default function TenantSettingsPage() {
     const [tenantRes, modulesRes, socRes, usrRes] = await Promise.all([
       supabase.from('tenants')
         .select('id, name, slug, status, max_societes, max_licences, max_storage_gb, created_at')
-        .eq('id', tenantId)
+        .eq('id', fullTenantId)
         .single(),
       supabase.from('tenant_modules')
-        .select('module_key, is_active')
-        .eq('tenant_id', tenantId),
+        .select('module, is_active')
+        .eq('tenant_id', fullTenantId)
+        .eq('is_active', true),
       supabase.from('societes')
         .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId)
+        .eq('tenant_id', fullTenantId)
         .eq('is_active', true),
       supabase.from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId),
+        .eq('tenant_id', fullTenantId),
     ])
 
     if (tenantRes.data) setTenant(tenantRes.data)
@@ -242,15 +247,11 @@ export default function TenantSettingsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
               {modules.map(m => (
                 <div
-                  key={m.module_key}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold capitalize ${
-                    m.is_active
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-400'
-                  }`}
+                  key={m.module}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold capitalize bg-indigo-50 border-indigo-200 text-indigo-700"
                 >
-                  <div className={`h-2 w-2 rounded-full shrink-0 ${m.is_active ? 'bg-indigo-500' : 'bg-slate-300'}`} />
-                  {m.module_key}
+                  <div className="h-2 w-2 rounded-full shrink-0 bg-indigo-500" />
+                  {m.module}
                 </div>
               ))}
             </div>
