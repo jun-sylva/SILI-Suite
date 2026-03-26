@@ -11,6 +11,7 @@ export default getRequestConfig(async ({requestLocale}) => {
   // dans les dossiers messages/<locale>.
   const namespaces = [
     'auth',
+    'blocked',
     'dashboard',
     'diagnostic',
     'errors',

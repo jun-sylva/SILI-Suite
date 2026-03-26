@@ -1,0 +1,17 @@
+{
+  "page_title": "Access suspended",
+  "admin_title": "Your workspace has been suspended",
+  "admin_subtitle": "Access to your workspace has been temporarily suspended by the platform administrator.",
+  "admin_contact_intro": "To restore your access, please contact the platform Master:",
+  "user_title": "Access restricted",
+  "user_subtitle": "Your access to this workspace has been suspended.",
+  "user_contact_intro": "Please contact your administrator to restore your access.",
+  "contact_name": "Name",
+  "contact_phone": "Phone",
+  "contact_email": "Email",
+  "master_name": "Michael Biya",
+  "master_phone": "+237 93 48 06 42",
+  "master_email": "m.biya@bbmediatech.com",
+  "btn_logout": "Sign out",
+  "tag_suspended": "Suspended account"
+}

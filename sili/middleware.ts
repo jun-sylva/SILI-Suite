@@ -117,6 +117,31 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Vérification statut tenant — bloquer l'accès si le tenant est suspendu
+  // (ne s'applique pas aux routes Master /admin/* ni à la page /tenant-bloque elle-même)
+  if (!pathWithoutLocale.startsWith('/admin') && !pathWithoutLocale.startsWith('/tenant-bloque')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, tenant_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profile?.tenant_id) {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('status')
+        .eq('id', profile.tenant_id)
+        .single();
+
+      if (tenant?.status === 'bloqué') {
+        const roleParam = profile.role === 'tenant_admin' ? 'admin' : 'user'
+        return NextResponse.redirect(
+          new URL(`/${userLocale}/tenant-bloque?role=${roleParam}`, request.url)
+        );
+      }
+    }
+  }
+
   return response;
 }
 

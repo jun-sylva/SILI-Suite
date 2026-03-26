@@ -100,7 +100,10 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 #### `/[user_id]/utilisateurs`
 - Liste utilisateurs + quota licences
 - Création : rôle admin ou user, si `tenant_user` → assignation sociétés obligatoire
-- Appel API : `POST /api/admin/create-user`
+- Champ **Confirmer Mot de passe** avec indicateur de correspondance (vert/rouge)
+- **Indicateur de robustesse** : barre 4 segments + 4 critères visuels (8 chars, majuscule, chiffre, spécial)
+- Validation bloquante côté client + côté serveur
+- Appel API : `POST /api/admin/create-user` (avec timeout 30s + try/catch)
 
 #### `/[user_id]/securite-backup`
 **Fichier** : `sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/securite-backup/page.tsx`
@@ -165,11 +168,12 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 ## API Routes
 
 ### `POST /api/admin/create-user`
-Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
-1. `supabase.auth.admin.createUser`
-2. `upsert` dans `profiles`
-3. Si `tenant_user` : `insert` dans `user_societes`
-4. Rollback si étape 2 ou 3 échoue
+Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
+1. Guard : échec rapide si `SUPABASE_SERVICE_ROLE_KEY` absente (évite hang infini)
+2. `supabase.auth.admin.createUser`
+3. `upsert` dans `profiles`
+4. Si `tenant_user` : `insert` dans `user_societes`
+5. Rollback si étape 3 ou 4 échoue
 
 ---
 
@@ -228,7 +232,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
 - [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
 
 ### Environnement
-- [ ] **Ajouter** `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`
+- [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
 
 ### Fonctionnalités
 - [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
@@ -243,6 +247,32 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local`.
   - **Onglet Partage de données** : autres sociétés du tenant, toggles par module commun → upsert `societe_data_sharing`. Seuls les modules actifs des deux côtés sont proposables.
 - [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
 - [ ] **Modules métier** : pages Vente, Achat, Stock, RH, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
+
+---
+
+## Contact Master (plateforme)
+
+| Champ | Valeur |
+|---|---|
+| Nom | Michael Biya |
+| Téléphone | +237 93 48 06 42 |
+| Email | m.biya@bbmediatech.com |
+
+Affiché sur la page `/tenant-bloque` pour les `tenant_admin` dont le tenant est suspendu.
+
+---
+
+## Règles métier importantes
+
+### Désactivation de module — rétention des données
+Désactiver un module (au niveau tenant via Master, ou au niveau société via `societe_modules`) **ne supprime jamais les données**. Seul `is_active = false` est positionné. Les données restent en base et sont réactivées immédiatement si le module est réactivé.
+
+### Blocage d'un tenant par le Master
+- Le Master positionne `tenants.status = 'bloqué'`
+- Le middleware vérifie ce statut à chaque requête pour les routes non-admin
+- `tenant_admin` bloqué → redirigé vers `/tenant-bloque?role=admin` → voit les coordonnées du Master (Michael Biya)
+- `tenant_user` bloqué → redirigé vers `/tenant-bloque?role=user` → voit un message pour contacter son admin
+- La page Master `/admin/[adminId]/tenants` n'est pas affectée (exemptée du check)
 
 ---
 

@@ -316,8 +316,8 @@ export default function TenantSettingsPage() {
       </Card>
 
       {/* Support banner */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-4">
-        <div className="flex items-center gap-3 flex-1">
+      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
             <Mail className="h-5 w-5 text-indigo-600" />
           </div>
@@ -326,12 +326,26 @@ export default function TenantSettingsPage() {
             <p className="text-sm text-indigo-600 mt-0.5">{t('contact_support_desc')}</p>
           </div>
         </div>
-        <a
-          href="mailto:support@sili.app"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition text-sm whitespace-nowrap shadow-sm"
-        >
-          support@sili.app
-        </a>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 border border-indigo-100">
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider w-14 shrink-0">Nom</span>
+            <span className="text-sm font-bold text-indigo-800">Michael Biya</span>
+          </div>
+          <a
+            href="tel:+237934806420"
+            className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 border border-indigo-100 hover:border-indigo-300 transition"
+          >
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider w-14 shrink-0">Tél.</span>
+            <span className="text-sm font-bold text-indigo-700">+237 93 48 06 42</span>
+          </a>
+          <a
+            href="mailto:m.biya@bbmediatech.com"
+            className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 border border-indigo-100 hover:border-indigo-300 transition"
+          >
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider w-14 shrink-0">Email</span>
+            <span className="text-sm font-bold text-indigo-700 truncate">m.biya@bbmediatech.com</span>
+          </a>
+        </div>
       </div>
     </div>
   )
