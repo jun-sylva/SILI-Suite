@@ -271,8 +271,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_rh_employes.sql` | DROP + CREATE `rh_employes` + trigger `generate_matricule()` (8 chiffres uniques) + RLS + indexes | ✅ |
 | `20260326_rh_presences.sql` | CREATE `rh_presences` (pointage quotidien) + RLS (lecture/écriture même tenant) + indexes | ✅ |
 | `20260326_tenant_settings_timezone.sql` | `ALTER TABLE tenants ADD COLUMN timezone text DEFAULT 'Africa/Douala'` | ✅ |
-| `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ⚠️ À exécuter |
-| `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ⚠️ À exécuter |
+| `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ✅ |
+| `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ✅ |
 
 ---
 
