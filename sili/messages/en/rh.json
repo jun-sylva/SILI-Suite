@@ -134,6 +134,8 @@
   "statut_mission": "On mission",
 
   "recap_month_label": "Month",
+  "recap_mes_title": "My Summary",
+  "recap_global_title": "Global Summary",
   "recap_empty": "No attendance data for this period.",
   "recap_jours_presents": "d. present",
   "recap_jours_absents": "d. absent",

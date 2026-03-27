@@ -661,7 +661,7 @@ export default function PresencesPage() {
                     if (!myEmp) return null
                     return (
                       <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-3">{t('conges_mes_title')}</h3>
+                        <h3 className="text-sm font-bold text-slate-700 mb-3">{t('recap_mes_title')}</h3>
                         <div className="overflow-x-auto rounded-xl border border-slate-200">
                           <table className="text-xs min-w-max w-full">
                             <thead className="bg-slate-50 text-slate-500 uppercase tracking-wide">
@@ -706,7 +706,7 @@ export default function PresencesPage() {
                   {/* ── Récapitulatif global (gestionnaire+) ── */}
                   {canManage && (
                     <div>
-                      <h3 className="text-sm font-bold text-slate-700 mb-3">Récapitulatif global</h3>
+                      <h3 className="text-sm font-bold text-slate-700 mb-3">{t('recap_global_title')}</h3>
                       {employees.length === 0 ? (
                         <p className="text-sm text-slate-400 text-center py-8">{t('recap_empty')}</p>
                       ) : (

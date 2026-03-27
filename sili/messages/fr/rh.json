@@ -134,6 +134,8 @@
   "statut_mission": "Mission",
 
   "recap_month_label": "Mois",
+  "recap_mes_title": "Mon Récapitulatif",
+  "recap_global_title": "Récapitulatif global",
   "recap_empty": "Aucune donnée de présence pour cette période.",
   "recap_jours_presents": "j. présents",
   "recap_jours_absents": "j. absents",
