@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { uploadFile, uniqueFilename } from '@/lib/storage'
 import {
   Loader2, ShieldOff, Clock, BarChart3, Calendar,
   CheckCircle2, XCircle, LogIn, LogOut, Plus, X,
@@ -49,10 +50,19 @@ type Conge = {
 
 type CongeForm = {
   type_conge: string
+  typologie:  'daily' | 'hourly'
   date_debut: string
-  date_fin: string
-  motif: string
+  date_fin:   string
+  nb_heures:  string
+  motif:      string
 }
+
+const CONGE_ALLOWED_FORMATS = [
+  'image/jpeg', 'image/png', 'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+const CONGE_MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 Mo
 
 type TabId = 'pointage' | 'recap' | 'conges'
 
@@ -144,7 +154,8 @@ export default function PresencesPage() {
   const [historyConges, setHistoryConges] = useState<Conge[]>([])
   const [congesLoading, setCongesLoading] = useState(false)
   const [congeModal, setCongeModal]     = useState(false)
-  const [congeForm, setCongeForm]       = useState<CongeForm>({ type_conge: 'annuel', date_debut: '', date_fin: '', motif: '' })
+  const [congeForm, setCongeForm]       = useState<CongeForm>({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
+  const [justificatifFile, setJustificatifFile] = useState<File | null>(null)
   const [savingConge, setSavingConge]   = useState(false)
   const [actionId, setActionId]         = useState<string | null>(null)
   const [comment, setComment]           = useState('')
@@ -352,29 +363,64 @@ export default function PresencesPage() {
   }
 
   async function handleSubmitConge() {
-    if (!myEmployeId) return
-    if (!congeForm.date_debut || !congeForm.date_fin) return
+    if (!myEmployeId || !congeForm.date_debut) return
+    if (congeForm.typologie === 'daily' && !congeForm.date_fin) return
+    if (congeForm.typologie === 'hourly' && !congeForm.nb_heures) return
+
+    if (justificatifFile) {
+      if (!CONGE_ALLOWED_FORMATS.includes(justificatifFile.type)) {
+        toast.error(t('conge_justificatif_format_error')); return
+      }
+      if (justificatifFile.size > CONGE_MAX_FILE_SIZE) {
+        toast.error(t('conge_justificatif_size_error')); return
+      }
+    }
+
     setSavingConge(true)
-    const nb = calcNbJours(congeForm.date_debut, congeForm.date_fin)
-    const { error } = await supabase.from('rh_conges').insert({
+
+    const payload: Record<string, unknown> = {
       tenant_id:   fullTenantId,
       societe_id:  societeId,
       employe_id:  myEmployeId,
       type_conge:  congeForm.type_conge,
+      typologie:   congeForm.typologie,
       date_debut:  congeForm.date_debut,
-      date_fin:    congeForm.date_fin,
-      nb_jours:    nb,
       motif:       congeForm.motif || null,
       statut:      'en_attente',
       created_by:  currentUserId,
-    })
-    if (error) toast.error(t('toast_conge_submit_error'))
-    else {
-      toast.success(t('toast_conge_submit_success'))
-      setCongeModal(false)
-      setCongeForm({ type_conge: 'annuel', date_debut: '', date_fin: '', motif: '' })
-      await fetchConges()
     }
+    if (congeForm.typologie === 'daily') {
+      payload.date_fin = congeForm.date_fin
+      payload.nb_jours = calcNbJours(congeForm.date_debut, congeForm.date_fin)
+    } else {
+      payload.nb_heures = parseFloat(congeForm.nb_heures)
+    }
+
+    const { data: inserted, error } = await supabase
+      .from('rh_conges')
+      .insert(payload)
+      .select('id')
+      .single()
+
+    if (error) {
+      toast.error(t('toast_conge_submit_error'))
+      setSavingConge(false)
+      return
+    }
+
+    if (justificatifFile && inserted) {
+      const filename = uniqueFilename(justificatifFile.name)
+      const path = `${fullTenantId}/societes/${societeId}/rh/conges/${inserted.id}/justificatif_${filename}`
+      const { error: uploadError } = await uploadFile(path, justificatifFile, { contentType: justificatifFile.type })
+      if (uploadError) toast.error(t('conge_justificatif_upload_error'))
+      else await supabase.from('rh_conges').update({ justificatif_path: path }).eq('id', inserted.id)
+    }
+
+    toast.success(t('toast_conge_submit_success'))
+    setCongeModal(false)
+    setCongeForm({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
+    setJustificatifFile(null)
+    await fetchConges()
     setSavingConge(false)
   }
 
@@ -865,6 +911,7 @@ export default function PresencesPage() {
             </div>
 
             <div className="space-y-3">
+              {/* Type */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_type')}</label>
                 <select value={congeForm.type_conge} onChange={e => setCongeForm(p => ({ ...p, type_conge: e.target.value }))}
@@ -872,27 +919,76 @@ export default function PresencesPage() {
                   {TYPE_CONGE_OPTIONS.map(k => <option key={k} value={k}>{t(TYPE_CONGE_KEYS[k] as any)}</option>)}
                 </select>
               </div>
+
+              {/* Modalité */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_typologie')}</label>
+                <div className="flex gap-2">
+                  {(['daily', 'hourly'] as const).map(typ => (
+                    <label key={typ} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border-2 cursor-pointer text-sm font-bold transition-colors ${
+                      congeForm.typologie === typ
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}>
+                      <input type="radio" name="typologie_pres" value={typ}
+                        checked={congeForm.typologie === typ}
+                        onChange={() => setCongeForm(p => ({ ...p, typologie: typ, date_fin: '', nb_heures: '' }))}
+                        className="sr-only"
+                      />
+                      {t(`conge_typologie_${typ}` as any)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_debut')}</label>
                   <input type="date" value={congeForm.date_debut} onChange={e => setCongeForm(p => ({ ...p, date_debut: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 outline-none" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_fin')}</label>
-                  <input type="date" value={congeForm.date_fin} onChange={e => setCongeForm(p => ({ ...p, date_fin: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 outline-none" />
-                </div>
+                {congeForm.typologie === 'daily' ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_fin')}</label>
+                    <input type="date" value={congeForm.date_fin} onChange={e => setCongeForm(p => ({ ...p, date_fin: e.target.value }))}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 outline-none" />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_nb_heures')}</label>
+                    <input type="number" min="0.5" max="24" step="0.5" value={congeForm.nb_heures}
+                      onChange={e => setCongeForm(p => ({ ...p, nb_heures: e.target.value }))}
+                      placeholder="ex: 4"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 outline-none" />
+                  </div>
+                )}
               </div>
-              {congeForm.date_debut && congeForm.date_fin && (
+
+              {/* Durée calculée (daily) */}
+              {congeForm.typologie === 'daily' && congeForm.date_debut && congeForm.date_fin && (
                 <p className="text-xs text-indigo-600 font-medium">
                   {t('conge_field_nb_jours')} : <strong>{calcNbJours(congeForm.date_debut, congeForm.date_fin)}</strong>
                 </p>
               )}
+
+              {/* Motif */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_motif')}</label>
                 <textarea value={congeForm.motif} onChange={e => setCongeForm(p => ({ ...p, motif: e.target.value }))}
                   rows={2} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-indigo-500 outline-none resize-none" />
+              </div>
+
+              {/* Justificatif */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('conge_field_justificatif')}</label>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                  onChange={e => setJustificatifFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">{t('conge_justificatif_hint')}</p>
               </div>
             </div>
 
@@ -900,8 +996,11 @@ export default function PresencesPage() {
               <button onClick={() => setCongeModal(false)} className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
                 {t('btn_cancel')}
               </button>
-              <button onClick={handleSubmitConge} disabled={savingConge || !congeForm.date_debut || !congeForm.date_fin}
-                className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              <button
+                onClick={handleSubmitConge}
+                disabled={savingConge || !congeForm.date_debut || (congeForm.typologie === 'daily' ? !congeForm.date_fin : !congeForm.nb_heures)}
+                className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
                 {savingConge ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {t('conge_submit')}
               </button>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { uploadFile, uniqueFilename } from '@/lib/storage'
 import {
   ArrowLeft, Loader2, LogIn, LogOut, CheckCircle2,
   Clock, Search, X, ChevronDown, ChevronUp,
@@ -32,19 +33,30 @@ type Presence = {
 type Conge = {
   id: string
   type_conge: string
+  typologie: 'daily' | 'hourly'
   date_debut: string
-  date_fin: string
-  nb_jours: number
+  date_fin: string | null
+  nb_jours: number | null
+  nb_heures: number | null
   statut: string
   motif: string | null
 }
 
 type CongeForm = {
   type_conge: string
+  typologie:  'daily' | 'hourly'
   date_debut: string
-  date_fin: string
-  motif: string
+  date_fin:   string
+  nb_heures:  string
+  motif:      string
 }
+
+const CONGE_ALLOWED_FORMATS = [
+  'image/jpeg', 'image/png', 'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+const CONGE_MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 Mo
 
 // ── Constantes ─────────────────────────────────────────────
 
@@ -107,10 +119,11 @@ export default function PortailPage() {
   const [savingExit,   setSavingExit]   = useState(false)
 
   // ── Congé ────────────────────────────────────────────────
-  const [congeOpen,   setCongeOpen]   = useState(false)
-  const [congeForm,   setCongeForm]   = useState<CongeForm>({ type_conge: 'annuel', date_debut: '', date_fin: '', motif: '' })
-  const [savingConge, setSavingConge] = useState(false)
-  const [myConges,    setMyConges]    = useState<Conge[]>([])
+  const [congeOpen,        setCongeOpen]        = useState(false)
+  const [congeForm,        setCongeForm]        = useState<CongeForm>({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
+  const [justificatifFile, setJustificatifFile] = useState<File | null>(null)
+  const [savingConge,      setSavingConge]      = useState(false)
+  const [myConges,         setMyConges]         = useState<Conge[]>([])
 
   // ── PIN modal ────────────────────────────────────────────
   const [pinOpen,  setPinOpen]  = useState(false)
@@ -181,7 +194,8 @@ export default function PortailPage() {
     setSearch(`${emp.prenom} ${emp.nom}`)
     setShowSugg(false)
     setCongeOpen(false)
-    setCongeForm({ type_conge: 'annuel', date_debut: '', date_fin: '', motif: '' })
+    setCongeForm({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
+    setJustificatifFile(null)
     await fetchTodayPresence(emp.id)
     await fetchConges(emp.id)
   }
@@ -248,7 +262,7 @@ export default function PortailPage() {
   async function fetchConges(employeId: string) {
     const { data } = await supabase
       .from('rh_conges')
-      .select('id, type_conge, date_debut, date_fin, nb_jours, statut, motif')
+      .select('id, type_conge, typologie, date_debut, date_fin, nb_jours, nb_heures, statut, motif')
       .eq('employe_id', employeId)
       .order('created_at', { ascending: false })
       .limit(5)
@@ -256,27 +270,64 @@ export default function PortailPage() {
   }
 
   async function handleCongeSubmit() {
-    if (!selected || !congeForm.date_debut || !congeForm.date_fin) return
+    if (!selected || !fullTenantId || !congeForm.date_debut) return
+    if (congeForm.typologie === 'daily' && !congeForm.date_fin) return
+    if (congeForm.typologie === 'hourly' && !congeForm.nb_heures) return
+
+    if (justificatifFile) {
+      if (!CONGE_ALLOWED_FORMATS.includes(justificatifFile.type)) {
+        toast.error(t('conge_justificatif_format_error')); return
+      }
+      if (justificatifFile.size > CONGE_MAX_FILE_SIZE) {
+        toast.error(t('conge_justificatif_size_error')); return
+      }
+    }
+
     setSavingConge(true)
-    const { error } = await supabase.from('rh_conges').insert({
+
+    const payload: Record<string, unknown> = {
       tenant_id:  fullTenantId,
       societe_id: societeId,
       employe_id: selected.id,
       type_conge: congeForm.type_conge,
+      typologie:  congeForm.typologie,
       date_debut: congeForm.date_debut,
-      date_fin:   congeForm.date_fin,
-      nb_jours:   calcNbJours(congeForm.date_debut, congeForm.date_fin),
       motif:      congeForm.motif || null,
       statut:     'en_attente',
       created_by: currentUserId,
-    })
-    if (error) toast.error(t('toast_conge_submit_error'))
-    else {
-      toast.success(t('toast_conge_submit_success'))
-      setCongeForm({ type_conge: 'annuel', date_debut: '', date_fin: '', motif: '' })
-      setCongeOpen(false)
-      await fetchConges(selected.id)
     }
+    if (congeForm.typologie === 'daily') {
+      payload.date_fin = congeForm.date_fin
+      payload.nb_jours = calcNbJours(congeForm.date_debut, congeForm.date_fin)
+    } else {
+      payload.nb_heures = parseFloat(congeForm.nb_heures)
+    }
+
+    const { data: inserted, error } = await supabase
+      .from('rh_conges')
+      .insert(payload)
+      .select('id')
+      .single()
+
+    if (error) {
+      toast.error(t('toast_conge_submit_error'))
+      setSavingConge(false)
+      return
+    }
+
+    if (justificatifFile && inserted) {
+      const filename = uniqueFilename(justificatifFile.name)
+      const path = `${fullTenantId}/societes/${societeId}/rh/conges/${inserted.id}/justificatif_${filename}`
+      const { error: uploadError } = await uploadFile(path, justificatifFile, { contentType: justificatifFile.type })
+      if (uploadError) toast.error(t('conge_justificatif_upload_error'))
+      else await supabase.from('rh_conges').update({ justificatif_path: path }).eq('id', inserted.id)
+    }
+
+    toast.success(t('toast_conge_submit_success'))
+    setCongeForm({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
+    setJustificatifFile(null)
+    setCongeOpen(false)
+    await fetchConges(selected.id)
     setSavingConge(false)
   }
 
@@ -475,20 +526,45 @@ export default function PortailPage() {
                 </button>
 
                 {congeOpen && (
-                  <div className="px-5 pb-5 space-y-3 border-t border-slate-100">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_type_conge')}</label>
-                        <select
-                          value={congeForm.type_conge}
-                          onChange={e => setCongeForm(p => ({ ...p, type_conge: e.target.value }))}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                        >
-                          {TYPE_CONGE_OPTIONS.map(tc => (
-                            <option key={tc} value={tc}>{t(`type_conge_${tc}` as any)}</option>
-                          ))}
-                        </select>
+                  <div className="px-5 pb-5 space-y-3 border-t border-slate-100 pt-3">
+
+                    {/* Type de congé */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_type_conge')}</label>
+                      <select
+                        value={congeForm.type_conge}
+                        onChange={e => setCongeForm(p => ({ ...p, type_conge: e.target.value }))}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      >
+                        {TYPE_CONGE_OPTIONS.map(tc => (
+                          <option key={tc} value={tc}>{t(`type_conge_${tc}` as any)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Modalité */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('conge_field_typologie')}</label>
+                      <div className="flex gap-3">
+                        {(['daily', 'hourly'] as const).map(typ => (
+                          <label key={typ} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 cursor-pointer text-sm font-bold transition-colors ${
+                            congeForm.typologie === typ
+                              ? 'border-violet-500 bg-violet-50 text-violet-700'
+                              : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                          }`}>
+                            <input type="radio" name="typologie" value={typ}
+                              checked={congeForm.typologie === typ}
+                              onChange={() => setCongeForm(p => ({ ...p, typologie: typ, date_fin: '', nb_heures: '' }))}
+                              className="sr-only"
+                            />
+                            {t(`conge_typologie_${typ}` as any)}
+                          </label>
+                        ))}
                       </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_date_debut')}</label>
                         <input type="date" value={congeForm.date_debut}
@@ -496,30 +572,58 @@ export default function PortailPage() {
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_date_fin')}</label>
-                        <input type="date" value={congeForm.date_fin}
-                          onChange={e => setCongeForm(p => ({ ...p, date_fin: e.target.value }))}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_motif')}</label>
-                        <input type="text" value={congeForm.motif}
-                          onChange={e => setCongeForm(p => ({ ...p, motif: e.target.value }))}
-                          placeholder="Optionnel"
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
-                        />
-                      </div>
+                      {congeForm.typologie === 'daily' ? (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_date_fin')}</label>
+                          <input type="date" value={congeForm.date_fin}
+                            onChange={e => setCongeForm(p => ({ ...p, date_fin: e.target.value }))}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('conge_field_nb_heures')}</label>
+                          <input type="number" min="0.5" max="24" step="0.5" value={congeForm.nb_heures}
+                            onChange={e => setCongeForm(p => ({ ...p, nb_heures: e.target.value }))}
+                            placeholder="ex: 4"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                          />
+                        </div>
+                      )}
                     </div>
-                    {congeForm.date_debut && congeForm.date_fin && (
+
+                    {/* Durée calculée (daily) */}
+                    {congeForm.typologie === 'daily' && congeForm.date_debut && congeForm.date_fin && (
                       <p className="text-xs text-slate-500">
                         Durée : <span className="font-bold text-slate-700">{calcNbJours(congeForm.date_debut, congeForm.date_fin)} jour(s)</span>
                       </p>
                     )}
+
+                    {/* Motif */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('field_motif')}</label>
+                      <input type="text" value={congeForm.motif}
+                        onChange={e => setCongeForm(p => ({ ...p, motif: e.target.value }))}
+                        placeholder="Optionnel"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      />
+                    </div>
+
+                    {/* Justificatif */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('conge_field_justificatif')}</label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                        onChange={e => setJustificatifFile(e.target.files?.[0] ?? null)}
+                        className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">{t('conge_justificatif_hint')}</p>
+                    </div>
+
                     <button
                       onClick={handleCongeSubmit}
-                      disabled={savingConge || !congeForm.date_debut || !congeForm.date_fin}
+                      disabled={savingConge || !congeForm.date_debut || (congeForm.typologie === 'daily' ? !congeForm.date_fin : !congeForm.nb_heures)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600 text-white font-bold text-sm rounded-xl hover:bg-violet-700 disabled:opacity-40 transition shadow-sm"
                     >
                       {savingConge && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -541,7 +645,11 @@ export default function PortailPage() {
                         <div>
                           <p className="font-medium text-slate-700">{t(`type_conge_${c.type_conge}` as any)}</p>
                           <p className="text-xs text-slate-400">
-                            {dayjs(c.date_debut).format('DD/MM/YY')} → {dayjs(c.date_fin).format('DD/MM/YY')} · {c.nb_jours}j
+                            {dayjs(c.date_debut).format('DD/MM/YY')}
+                            {c.typologie === 'hourly'
+                              ? ` · ${c.nb_heures}h`
+                              : ` → ${c.date_fin ? dayjs(c.date_fin).format('DD/MM/YY') : '?'} · ${c.nb_jours}j`
+                            }
                           </p>
                         </div>
                         <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${CONGE_STATUT_STYLES[c.statut] ?? 'bg-slate-100 text-slate-500'}`}>
