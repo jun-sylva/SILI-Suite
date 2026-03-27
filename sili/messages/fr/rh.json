@@ -176,5 +176,30 @@
 
   "acces_refuse_title": "Accès refusé",
   "acces_refuse_desc": "Vous devez avoir au minimum le rôle Gestionnaire sur le module RH pour accéder à la gestion des employés.",
-  "acces_refuse_employes_tab": "Employés (accès restreint)"
+  "acces_refuse_employes_tab": "Employés (accès restreint)",
+
+  "btn_documents": "Documents",
+  "docs_drawer_title": "Documents officiels",
+  "docs_drawer_subtitle": "Pièces d'identité et documents RH",
+  "docs_empty": "Aucun document enregistré.",
+  "docs_add_title": "Ajouter un document",
+  "docs_type_label": "Type de document",
+  "docs_type_cni": "Carte Nationale d'Identité (CNI)",
+  "docs_type_passeport": "Passeport",
+  "docs_type_cnps": "Carte CNPS",
+  "docs_type_diplome": "Diplôme / Attestation",
+  "docs_type_contrat": "Contrat de travail",
+  "docs_type_autre": "Autre document",
+  "docs_file_label": "Fichier (PDF, JPG, PNG — max 5 Mo)",
+  "docs_upload_btn": "Ajouter",
+  "docs_uploading": "Chargement...",
+  "docs_download": "Télécharger",
+  "docs_delete": "Supprimer",
+  "docs_upload_success": "Document ajouté avec succès",
+  "docs_upload_error": "Erreur lors de l'ajout du document",
+  "docs_delete_success": "Document supprimé",
+  "docs_delete_error": "Erreur lors de la suppression",
+  "docs_size_error": "Fichier trop volumineux (max 5 Mo)",
+  "docs_format_error": "Format non supporté. Utilisez PDF, JPG ou PNG.",
+  "docs_uploaded_at": "Ajouté le"
 }

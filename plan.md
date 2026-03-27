@@ -139,6 +139,8 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 - **Modal création/édition** : 4 fieldsets (Identité, Contact, Poste & Contrat, Documents officiels)
 - **Matricule** : auto-généré via trigger Postgres (8 chiffres uniques), affiché en lecture seule
 - **Statuts** : actif (emerald), inactif (slate), suspendu (red), conge (amber)
+- **Poste / Département** : listes déroulantes prédéfinies (11 postes, 7 départements)
+- **Documents officiels** : drawer latéral par employé — upload CNI, Passeport, CNPS, Diplôme, Contrat, Autre. Storage : `{tenant_id}/societes/{societe_id}/rh/employes/{employe_id}/`. Table `rh_employe_documents`. Téléchargement via URL signée (60s). Max 5 Mo, formats PDF/JPG/PNG.
 - **i18n** : namespace `rh` (FR + EN)
 
 ### Espace Master (`/admin/[adminId]/`)
@@ -270,6 +272,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_rh_presences.sql` | CREATE `rh_presences` (pointage quotidien) + RLS (lecture/écriture même tenant) + indexes | ✅ |
 | `20260326_tenant_settings_timezone.sql` | `ALTER TABLE tenants ADD COLUMN timezone text DEFAULT 'Africa/Douala'` | ✅ |
 | `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ⚠️ À exécuter |
+| `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ⚠️ À exécuter |
 
 ---
 

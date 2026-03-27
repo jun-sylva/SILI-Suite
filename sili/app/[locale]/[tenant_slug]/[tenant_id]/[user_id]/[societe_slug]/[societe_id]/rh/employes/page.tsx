@@ -7,7 +7,9 @@ import { supabase } from '@/lib/supabase/client'
 import {
   Users, UserCheck, Plus, Loader2, X, CheckCircle2,
   AlertCircle, Pencil, ChevronDown, ShieldOff,
+  FileText, Download, Trash2,
 } from 'lucide-react'
+import { uploadFile, deleteFiles, uniqueFilename } from '@/lib/storage'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import dayjs from 'dayjs'
@@ -84,6 +86,19 @@ const STATUT_STYLES: Record<string, string> = {
   conge:     'bg-amber-100 text-amber-700',
 }
 
+const DOC_TYPES = ['cni', 'passeport', 'cnps', 'diplome', 'contrat', 'autre'] as const
+const ALLOWED_FORMATS = ['application/pdf', 'image/jpeg', 'image/png']
+const MAX_FILE_SIZE   = 5 * 1024 * 1024 // 5 MB
+
+type RhDoc = {
+  id: string
+  type_doc: string
+  nom_fichier: string
+  storage_path: string
+  taille_kb: number | null
+  created_at: string
+}
+
 const CONTRATS     = ['CDI', 'CDD', 'Stage', 'Freelance', 'Consultant']
 const STATUTS      = ['actif', 'inactif', 'suspendu', 'conge']
 const POSTES       = ['Directeur', 'Manager', 'Chef de Projet', 'Développeur', 'Designer', 'Commercial', 'Comptable', 'Assistant', 'Technicien', 'Consultant', 'Autre']
@@ -109,6 +124,15 @@ export default function EmployesPage() {
   const [fullTenantId, setFullTenantId]   = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
   const [canEdit, setCanEdit]             = useState(false)
+
+  // Drawer Documents
+  const [docsOpen, setDocsOpen]           = useState(false)
+  const [docsEmployee, setDocsEmployee]   = useState<{ id: string; nom: string; prenom: string; matricule: string } | null>(null)
+  const [employeeDocs, setEmployeeDocs]   = useState<RhDoc[]>([])
+  const [docsLoading, setDocsLoading]     = useState(false)
+  const [uploadType, setUploadType]       = useState<string>('cni')
+  const [uploadFileObj, setUploadFileObj] = useState<File | null>(null)
+  const [uploading, setUploading]         = useState(false)
 
   // Modal
   const [modalOpen, setModalOpen]   = useState(false)
@@ -356,6 +380,75 @@ export default function EmployesPage() {
       setForm(prev => ({ ...prev, [key]: e.target.value })),
   })
 
+  // ── Documents drawer ─────────────────────────────────────
+
+  async function openDocsDrawer(emp: { id: string; nom: string; prenom: string; matricule: string }) {
+    setDocsEmployee(emp)
+    setDocsOpen(true)
+    setUploadType('cni')
+    setUploadFileObj(null)
+    await fetchDocs(emp.id)
+  }
+
+  async function fetchDocs(employeId: string) {
+    setDocsLoading(true)
+    const { data } = await supabase
+      .from('rh_employe_documents')
+      .select('id, type_doc, nom_fichier, storage_path, taille_kb, created_at')
+      .eq('employe_id', employeId)
+      .order('created_at', { ascending: false })
+    setEmployeeDocs(data ?? [])
+    setDocsLoading(false)
+  }
+
+  async function handleUploadDoc() {
+    if (!uploadFileObj || !docsEmployee) return
+    if (!ALLOWED_FORMATS.includes(uploadFileObj.type)) { toast.error(t('docs_format_error')); return }
+    if (uploadFileObj.size > MAX_FILE_SIZE) { toast.error(t('docs_size_error')); return }
+
+    setUploading(true)
+    const filename   = uniqueFilename(uploadFileObj.name)
+    const storagePath = `${fullTenantId}/societes/${societeId}/rh/employes/${docsEmployee.id}/${uploadType}_${filename}`
+
+    const { error: uploadError } = await uploadFile(storagePath, uploadFileObj)
+    if (uploadError) { toast.error(t('docs_upload_error')); setUploading(false); return }
+
+    const { error: dbError } = await supabase.from('rh_employe_documents').insert({
+      tenant_id:    fullTenantId,
+      societe_id:   societeId,
+      employe_id:   docsEmployee.id,
+      type_doc:     uploadType,
+      nom_fichier:  uploadFileObj.name,
+      storage_path: storagePath,
+      taille_kb:    Math.round(uploadFileObj.size / 1024),
+      uploaded_by:  currentUserId,
+    })
+
+    if (dbError) {
+      await deleteFiles([storagePath])
+      toast.error(t('docs_upload_error'))
+    } else {
+      toast.success(t('docs_upload_success'))
+      setUploadFileObj(null)
+      await fetchDocs(docsEmployee.id)
+    }
+    setUploading(false)
+  }
+
+  async function handleDeleteDoc(doc: RhDoc) {
+    const { error: storageError } = await deleteFiles([doc.storage_path])
+    if (storageError) { toast.error(t('docs_delete_error')); return }
+    const { error: dbError } = await supabase.from('rh_employe_documents').delete().eq('id', doc.id)
+    if (dbError) { toast.error(t('docs_delete_error')); return }
+    toast.success(t('docs_delete_success'))
+    if (docsEmployee) await fetchDocs(docsEmployee.id)
+  }
+
+  async function handleDownloadDoc(doc: RhDoc) {
+    const { data } = await supabase.storage.from('sili-files').createSignedUrl(doc.storage_path, 60)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
   // ── Render ────────────────────────────────────────────────
 
   if (loading) {
@@ -431,6 +524,7 @@ export default function EmployesPage() {
                   <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('col_statut')}</th>
                   <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fiche</th>
                   {canEdit && <th className="px-4 py-3.5" />}
+                  {canEdit && <th className="px-4 py-3.5" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -485,6 +579,18 @@ export default function EmployesPage() {
                         </button>
                       </td>
                     )}
+                    {canEdit && emp.fiche && (
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => openDocsDrawer({ id: emp.fiche!.id, nom: emp.fiche!.nom ?? '', prenom: emp.fiche!.prenom ?? '', matricule: emp.fiche!.matricule })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {t('btn_documents')}
+                        </button>
+                      </td>
+                    )}
+                    {canEdit && !emp.fiche && <td />}
                   </tr>
                 ))}
               </tbody>
@@ -538,6 +644,7 @@ export default function EmployesPage() {
                   <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('col_embauche')}</th>
                   <th className="px-4 py-3.5 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('col_statut')}</th>
                   {canEdit && <th className="px-4 py-3.5" />}
+                  {canEdit && <th className="px-4 py-3.5" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -583,6 +690,17 @@ export default function EmployesPage() {
                         </button>
                       </td>
                     )}
+                    {canEdit && (
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => openDocsDrawer({ id: emp.id, nom: emp.nom, prenom: emp.prenom, matricule: emp.matricule })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {t('btn_documents')}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -590,6 +708,116 @@ export default function EmployesPage() {
           </div>
         )}
       </Card>
+
+      {/* ── Drawer Documents ── */}
+      {docsOpen && docsEmployee && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[90] bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setDocsOpen(false)}
+          />
+          {/* Panel */}
+          <div className="fixed right-0 top-0 h-full w-full max-w-md z-[100] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 p-5 bg-slate-50/50 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-teal-100 text-teal-600 rounded-xl">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">{t('docs_drawer_title')}</p>
+                  <p className="text-xs text-slate-500">{docsEmployee.prenom} {docsEmployee.nom} · {docsEmployee.matricule}</p>
+                </div>
+              </div>
+              <button onClick={() => setDocsOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+
+              {/* Upload */}
+              <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">{t('docs_add_title')}</p>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('docs_type_label')}</label>
+                  <select
+                    value={uploadType}
+                    onChange={e => setUploadType(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >
+                    {DOC_TYPES.map(dt => (
+                      <option key={dt} value={dt}>{t(`docs_type_${dt}` as any)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">{t('docs_file_label')}</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={e => setUploadFileObj(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer"
+                  />
+                </div>
+                <button
+                  onClick={handleUploadDoc}
+                  disabled={!uploadFileObj || uploading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-teal-600 text-white font-bold text-sm rounded-xl hover:bg-teal-700 disabled:opacity-40 transition shadow-sm"
+                >
+                  {uploading ? <><Loader2 className="h-4 w-4 animate-spin" />{t('docs_uploading')}</> : t('docs_upload_btn')}
+                </button>
+              </div>
+
+              {/* Liste documents */}
+              {docsLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+              ) : employeeDocs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+                  <FileText className="h-10 w-10 text-slate-200" />
+                  <p className="text-sm text-slate-400">{t('docs_empty')}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {employeeDocs.map(doc => (
+                    <div key={doc.id} className="flex items-center gap-3 bg-slate-50 rounded-xl border border-slate-200 p-3">
+                      <div className="p-2 bg-white border border-slate-200 rounded-lg shrink-0">
+                        <FileText className="h-4 w-4 text-teal-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-700 truncate">{doc.nom_fichier}</p>
+                        <p className="text-[11px] text-slate-400">
+                          {t(`docs_type_${doc.type_doc}` as any)} · {t('docs_uploaded_at')} {dayjs(doc.created_at).format('DD/MM/YY')}
+                          {doc.taille_kb && ` · ${doc.taille_kb} Ko`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleDownloadDoc(doc)}
+                          title={t('docs_download')}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDoc(doc)}
+                          title={t('docs_delete')}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Modal Fiche Employé ── */}
       {modalOpen && (

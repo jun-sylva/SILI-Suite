@@ -176,5 +176,30 @@
 
   "acces_refuse_title": "Access denied",
   "acces_refuse_desc": "You need at least the Manager role on the HR module to access employee management.",
-  "acces_refuse_employes_tab": "Employees (restricted access)"
+  "acces_refuse_employes_tab": "Employees (restricted access)",
+
+  "btn_documents": "Documents",
+  "docs_drawer_title": "Official Documents",
+  "docs_drawer_subtitle": "Identity documents and HR records",
+  "docs_empty": "No documents on record.",
+  "docs_add_title": "Add a document",
+  "docs_type_label": "Document type",
+  "docs_type_cni": "National Identity Card (CNI)",
+  "docs_type_passeport": "Passport",
+  "docs_type_cnps": "CNPS Card",
+  "docs_type_diplome": "Degree / Certificate",
+  "docs_type_contrat": "Employment contract",
+  "docs_type_autre": "Other document",
+  "docs_file_label": "File (PDF, JPG, PNG — max 5 MB)",
+  "docs_upload_btn": "Add",
+  "docs_uploading": "Uploading...",
+  "docs_download": "Download",
+  "docs_delete": "Delete",
+  "docs_upload_success": "Document added successfully",
+  "docs_upload_error": "Error adding document",
+  "docs_delete_success": "Document deleted",
+  "docs_delete_error": "Error deleting document",
+  "docs_size_error": "File too large (max 5 MB)",
+  "docs_format_error": "Unsupported format. Use PDF, JPG or PNG.",
+  "docs_uploaded_at": "Added on"
 }
