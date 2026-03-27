@@ -232,5 +232,18 @@
   "portail_pin_modal_title": "PIN required",
   "portail_pin_modal_desc": "Enter the PIN code to exit the portal.",
   "portail_pin_confirm": "Confirm",
-  "portail_pin_error": "Incorrect PIN"
+  "portail_pin_error": "Incorrect PIN",
+
+  "field_type_conge": "Leave type",
+  "field_date_debut": "Start date",
+  "field_date_fin": "End date",
+  "field_motif": "Reason (optional)",
+  "conge_submit_btn": "Submit request",
+
+  "type_conge_annuel": "Annual leave",
+  "type_conge_maladie": "Sick leave",
+  "type_conge_maternite": "Maternity leave",
+  "type_conge_paternite": "Paternity leave",
+  "type_conge_sans_solde": "Unpaid leave",
+  "type_conge_exceptionnel": "Exceptional leave"
 }

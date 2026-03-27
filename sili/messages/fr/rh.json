@@ -232,5 +232,18 @@
   "portail_pin_modal_title": "Code PIN requis",
   "portail_pin_modal_desc": "Entrez le code PIN pour quitter le portail.",
   "portail_pin_confirm": "Confirmer",
-  "portail_pin_error": "Code PIN incorrect"
+  "portail_pin_error": "Code PIN incorrect",
+
+  "field_type_conge": "Type de congé",
+  "field_date_debut": "Date de début",
+  "field_date_fin": "Date de fin",
+  "field_motif": "Motif (optionnel)",
+  "conge_submit_btn": "Envoyer la demande",
+
+  "type_conge_annuel": "Congé annuel",
+  "type_conge_maladie": "Maladie",
+  "type_conge_maternite": "Maternité",
+  "type_conge_paternite": "Paternité",
+  "type_conge_sans_solde": "Sans solde",
+  "type_conge_exceptionnel": "Exceptionnel"
 }
