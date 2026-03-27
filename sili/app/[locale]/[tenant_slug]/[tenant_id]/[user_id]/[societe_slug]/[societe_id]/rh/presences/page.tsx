@@ -131,7 +131,7 @@ export default function PresencesPage() {
   const [savingEntry, setSavingEntry]   = useState(false)
   const [savingExit, setSavingExit]     = useState(false)
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
-  const [overrideStatuts, setOverrideStatuts] = useState<Record<string, string>>({})
+
 
   // ── Récapitulatif ────────────────────────────────────────
   const [selectedMonth, setSelectedMonth]   = useState(dayjs().format('YYYY-MM'))
@@ -175,9 +175,15 @@ export default function PresencesPage() {
       setCanAccessPage(true)
       setCanManage(true)
     } else {
-      const { data } = await supabase.rpc('get_user_permission', { p_module: 'rh', p_societe_id: societeId })
-      perm = data as string
-      setCanAccessPage(!!perm && perm !== 'aucun')
+      const { data: permData } = await supabase
+        .from('user_module_permissions')
+        .select('permission')
+        .eq('user_id', session.user.id)
+        .eq('societe_id', societeId)
+        .eq('module', 'rh')
+        .maybeSingle()
+      perm = permData?.permission ?? 'aucun'
+      setCanAccessPage(perm !== 'aucun')
       setCanManage(perm === 'gestionnaire' || perm === 'admin')
     }
 

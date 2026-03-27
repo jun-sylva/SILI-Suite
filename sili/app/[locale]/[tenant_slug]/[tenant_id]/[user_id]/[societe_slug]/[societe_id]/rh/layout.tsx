@@ -40,9 +40,14 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const { data: perm } = await supabase
-        .rpc('get_user_permission', { p_module: 'rh', p_societe_id: societeId })
-
+      const { data: permData } = await supabase
+        .from('user_module_permissions')
+        .select('permission')
+        .eq('user_id', session.user.id)
+        .eq('societe_id', societeId)
+        .eq('module', 'rh')
+        .maybeSingle()
+      const perm = permData?.permission ?? 'aucun'
       setCanAccessEmployes(perm === 'gestionnaire' || perm === 'admin')
     }
     checkAccess()
