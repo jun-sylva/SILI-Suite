@@ -203,5 +203,34 @@
   "docs_delete_error": "Error deleting document",
   "docs_size_error": "File too large (max 5 MB)",
   "docs_format_error": "Unsupported format. Use PDF, JPG or PNG.",
-  "docs_uploaded_at": "Added on"
+  "docs_uploaded_at": "Added on",
+
+  "portail_card_title": "Portal",
+  "portail_card_desc": "Check-in kiosk for field employees (no account).",
+  "portail_card_launch": "Launch portal",
+  "portail_pin_label": "Exit PIN",
+  "portail_pin_change": "Edit",
+  "portail_pin_new_placeholder": "4 digits",
+  "portail_pin_save": "Save",
+  "portail_pin_saved": "PIN updated",
+  "portail_pin_save_error": "Error updating PIN",
+
+  "portail_title": "Attendance Portal",
+  "portail_subtitle": "Check-in and leave — Field employees",
+  "portail_back": "Back",
+  "portail_search_placeholder": "Search by name, email or badge number...",
+  "portail_search_hint": "Type at least 4 characters",
+  "portail_no_results": "No employee found",
+  "portail_select_hint": "Search for an employee to get started",
+  "portail_status_absent": "Not clocked in today",
+  "portail_status_en_cours": "In progress since",
+  "portail_status_present": "Present",
+  "portail_conge_section": "Request leave",
+  "portail_history_title": "My recent requests",
+  "portail_history_empty": "No requests on record",
+
+  "portail_pin_modal_title": "PIN required",
+  "portail_pin_modal_desc": "Enter the PIN code to exit the portal.",
+  "portail_pin_confirm": "Confirm",
+  "portail_pin_error": "Incorrect PIN"
 }

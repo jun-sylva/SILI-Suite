@@ -273,6 +273,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_tenant_settings_timezone.sql` | `ALTER TABLE tenants ADD COLUMN timezone text DEFAULT 'Africa/Douala'` | ✅ |
 | `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ✅ |
 | `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ✅ |
+| `20260327_societes_portail_pin.sql` | `ALTER TABLE societes ADD COLUMN portail_pin text DEFAULT '0000'` | ⚠️ À exécuter |
 
 ---
 
@@ -329,7 +330,14 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
   - tenant_admin : accès total
   - Fuseau horaire depuis `tenants.timezone` (IANA)
   - Statut `present` = heure_entree + heure_sortie ; sinon `absent`
-  - ⚠️ Migration `20260326_rh_presences_v2.sql` à exécuter (ADD COLUMN heure_entree/heure_sortie)
+- **Portail Présences** (`rh/portail/page.tsx`) : kiosque tactile pour employés sans compte
+  - Plein écran fixe (z-200), horloge live, pas de timeout
+  - Recherche temps réel (4 chars min, debounce 300ms) — `rh_employes WHERE user_id IS NULL`
+  - Mini fiche sélectionnée → Entrée/Sortie (même logique que Présences), statut live
+  - Formulaire demande congé (pliable) + historique des 5 dernières demandes
+  - Bouton ← Retour protégé par PIN 4 chiffres (stocké dans `societes.portail_pin`, défaut `'0000'`)
+  - PIN modifiable depuis la carte Portail du dashboard RH
+  - Visible uniquement pour gestionnaire+ et tenant_admin sur le dashboard
 
 ---
 

@@ -203,5 +203,34 @@
   "docs_delete_error": "Erreur lors de la suppression",
   "docs_size_error": "Fichier trop volumineux (max 5 Mo)",
   "docs_format_error": "Format non supporté. Utilisez PDF, JPG ou PNG.",
-  "docs_uploaded_at": "Ajouté le"
+  "docs_uploaded_at": "Ajouté le",
+
+  "portail_card_title": "Portail",
+  "portail_card_desc": "Kiosque de pointage pour les employés terrain (sans compte).",
+  "portail_card_launch": "Lancer le portail",
+  "portail_pin_label": "PIN de sortie",
+  "portail_pin_change": "Modifier",
+  "portail_pin_new_placeholder": "4 chiffres",
+  "portail_pin_save": "Enregistrer",
+  "portail_pin_saved": "PIN mis à jour",
+  "portail_pin_save_error": "Erreur lors de la mise à jour du PIN",
+
+  "portail_title": "Portail Présences",
+  "portail_subtitle": "Pointage et congés — Employés terrain",
+  "portail_back": "Retour",
+  "portail_search_placeholder": "Rechercher par nom, email ou matricule...",
+  "portail_search_hint": "Saisissez au moins 4 caractères",
+  "portail_no_results": "Aucun employé trouvé",
+  "portail_select_hint": "Recherchez un employé pour commencer",
+  "portail_status_absent": "Pas encore pointé aujourd'hui",
+  "portail_status_en_cours": "En cours depuis",
+  "portail_status_present": "Présent",
+  "portail_conge_section": "Demander un congé",
+  "portail_history_title": "Mes dernières demandes",
+  "portail_history_empty": "Aucune demande enregistrée",
+
+  "portail_pin_modal_title": "Code PIN requis",
+  "portail_pin_modal_desc": "Entrez le code PIN pour quitter le portail.",
+  "portail_pin_confirm": "Confirmer",
+  "portail_pin_error": "Code PIN incorrect"
 }
