@@ -22,7 +22,7 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 
 | Table | Description |
 |---|---|
-| `public.tenants` | Tenants (organisations). Colonnes clés : `id`, `slug`, `name`, `status`, `max_societes`, `max_licences`, `max_storage_gb` |
+| `public.tenants` | Tenants (organisations). Colonnes clés : `id`, `slug`, `name`, `status`, `max_societes`, `max_licences`, `max_storage_gb`, `timezone` (IANA, défaut `'Africa/Douala'`) |
 | `public.profiles` | Profils utilisateurs. Colonnes : `id` (= auth.users.id), `full_name`, `phone`, `role` (global_role enum), `tenant_id`, `is_super_admin` |
 | `public.societes` | Sociétés d'un tenant. Colonnes : `id`, `tenant_id`, `raison_sociale`, `is_active`, `rccm`, `numero_contribuable`, `storage_gb`, `devise`, `site_web`, `capital_social` |
 | `public.user_societes` | Liaison utilisateur ↔ société (accès). Colonnes : `user_id`, `societe_id`, `is_active` |
@@ -122,13 +122,15 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 #### Module RH `/[societe_id]/rh`
 
 **Layout** (`rh/layout.tsx`) — navbar module RH sticky :
-- Tableau de bord → `/rh` (actif si exact match ou se termine par `/rh`)
-- Employés → `/rh/employes`
-- Présences / Paie → désactivés avec badge "Bientôt"
+- Tableau de bord → `/rh`
+- Employés → `/rh/employes` (tab verrouillé si `< gestionnaire`)
+- Présences → `/rh/presences` (actif)
+- Paie → désactivé avec badge "Bientôt"
+- ⚠️ Permission : requête directe `user_module_permissions` (pas de RPC)
 
 **Dashboard** (`rh/page.tsx`) — 3 cartes :
 - Employés (cliquable → `/rh/employes`)
-- Présences (désactivé)
+- Présences (cliquable → `/rh/presences`, couleur teal)
 - Paie (désactivé)
 
 **Page Employés** (`rh/employes/page.tsx`) :
@@ -266,6 +268,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_storage_phase1.sql` | Bucket `sili-files` + RLS storage + table `tenant_storage_usage` + triggers auto files_mb | ✅ |
 | `20260326_rh_employes.sql` | DROP + CREATE `rh_employes` + trigger `generate_matricule()` (8 chiffres uniques) + RLS + indexes | ✅ |
 | `20260326_rh_presences.sql` | CREATE `rh_presences` (pointage quotidien) + RLS (lecture/écriture même tenant) + indexes | ✅ |
+| `20260326_tenant_settings_timezone.sql` | `ALTER TABLE tenants ADD COLUMN timezone text DEFAULT 'Africa/Douala'` | ✅ |
+| `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ⚠️ À exécuter |
 
 ---
 
@@ -316,7 +320,13 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
 - [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
 - [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
-- [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif mensuel / Congés) — permissions : lecteur (lecture) / gestionnaire+ (pointage + approbation congés)
+- [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif / Congés)
+  - Contributeur : self-pointage (entrée/sortie) + demande congé + mes récapitulatifs + mes congés
+  - Gestionnaire/Admin : pointage global + récapitulatif global + approbation congés
+  - tenant_admin : accès total
+  - Fuseau horaire depuis `tenants.timezone` (IANA)
+  - Statut `present` = heure_entree + heure_sortie ; sinon `absent`
+  - ⚠️ Migration `20260326_rh_presences_v2.sql` à exécuter (ADD COLUMN heure_entree/heure_sortie)
 
 ---
 

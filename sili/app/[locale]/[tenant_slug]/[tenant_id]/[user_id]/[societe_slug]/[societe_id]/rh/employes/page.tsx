@@ -84,8 +84,10 @@ const STATUT_STYLES: Record<string, string> = {
   conge:     'bg-amber-100 text-amber-700',
 }
 
-const CONTRATS = ['CDI', 'CDD', 'Stage', 'Freelance', 'Consultant']
-const STATUTS  = ['actif', 'inactif', 'suspendu', 'conge']
+const CONTRATS     = ['CDI', 'CDD', 'Stage', 'Freelance', 'Consultant']
+const STATUTS      = ['actif', 'inactif', 'suspendu', 'conge']
+const POSTES       = ['Directeur', 'Manager', 'Chef de Projet', 'Développeur', 'Designer', 'Commercial', 'Comptable', 'Assistant', 'Technicien', 'Consultant', 'Autre']
+const DEPARTEMENTS = ['Direction / Management', 'Ressources Humaines', 'Informatique / IT', 'Finance / Comptabilité', 'Commercial / Vente', 'Marketing', 'Opérations / Logistique']
 
 function initials(nom: string | null, prenom: string | null) {
   const n = (prenom?.[0] ?? '') + (nom?.[0] ?? '')
@@ -649,8 +651,14 @@ export default function EmployesPage() {
               <fieldset>
                 <legend className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-3">{t('section_poste')}</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <InputField label={t('field_poste')}       {...f('poste')}       placeholder="Ex : Comptable" />
-                  <InputField label={t('field_departement')} {...f('departement')} placeholder="Ex : Finance" />
+                  <SelectField label={t('field_poste')} {...f('poste')}>
+                    <option value="">— Sélectionner —</option>
+                    {POSTES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </SelectField>
+                  <SelectField label={t('field_departement')} {...f('departement')}>
+                    <option value="">— Sélectionner —</option>
+                    {DEPARTEMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </SelectField>
                   <InputField label={t('field_date_embauche')} type="date" {...f('date_embauche')} />
                   <SelectField label={t('field_type_contrat')} {...f('type_contrat')}>
                     <option value="">— Sélectionner —</option>
