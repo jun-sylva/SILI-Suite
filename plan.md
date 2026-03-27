@@ -123,17 +123,30 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 
 #### Module RH `/[societe_id]/rh`
 
-**Layout** (`rh/layout.tsx`) — navbar module RH sticky :
+**Layout** (`rh/layout.tsx`) — navbar module RH sticky, 5 onglets :
 - Tableau de bord → `/rh`
 - Employés → `/rh/employes` (tab verrouillé si `< gestionnaire`)
-- Présences → `/rh/presences` (actif)
-- Paie → désactivé avec badge "Bientôt"
+- Présences → `/rh/presences`
+- Paie → `/rh/paie`
+- Rapport → `/rh/rapport` (tab verrouillé si `< gestionnaire`)
 - ⚠️ Permission : requête directe `user_module_permissions` (pas de RPC)
 
 **Dashboard** (`rh/page.tsx`) — 3 cartes :
 - Employés (cliquable → `/rh/employes`)
 - Présences (cliquable → `/rh/presences`, couleur teal)
-- Paie (désactivé)
+- Paie (cliquable → `/rh/paie`, couleur green)
+
+**Page Paie** (`rh/paie/page.tsx`) :
+- **Tab Mes Bulletins** (contributeur+) : liste PDF par mois, téléchargement via URL signée
+- **Tab Gestion** (gestionnaire+) : sélecteur mois/année, tableau tous employés avec statut bulletin, upload PDF par employé (upsert), remplacement, suppression (admin/tenant_admin uniquement)
+- Storage : `{tenant_id}/societes/{societe_id}/rh/paie/{employe_id}/{annee}_{mois}_{filename}`
+
+**Page Rapport** (`rh/rapport/page.tsx`) — accès gestionnaire+ / tenant_admin :
+- **KPIs** : effectif actif, taux de présence moyen, congés en attente, masse salariale
+- **Conformité des Employés** : tableau par employé — jours présents / ouvrables, taux avec barre CSS, badge Présence (conforme/non-conforme), badge Bulletin (uploadé/manquant). Seuil configurable (70/80/90/100%). Trié par taux croissant.
+- **Répartition** : barres horizontales CSS par département + par type de contrat
+- **Masse Salariale** : total brut + répartition par département (barres CSS)
+- Jours ouvrables = Lun–Ven (calcul auto, sans jours fériés pour l'instant)
 
 **Page Employés** (`rh/employes/page.tsx`) :
 - **Section 1 — Employés avec Compte** : `user_societes` → `profiles` (tenant_user, is_active=true) → `rh_employes` pour enrichissement. Affiche les utilisateurs assignés à la société avec leur fiche RH si elle existe.

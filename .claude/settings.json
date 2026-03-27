@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rh -type f \\\\\\( -name \"*.tsx\" -o -name \"*.jsx\" \\\\\\))",
+      "Bash(grep -rn .map /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rh/*.tsx)",
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rh -name \"*.tsx\" -type f)",
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/node_modules -name *.development.js -path */react-dom/*)"
+    ]
+  }
+}

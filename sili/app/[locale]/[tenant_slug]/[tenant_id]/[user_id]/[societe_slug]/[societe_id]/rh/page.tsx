@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
-import { Users, Clock, Banknote, Monitor, ChevronRight, Pencil, Loader2 } from 'lucide-react'
+import { Users, Clock, Banknote, BarChart3, Monitor, ChevronRight, Pencil, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
@@ -98,6 +98,15 @@ export default function RHDashboard() {
       icon:   Banknote,
       href:   `${base}/paie`,
       color:  'bg-green-50 text-green-600 border-green-100',
+      active: true,
+    },
+    {
+      key:    'rapport',
+      title:  t('dashboard_rapport_title'),
+      desc:   t('dashboard_rapport_desc'),
+      icon:   BarChart3,
+      href:   `${base}/rapport`,
+      color:  'bg-orange-50 text-orange-600 border-orange-100',
       active: true,
     },
   ]
