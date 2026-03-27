@@ -101,9 +101,9 @@ export default function TenantSettingsPage() {
     setUsersCount(usrRes.count || 0)
 
     const { data: tsData } = await supabase
-      .from('tenant_settings')
+      .from('tenants')
       .select('timezone')
-      .eq('tenant_id', fullTenantId)
+      .eq('id', fullTenantId)
       .maybeSingle()
     if (tsData?.timezone) setTimezone(tsData.timezone)
 
@@ -113,8 +113,9 @@ export default function TenantSettingsPage() {
   async function saveTimezone() {
     setSavingTimezone(true)
     const { error } = await supabase
-      .from('tenant_settings')
-      .upsert({ tenant_id: fullTenantId, timezone }, { onConflict: 'tenant_id' })
+      .from('tenants')
+      .update({ timezone })
+      .eq('id', fullTenantId)
     if (error) toast.error(t('toast_timezone_error'))
     else toast.success(t('toast_timezone_success'))
     setSavingTimezone(false)

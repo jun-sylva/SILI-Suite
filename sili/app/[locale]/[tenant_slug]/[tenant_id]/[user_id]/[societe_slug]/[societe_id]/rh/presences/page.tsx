@@ -183,9 +183,9 @@ export default function PresencesPage() {
 
     // Fuseau horaire du tenant
     const { data: tsData } = await supabase
-      .from('tenant_settings')
+      .from('tenants')
       .select('timezone')
-      .eq('tenant_id', profile.tenant_id)
+      .eq('id', profile.tenant_id)
       .maybeSingle()
     if (tsData?.timezone) setTimezone(tsData.timezone)
 
