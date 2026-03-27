@@ -37,6 +37,7 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.societe_modules` | Modules activés par société (sous-ensemble de `tenant_modules`). Colonnes : `id`, `societe_id`, `module`, `is_active`, `activated_at`. Contrainte unique : `(societe_id, module)`. |
 | `public.societe_data_sharing` | Partage de données directionnel entre sociétés, par module. Colonnes : `id`, `source_societe_id`, `target_societe_id`, `module`, `is_active`, `created_at`. Contrainte unique : `(source_societe_id, target_societe_id, module)`. Le partage est à sens unique : source partage vers target, pas l'inverse sauf config explicite. |
 | `public.rh_presences` | Pointage quotidien. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id` (FK → `rh_employes`), `date`, `statut` ('present'/'absent'/'retard'/'conge'/'mission'), `note`, `heure_entree timestamptz`, `heure_sortie timestamptz`, `created_by`, `created_at`, `updated_at`. Contrainte unique : `(employe_id, date)`. RLS : SELECT/INSERT/UPDATE/DELETE pour le même tenant. |
+| `public.rh_bulletins_paie` | Bulletins de salaire. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id`, `mois` (1-12), `annee`, `storage_path`, `nom_fichier`, `taille_kb`, `uploaded_by`, `created_at`. Contrainte unique : `(employe_id, mois, annee)`. RLS par tenant. |
 | `public.rh_conges` | Demandes de congé. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id`, `type_conge`, `typologie` ('daily'/'hourly'), `date_debut`, `date_fin` (nullable si horaire), `nb_jours` (nullable si horaire), `nb_heures numeric(5,2)` (nullable si journalier), `statut` ('en_attente'/'approuve'/'refuse'), `motif`, `justificatif_path` (Storage), `commentaire_rh`, `approuve_par`, `approuve_le`, `created_by`, `created_at`, `updated_at`. Pas de RLS. |
 | `public.rh_employes` | Employés RH. Colonnes : `id`, `tenant_id`, `societe_id`, `user_id` (nullable — NULL = sans compte plateforme), `matricule` (8 chiffres, auto-généré via trigger), `nom`, `prenom`, `sexe` ('M'/'F'), `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`, `email`, `telephone`, `poste`, `departement`, `date_embauche`, `type_contrat` ('CDI'/'CDD'/'Stage'/'Freelance'/'Consultant'), `salaire_base`, `cni_numero`, `cnps_numero`, `photo_url`, `statut` ('actif'/'inactif'/'suspendu'/'conge'), `created_by`, `created_at`, `updated_at`. RLS : SELECT (même tenant), INSERT/UPDATE/DELETE (tenant_admin uniquement). |
 
@@ -276,6 +277,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ✅ |
 | `20260327_societes_portail_pin.sql` | `ALTER TABLE societes ADD COLUMN portail_pin text DEFAULT '0000'` | ✅ |
 | `20260327_rh_conges_typologie.sql` | `ALTER TABLE rh_conges ADD COLUMN typologie text DEFAULT 'daily'`, `nb_heures numeric(5,2)`, `justificatif_path text` | ✅ |
+| `20260327_rh_bulletins_paie.sql` | CREATE `rh_bulletins_paie` (bulletins de salaire PDF, unique par employe+mois+annee) + RLS + indexes | ⏳ |
 
 ---
 

@@ -57,7 +57,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
     { id: 'dashboard', label: t('nav_dashboard'), href: base,                icon: LayoutDashboard, exact: true,  restricted: false },
     { id: 'employes',  label: t('nav_employes'),  href: `${base}/employes`,  icon: Users,           exact: false, restricted: !canAccessEmployes },
     { id: 'presences', label: t('nav_presences'), href: `${base}/presences`, icon: Clock,           exact: false, restricted: false },
-    { id: 'paie',      label: t('nav_paie'),      href: null,                icon: Banknote,        exact: false, restricted: false },
+    { id: 'paie',      label: t('nav_paie'),      href: `${base}/paie`,      icon: Banknote,        exact: false, restricted: false },
   ]
 
   return (

@@ -96,9 +96,9 @@ export default function RHDashboard() {
       title:  t('dashboard_paie_title'),
       desc:   t('dashboard_paie_desc'),
       icon:   Banknote,
-      href:   null,
-      color:  'bg-slate-50 text-slate-400 border-slate-100',
-      active: false,
+      href:   `${base}/paie`,
+      color:  'bg-green-50 text-green-600 border-green-100',
+      active: true,
     },
   ]
 
