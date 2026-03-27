@@ -273,7 +273,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_tenant_settings_timezone.sql` | `ALTER TABLE tenants ADD COLUMN timezone text DEFAULT 'Africa/Douala'` | ✅ |
 | `20260326_rh_presences_v2.sql` | `ALTER TABLE rh_presences ADD COLUMN heure_entree timestamptz, heure_sortie timestamptz` + statut nullable | ✅ |
 | `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ✅ |
-| `20260327_societes_portail_pin.sql` | `ALTER TABLE societes ADD COLUMN portail_pin text DEFAULT '0000'` | ⚠️ À exécuter |
+| `20260327_societes_portail_pin.sql` | `ALTER TABLE societes ADD COLUMN portail_pin text DEFAULT '0000'` | ✅ |
 
 ---
 

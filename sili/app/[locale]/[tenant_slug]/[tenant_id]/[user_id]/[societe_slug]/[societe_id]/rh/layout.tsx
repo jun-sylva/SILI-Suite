@@ -54,10 +54,10 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
   }, [societeId])
 
   const navItems = [
-    { label: t('nav_dashboard'), href: base,               icon: LayoutDashboard, exact: true,  restricted: false },
-    { label: t('nav_employes'),  href: `${base}/employes`, icon: Users,           exact: false, restricted: !canAccessEmployes },
-    { label: t('nav_presences'), href: `${base}/presences`, icon: Clock,           exact: false, restricted: false },
-    { label: t('nav_paie'),      href: null,               icon: Banknote,        exact: false, restricted: false },
+    { id: 'dashboard', label: t('nav_dashboard'), href: base,                icon: LayoutDashboard, exact: true,  restricted: false },
+    { id: 'employes',  label: t('nav_employes'),  href: `${base}/employes`,  icon: Users,           exact: false, restricted: !canAccessEmployes },
+    { id: 'presences', label: t('nav_presences'), href: `${base}/presences`, icon: Clock,           exact: false, restricted: false },
+    { id: 'paie',      label: t('nav_paie'),      href: null,                icon: Banknote,        exact: false, restricted: false },
   ]
 
   return (
@@ -76,7 +76,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
             if (!item.href) {
               return (
                 <span
-                  key={item.label}
+                  key={item.id}
                   className="flex items-center gap-2 px-4 py-3.5 text-sm font-medium text-slate-300 cursor-not-allowed whitespace-nowrap border-b-2 border-transparent"
                 >
                   <item.icon className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
             if (item.restricted) {
               return (
                 <span
-                  key={item.label}
+                  key={item.id}
                   className="flex items-center gap-2 px-4 py-3.5 text-sm font-medium text-slate-300 cursor-not-allowed whitespace-nowrap border-b-2 border-transparent"
                   title={t('acces_refuse_employes_tab')}
                 >
@@ -105,7 +105,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
 
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   isActive
