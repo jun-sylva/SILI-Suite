@@ -120,12 +120,14 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
       {/* Navbar module RH */}
       <div className="bg-white border-b border-slate-200 mb-6 -mx-6 px-6 sticky top-0 z-20 shadow-sm">
         <nav className="flex gap-1 overflow-x-auto scrollbar-hide">
-          {navItems.map((item) => {
-            const isActive = item.exact
-              ? pathname === item.href || pathname.endsWith('/rh')
-              : pathname.startsWith(item.href)
-            return <RHNavItem key={item.id} item={item} isActive={isActive} t={t} />
-          })}
+          {navItems.map((item) => (
+            <RHNavItem
+              key={item.id}
+              item={item}
+              isActive={item.exact ? pathname === item.href || pathname.endsWith('/rh') : pathname.startsWith(item.href)}
+              t={t}
+            />
+          ))}
         </nav>
       </div>
 
