@@ -149,14 +149,25 @@ export default function MesRequetesPage() {
         setGestionnaires(gProfiles?.filter(p => p.id !== uid) ?? [])
       }
 
-      // Charger les groupes de cette société
-      const { data: groupsData } = await supabase
-        .from('user_groups')
-        .select('id, nom')
-        .eq('tenant_id', tid)
+      // Charger uniquement les groupes avec permission gestionnaire/admin sur le module workflow
+      const { data: groupPerms } = await supabase
+        .from('user_group_permissions')
+        .select('group_id')
         .eq('societe_id', societeId)
-        .order('nom', { ascending: true })
-      setGroups(groupsData ?? [])
+        .eq('module', 'workflow')
+        .in('permission', ['gestionnaire', 'admin'])
+
+      const groupIds = groupPerms?.map(p => p.group_id) ?? []
+      if (groupIds.length > 0) {
+        const { data: groupsData } = await supabase
+          .from('user_groups')
+          .select('id, nom')
+          .in('id', groupIds)
+          .order('nom', { ascending: true })
+        setGroups(groupsData ?? [])
+      } else {
+        setGroups([])
+      }
 
       await loadRequests(uid)
     }

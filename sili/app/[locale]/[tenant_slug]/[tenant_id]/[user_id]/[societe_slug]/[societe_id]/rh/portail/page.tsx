@@ -185,9 +185,10 @@ export default function PortailPage() {
   }, [societeId])
 
   useEffect(() => {
+    if (selected) return   // employé déjà sélectionné → ne pas relancer la recherche
     const timer = setTimeout(() => doSearch(search), 300)
     return () => clearTimeout(timer)
-  }, [search, doSearch])
+  }, [search, doSearch, selected])
 
   async function selectEmployee(emp: Employe) {
     setSelected(emp)
@@ -270,7 +271,11 @@ export default function PortailPage() {
   }
 
   async function handleCongeSubmit() {
-    if (!selected || !fullTenantId || !congeForm.date_debut) return
+    if (!selected || !fullTenantId) {
+      toast.error(t('toast_conge_submit_error'))
+      return
+    }
+    if (!congeForm.date_debut) return
     if (congeForm.typologie === 'daily' && !congeForm.date_fin) return
     if (congeForm.typologie === 'hourly' && !congeForm.nb_heures) return
 
@@ -462,6 +467,7 @@ export default function PortailPage() {
                 <div className="flex gap-3">
                   {/* Entrée */}
                   <button
+                    type="button"
                     onClick={handleEntree}
                     disabled={savingEntry || hasEntree}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 rounded-2xl font-bold text-sm transition-all ${
@@ -479,6 +485,7 @@ export default function PortailPage() {
 
                   {/* Sortie */}
                   <button
+                    type="button"
                     onClick={handleSortie}
                     disabled={savingExit || !hasEntree || hasSortie}
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 rounded-2xl font-bold text-sm transition-all ${
@@ -622,6 +629,7 @@ export default function PortailPage() {
                     </div>
 
                     <button
+                      type="button"
                       onClick={handleCongeSubmit}
                       disabled={savingConge || !congeForm.date_debut || (congeForm.typologie === 'daily' ? !congeForm.date_fin : !congeForm.nb_heures)}
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600 text-white font-bold text-sm rounded-xl hover:bg-violet-700 disabled:opacity-40 transition shadow-sm"

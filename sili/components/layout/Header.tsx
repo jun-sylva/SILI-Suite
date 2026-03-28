@@ -120,7 +120,7 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
   const activeSociete = currentSocieteId ? (societes.find(s => s.id === currentSocieteId) ?? null) : null
 
   return (
-    <header className="flex shrink-0 h-16 w-full items-center justify-center border-b bg-white shadow-sm z-10">
+    <header className="flex shrink-0 h-16 w-full items-center justify-center border-b bg-white shadow-sm z-[60]">
       <div className="mx-auto flex w-full max-w-[2000px] items-center justify-between px-4 md:px-6">
 
         {/* Left: Mobile toggle + Company switcher */}
