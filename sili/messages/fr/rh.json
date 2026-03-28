@@ -140,6 +140,7 @@
   "pointage_not_set": "—",
   "pointage_readonly": "Vous n'avez pas les droits pour modifier le pointage.",
   "pointage_no_fiche": "Votre fiche employé n'est pas encore créée. Contactez votre gestionnaire.",
+  "pointage_mon_pointage": "Mon pointage",
   "pointage_entree": "Entrée",
   "pointage_sortie": "Sortie",
   "pointage_en_cours": "En cours",

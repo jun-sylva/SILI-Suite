@@ -140,6 +140,7 @@
   "pointage_not_set": "—",
   "pointage_readonly": "You do not have permission to edit attendance.",
   "pointage_no_fiche": "Your employee record has not been created yet. Contact your manager.",
+  "pointage_mon_pointage": "My attendance",
   "pointage_entree": "Check in",
   "pointage_sortie": "Check out",
   "pointage_en_cours": "In progress",

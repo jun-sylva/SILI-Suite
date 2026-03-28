@@ -597,6 +597,66 @@ export default function PresencesPage() {
                 </div>
               )}
 
+              {/* ── Self-pointage pour gestionnaire/admin (aussi employé) ── */}
+              {canManage && myEmployeId && (
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5 space-y-4">
+                  <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider">
+                    {t('tab_pointage')} — {t('pointage_mon_pointage')} — {dayjs().format('DD/MM/YYYY')}
+                  </p>
+                  <div className="flex gap-4 flex-wrap">
+                    <div className="flex-1 min-w-[160px]">
+                      <button
+                        onClick={handleEntree}
+                        disabled={savingEntry || hasEntree}
+                        className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                          hasEntree
+                            ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700 cursor-default'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md'
+                        } disabled:opacity-70`}
+                      >
+                        {savingEntry ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+                        {hasEntree
+                          ? `${t('pointage_entree')} — ${formatTime(myPresence!.heure_entree, timezone)}`
+                          : t('pointage_entree')
+                        }
+                      </button>
+                    </div>
+                    <div className="flex-1 min-w-[160px]">
+                      <button
+                        onClick={handleSortie}
+                        disabled={savingExit || !hasEntree || hasSortie}
+                        className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
+                          hasSortie
+                            ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700 cursor-default'
+                            : hasEntree
+                              ? 'bg-slate-800 text-white hover:bg-slate-900 shadow-md'
+                              : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                        } disabled:opacity-70`}
+                      >
+                        {savingExit ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+                        {hasSortie
+                          ? `${t('pointage_sortie')} — ${formatTime(myPresence!.heure_sortie, timezone)}`
+                          : t('pointage_sortie')
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  {myPresence && (
+                    <div className="flex items-center gap-2">
+                      {hasSortie ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> {t('pointage_complet')}
+                        </span>
+                      ) : hasEntree ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full">
+                          <Clock className="h-3.5 w-3.5" /> {t('pointage_en_cours')}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── Vue gestionnaire (tous les employés) ─────── */}
               {canManage && (
                 <div className="space-y-4">
