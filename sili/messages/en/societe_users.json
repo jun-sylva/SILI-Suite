@@ -64,5 +64,10 @@
   "toast_group_deleted": "Group deleted.",
   "toast_member_added": "Member added.",
   "toast_member_removed": "Member removed.",
-  "toast_group_error": "An error occurred."
+  "toast_group_error": "An error occurred.",
+
+  "modal_group_perms_title": "Group permissions",
+  "group_perms_subtitle": "Define module permissions for this group.",
+  "toast_group_perm_updated": "Group permission updated.",
+  "toast_group_perm_error": "Error updating permission."
 }

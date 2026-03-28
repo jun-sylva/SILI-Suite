@@ -296,6 +296,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260327_notifications_tenant_id_nullable.sql` | `ALTER TABLE notifications ALTER COLUMN tenant_id DROP NOT NULL` — Masters ont `tenant_id = NULL` | ✅ |
 | `20260327_workflow_justificatif.sql` | `ALTER TABLE workflow_requests ADD COLUMN justificatif_path TEXT` | ✅ |
 | `20260327_user_groups.sql` | CREATE `user_groups` + `user_group_members` + `ALTER TABLE workflow_requests ADD COLUMN assigned_to_group` + RLS + indexes | ⏳ à exécuter |
+| `20260328_user_group_permissions.sql` | CREATE `user_group_permissions` (héritage permissions modules par groupe) + RLS + indexes | ⏳ à exécuter |
 
 ---
 
@@ -391,9 +392,16 @@ Gestionnaire refuse          → refuse
 - 2 onglets : **Utilisateurs** (permissions modules, inchangé) + **Groupes** (nouveau)
 - CRUD groupes : créer, modifier, supprimer, gérer les membres + leur rôle (membre/manager)
 - Types de groupe : `compte` (utilisateurs avec compte), `mixte` (avec + sans compte via rh_employes)
-- Héritage de permissions : **aucun** (V3) — les groupes servent uniquement à l'assignation workflow
+- Héritage de permissions : **implémenté en V3** via `user_group_permissions`
 - Un manager dans un groupe voit et peut traiter toutes les requêtes assignées à ce groupe
 - Détection de conflit temps réel : popup si un autre manager traite la même requête simultanément
+
+#### Permissions par Groupe V3
+- **Table** `user_group_permissions` : group_id, tenant_id, societe_id, module, permission, granted_by — contrainte unique `(group_id, societe_id, module)`
+- **Résolution** : `getEffectivePermission()` dans `lib/permissions.ts` — `MAX(permission individuelle via RPC, permission max des groupes)`
+- **Hook** : `usePermission.ts` refactoré pour appeler `getEffectivePermission()` après la vérification `sys_modules`
+- **UI** : bouton "Permissions" par groupe dans l'onglet Groupes → modal tableau croisé (module × permission) + colonne "Héritage" informative
+- **Règle** : la permission individuelle ne peut jamais être réduite par un groupe — toujours le MAX
 
 ---
 

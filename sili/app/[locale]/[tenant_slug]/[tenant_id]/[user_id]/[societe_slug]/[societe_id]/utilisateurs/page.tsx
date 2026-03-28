@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import {
   UserCog, Loader2, ShoppingCart, PackageSearch, Package, Users,
   CircleDollarSign, MessageSquare, FileText, PhoneCall, Layers, XCircle, GitBranch,
-  UsersRound, Plus, Pencil, Trash2, X, ChevronRight,
+  UsersRound, Plus, Pencil, Trash2, X, ChevronRight, ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -26,6 +26,13 @@ interface AssignedUser {
 
 // userId → moduleKey → PermissionLevel
 type PermMap = Record<string, Record<string, PermissionLevel>>
+
+// groupId → moduleKey → PermissionLevel
+type GroupPermMap = Record<string, Record<string, PermissionLevel>>
+
+const PERM_RANK: Record<PermissionLevel, number> = {
+  aucun: 0, lecteur: 1, contributeur: 2, gestionnaire: 3, admin: 4,
+}
 
 interface UserGroup {
   id: string
@@ -114,6 +121,11 @@ export default function SocieteUsersPage() {
   const [newMemberId, setNewMemberId]         = useState('')
   const [newMemberRole, setNewMemberRole]     = useState<MemberRole>('membre')
   const [addingMember, setAddingMember]       = useState(false)
+
+  // group permissions modal
+  const [permsGroup, setPermsGroup]           = useState<UserGroup | null>(null)
+  const [groupPerms, setGroupPerms]           = useState<GroupPermMap>({})
+  const [groupPermsLoading, setGroupPermsLoading] = useState(false)
 
   useEffect(() => { init() }, [])
 
@@ -433,6 +445,62 @@ export default function SocieteUsersPage() {
     await fetchGroups(fullTenantId)
   }
 
+  // ── Group Permissions helpers ───────────────────────────────────────────
+
+  async function openGroupPerms(g: UserGroup) {
+    setPermsGroup(g)
+    setGroupPermsLoading(true)
+
+    const { data } = await supabase
+      .from('user_group_permissions')
+      .select('module, permission')
+      .eq('group_id', g.id)
+      .eq('societe_id', societeId)
+
+    const map: Record<string, PermissionLevel> = {}
+    activeModules.forEach(m => { map[m] = 'aucun' })
+    data?.forEach((r: any) => { map[r.module] = r.permission as PermissionLevel })
+    setGroupPerms(prev => ({ ...prev, [g.id]: map }))
+    setGroupPermsLoading(false)
+  }
+
+  async function setGroupPermission(groupId: string, moduleKey: string, level: PermissionLevel) {
+    // Optimistic
+    setGroupPerms(prev => ({
+      ...prev,
+      [groupId]: { ...prev[groupId], [moduleKey]: level },
+    }))
+
+    const { error } = await supabase
+      .from('user_group_permissions')
+      .upsert(
+        {
+          group_id:   groupId,
+          tenant_id:  fullTenantId,
+          societe_id: societeId,
+          module:     moduleKey,
+          permission: level,
+          granted_by: currentUserId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'group_id,societe_id,module' }
+      )
+
+    if (error) {
+      toast.error(t('toast_group_perm_error'))
+      // Rollback
+      setGroupPerms(prev => ({
+        ...prev,
+        [groupId]: { ...prev[groupId], [moduleKey]: prev[groupId]?.[moduleKey] ?? 'aucun' },
+      }))
+    } else {
+      toast.success(t('toast_group_perm_updated'))
+    }
+  }
+
+  const getGroupLevel = (groupId: string, moduleKey: string): PermissionLevel =>
+    groupPerms[groupId]?.[moduleKey] ?? 'aucun'
+
   // ── Render ─────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -669,6 +737,13 @@ export default function SocieteUsersPage() {
                               {t('btn_add_member')}
                             </button>
                             <button
+                              onClick={() => openGroupPerms(g)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-violet-50 hover:text-violet-600 rounded-lg transition-colors"
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              Permissions
+                            </button>
+                            <button
                               onClick={() => openEditGroup(g)}
                               className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             >
@@ -785,6 +860,93 @@ export default function SocieteUsersPage() {
                 className="px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
               >
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Permissions du groupe ───────────────────────────── */}
+      {permsGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{t('modal_group_perms_title')}</h2>
+                <p className="text-sm text-slate-500">{permsGroup.nom} — {t('group_perms_subtitle')}</p>
+              </div>
+              <button onClick={() => setPermsGroup(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {groupPermsLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+              </div>
+            ) : activeModules.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <Layers className="h-8 w-8 text-slate-300 mb-2" />
+                <p className="text-sm text-slate-400">{t('empty_modules_subtitle')}</p>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">Module</th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">Permission du groupe</th>
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span className="flex items-center gap-1 text-violet-600">
+                          <ShieldCheck className="h-3 w-3" />
+                          Héritage
+                        </span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {activeModules.map(moduleKey => {
+                      const Icon = MODULE_ICONS[moduleKey] ?? Layers
+                      const level = getGroupLevel(permsGroup.id, moduleKey)
+                      return (
+                        <tr key={moduleKey} className="hover:bg-slate-50/60">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-slate-400" />
+                              <span className="font-medium text-slate-700">{tNav(moduleKey)}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={level}
+                              onChange={e => setGroupPermission(permsGroup.id, moduleKey, e.target.value as PermissionLevel)}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg border-0 outline-none ring-1 ring-inset cursor-pointer transition-all appearance-none ${PERM_STYLES[level]} ring-transparent focus:ring-2 focus:ring-violet-400`}
+                            >
+                              {PERMISSION_LEVELS.map(lvl => (
+                                <option key={lvl} value={lvl}>{t(`permission_${lvl}`)}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-xs text-slate-400">
+                              Tous les membres du groupe héritent au minimum de{' '}
+                              <span className="font-semibold text-slate-600">{t(`permission_${level}`)}</span>
+                            </p>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="shrink-0 flex justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setPermsGroup(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Fermer
               </button>
             </div>
           </div>
