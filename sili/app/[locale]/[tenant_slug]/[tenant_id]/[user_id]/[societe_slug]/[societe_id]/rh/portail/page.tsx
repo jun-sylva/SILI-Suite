@@ -261,12 +261,13 @@ export default function PortailPage() {
   // ── Congés ────────────────────────────────────────────────
 
   async function fetchConges(employeId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('rh_conges')
       .select('id, type_conge, typologie, date_debut, date_fin, nb_jours, nb_heures, statut, motif')
       .eq('employe_id', employeId)
       .order('created_at', { ascending: false })
       .limit(5)
+    if (error) console.error('[portail fetchConges]', error.message)
     setMyConges(data ?? [])
   }
 

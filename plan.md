@@ -302,6 +302,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_fix_workflow_rls_recursion.sql` | Fix récursion infinie entre `wi_select` et `wis_select` — fonction SECURITY DEFINER `wf_is_actor_in_instance()` + réécriture des deux politiques | ✅ |
 | `20260328_fix_user_group_members_rls.sql` | Fix RLS SELECT `user_group_members` — ajout `tenant_admin` via UNION profiles (tenant_admin absent de user_societes → loadMembers retournait vide) | ✅ |
 | `20260328_unique_group_member.sql` | Contraintes UNIQUE `(group_id, user_id)` et `(group_id, employe_id)` sur `user_group_members` — empêche d'ajouter deux fois le même membre | ✅ |
+| `20260328_rh_conges_rls.sql` | Fix RLS `rh_conges` — SELECT/INSERT/UPDATE par `tenant_id` (congés portail invisibles aux managers) + FK `employe_id → rh_employes` pour le join PostgREST | ✅ |
 
 ---
 
@@ -341,6 +342,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260328_fix_workflow_rls_recursion.sql` ✅
 - [x] `20260328_fix_user_group_members_rls.sql` ✅
 - [x] `20260328_unique_group_member.sql` ✅
+- [x] `20260328_rh_conges_rls.sql` ✅
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅

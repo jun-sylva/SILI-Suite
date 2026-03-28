@@ -341,12 +341,13 @@ export default function PresencesPage() {
 
   async function fetchConges() {
     setCongesLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('rh_conges')
       .select('*, rh_employes!employe_id(nom, prenom, matricule)')
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
 
+    if (error) console.error('[fetchConges]', error.message)
     const all = (data ?? []) as Conge[]
     const mine = myEmployeId ? all.filter(c => c.employe_id === myEmployeId) : []
     setMyConges(mine)
