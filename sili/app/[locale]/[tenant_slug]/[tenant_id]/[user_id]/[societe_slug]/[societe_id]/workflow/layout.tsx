@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, FileText, ClipboardList, Lock } from 'lucide-react'
+import { LayoutDashboard, FileText, ClipboardList, Lock, Wrench, GitMerge } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 
@@ -52,7 +52,8 @@ function WorkflowNavItem({ item, isActive, t }: {
 }
 
 export default function WorkflowLayout({ children }: { children: React.ReactNode }) {
-  const t = useTranslations('workflow')
+  const t  = useTranslations('workflow')
+  const tb = useTranslations('workflow_builder')
   const pathname = usePathname()
   const params = useParams()
   const tenantSlug  = params.tenant_slug  as string
@@ -63,6 +64,7 @@ export default function WorkflowLayout({ children }: { children: React.ReactNode
   const base = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/workflow`
 
   const [canAccessAssignees, setCanAccessAssignees] = useState(false)
+  const [isTenantAdmin, setIsTenantAdmin]           = useState(false)
 
   useEffect(() => {
     async function checkAccess() {
@@ -71,10 +73,12 @@ export default function WorkflowLayout({ children }: { children: React.ReactNode
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', session.user.id).single()
       if (!profile) return
-      if (profile.role === 'tenant_admin' || profile.role === 'super_admin') {
-        setCanAccessAssignees(true)
-        return
-      }
+
+      const admin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
+      setIsTenantAdmin(admin)
+
+      if (admin) { setCanAccessAssignees(true); return }
+
       const { data: permData } = await supabase
         .from('user_module_permissions').select('permission')
         .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
@@ -88,6 +92,8 @@ export default function WorkflowLayout({ children }: { children: React.ReactNode
     { id: 'dashboard',    label: t('nav_dashboard'),    href: base,                    icon: LayoutDashboard, exact: true,  restricted: false },
     { id: 'mes-requetes', label: t('nav_mes_requetes'), href: `${base}/mes-requetes`,  icon: FileText,        exact: false, restricted: false },
     { id: 'assignees',    label: t('nav_assignees'),    href: `${base}/assignees`,     icon: ClipboardList,   exact: false, restricted: !canAccessAssignees },
+    { id: 'processes',    label: tb('nav_processes'),   href: `${base}/processes`,     icon: GitMerge,        exact: false, restricted: !canAccessAssignees },
+    { id: 'builder',      label: tb('nav_builder'),     href: `${base}/builder`,       icon: Wrench,          exact: false, restricted: !isTenantAdmin },
   ]
 
   return (

@@ -295,8 +295,9 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260327_workflow_tables.sql` | CREATE `workflow_requests` + `workflow_comments` + RLS par tenant | ✅ |
 | `20260327_notifications_tenant_id_nullable.sql` | `ALTER TABLE notifications ALTER COLUMN tenant_id DROP NOT NULL` — Masters ont `tenant_id = NULL` | ✅ |
 | `20260327_workflow_justificatif.sql` | `ALTER TABLE workflow_requests ADD COLUMN justificatif_path TEXT` | ✅ |
-| `20260327_user_groups.sql` | CREATE `user_groups` + `user_group_members` + `ALTER TABLE workflow_requests ADD COLUMN assigned_to_group` + RLS + indexes | ⏳ à exécuter |
-| `20260328_user_group_permissions.sql` | CREATE `user_group_permissions` (héritage permissions modules par groupe) + RLS + indexes | ⏳ à exécuter |
+| `20260327_user_groups.sql` | CREATE `user_groups` + `user_group_members` + `ALTER TABLE workflow_requests ADD COLUMN assigned_to_group` + RLS + indexes | ✅ |
+| `20260328_user_group_permissions.sql` | CREATE `user_group_permissions` (héritage permissions modules par groupe) + RLS + indexes | ✅ |
+| `20260328_fix_user_groups_rls.sql` | Fix RLS SELECT `user_groups` — ajout `tenant_admin` via UNION profiles | ⏳ à exécuter |
 
 ---
 

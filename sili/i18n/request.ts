@@ -34,6 +34,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'utilisateurs',
     'validation',
     'workflow',
+    'workflow_builder',
   ];
   const messages: Record<string, any> = {};
 

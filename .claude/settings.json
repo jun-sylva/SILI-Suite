@@ -9,7 +9,8 @@
       "Bash(grep -r \"user_module_permissions\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)"
     ],
     "additionalDirectories": [
-      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow"
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow/processes"
     ]
   }
 }
