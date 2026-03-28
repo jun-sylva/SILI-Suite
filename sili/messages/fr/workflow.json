@@ -37,6 +37,11 @@
   "field_assign_to": "Assigner à (gestionnaire)",
   "field_commentaire": "Commentaire",
   "field_commentaire_placeholder": "Commentaire optionnel...",
+  "field_justificatif": "Justificatif",
+  "field_justificatif_hint": "PDF, Word, image — max 5 Mo (optionnel)",
+  "justificatif_download": "Télécharger le justificatif",
+  "justificatif_uploading": "Upload en cours...",
+  "toast_upload_error": "Erreur lors de l'upload du fichier.",
 
   "type_materiel_it": "Matériel & IT",
   "type_finance": "Finance & Remboursement",

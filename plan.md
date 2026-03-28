@@ -294,6 +294,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260327_add_workflow_module.sql` | INSERT `workflow` dans `sys_modules` avec `is_active = false` (désactivé globalement par défaut) | ✅ |
 | `20260327_workflow_tables.sql` | CREATE `workflow_requests` + `workflow_comments` + RLS par tenant | ✅ |
 | `20260327_notifications_tenant_id_nullable.sql` | `ALTER TABLE notifications ALTER COLUMN tenant_id DROP NOT NULL` — Masters ont `tenant_id = NULL` | ✅ |
+| `20260327_workflow_justificatif.sql` | `ALTER TABLE workflow_requests ADD COLUMN justificatif_path TEXT` | ✅ |
 
 ---
 

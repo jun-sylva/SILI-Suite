@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch,
+  Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch, Download,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -23,6 +23,7 @@ interface WorkflowRequest {
   statut: Statut
   priorite: Priorite
   assigned_to: string | null
+  justificatif_path: string | null
   created_at: string
   created_profile?: { full_name: string | null } | null
 }
@@ -89,7 +90,7 @@ export default function AssigneesPage() {
   const loadRequests = useCallback(async (uid: string, adminMode: boolean) => {
     const query = supabase
       .from('workflow_requests')
-      .select('id, titre, type_demande, description, statut, priorite, assigned_to, created_at, created_profile:created_by(full_name)')
+      .select('id, titre, type_demande, description, statut, priorite, assigned_to, justificatif_path, created_at, created_profile:created_by(full_name)')
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
 
@@ -381,6 +382,24 @@ export default function AssigneesPage() {
                 <div>
                   <p className="text-xs text-slate-400 mb-1">{t('field_description')}</p>
                   <p className="text-sm text-slate-700 whitespace-pre-wrap">{detailRequest.description}</p>
+                </div>
+              )}
+
+              {/* Justificatif — visible uniquement par l'assigné */}
+              {detailRequest.justificatif_path && detailRequest.assigned_to === currentUserId && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">{t('field_justificatif')}</p>
+                  <button
+                    onClick={async () => {
+                      const { data } = await supabase.storage.from('sili-files')
+                        .createSignedUrl(detailRequest.justificatif_path!, 60)
+                      if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {t('justificatif_download')}
+                  </button>
                 </div>
               )}
 

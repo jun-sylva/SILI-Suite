@@ -37,6 +37,11 @@
   "field_assign_to": "Assign to (manager)",
   "field_commentaire": "Comment",
   "field_commentaire_placeholder": "Optional comment...",
+  "field_justificatif": "Supporting document",
+  "field_justificatif_hint": "PDF, Word, image — max 5 MB (optional)",
+  "justificatif_download": "Download supporting document",
+  "justificatif_uploading": "Uploading...",
+  "toast_upload_error": "Error uploading the file.",
 
   "type_materiel_it": "Hardware & IT",
   "type_finance": "Finance & Reimbursement",

@@ -6,8 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Plus, Loader2, FileText, ChevronDown, ChevronRight, X, Trash2, Eye,
-  Clock, CheckCircle2, XCircle, GitBranch,
+  Plus, Loader2, FileText, X, Trash2, Eye, GitBranch, Download, Paperclip,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -25,6 +24,7 @@ interface WorkflowRequest {
   priorite: Priorite
   assigned_to: string | null
   assigned_profile?: { full_name: string | null } | null
+  justificatif_path: string | null
   created_at: string
 }
 
@@ -80,6 +80,8 @@ export default function MesRequetesPage() {
     titre: '', type_demande: 'autre' as TypeDemande, description: '',
     priorite: 'normale' as Priorite, assigned_to: '',
   })
+  const [justificatifFile, setJustificatifFile] = useState<File | null>(null)
+  const [fileError, setFileError]               = useState<string>('')
 
   // Modal détail
   const [detailRequest, setDetailRequest] = useState<WorkflowRequest | null>(null)
@@ -95,7 +97,7 @@ export default function MesRequetesPage() {
   const loadRequests = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('workflow_requests')
-      .select('id, titre, type_demande, description, statut, priorite, assigned_to, created_at, assigned_profile:assigned_to(full_name)')
+      .select('id, titre, type_demande, description, statut, priorite, assigned_to, justificatif_path, created_at, assigned_profile:assigned_to(full_name)')
       .eq('created_by', userId)
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
@@ -139,27 +141,60 @@ export default function MesRequetesPage() {
 
   // ── Création ──────────────────────────────────────────────────────────────
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setFileError('')
+    const file = e.target.files?.[0] ?? null
+    if (file && file.size > 5 * 1024 * 1024) {
+      setFileError(t('field_justificatif_hint'))
+      e.target.value = ''
+      return
+    }
+    setJustificatifFile(file)
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!form.titre.trim()) return
     setCreating(true)
     try {
-      const { error } = await supabase.from('workflow_requests').insert({
-        tenant_id:    currentTenantId,
-        societe_id:   societeId,
-        titre:        form.titre.trim(),
-        type_demande: form.type_demande,
-        description:  form.description.trim() || null,
-        priorite:     form.priorite,
-        statut:       form.assigned_to ? 'assigne' : 'en_attente',
-        assigned_to:  form.assigned_to || null,
-        created_by:   currentUserId,
-      })
+      // 1. Créer la requête
+      const { data: inserted, error } = await supabase
+        .from('workflow_requests')
+        .insert({
+          tenant_id:    currentTenantId,
+          societe_id:   societeId,
+          titre:        form.titre.trim(),
+          type_demande: form.type_demande,
+          description:  form.description.trim() || null,
+          priorite:     form.priorite,
+          statut:       form.assigned_to ? 'assigne' : 'en_attente',
+          assigned_to:  form.assigned_to || null,
+          created_by:   currentUserId,
+        })
+        .select('id')
+        .single()
       if (error) throw error
+
+      // 2. Upload du justificatif si présent
+      if (justificatifFile && inserted?.id) {
+        const ext = justificatifFile.name.split('.').pop()
+        const path = `${currentTenantId}/societes/${societeId}/workflow/${inserted.id}/justificatif_${Date.now()}.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('sili-files')
+          .upload(path, justificatifFile, { upsert: false })
+        if (uploadError) {
+          toast.error(t('toast_upload_error'))
+        } else {
+          await supabase.from('workflow_requests')
+            .update({ justificatif_path: path })
+            .eq('id', inserted.id)
+        }
+      }
 
       toast.success(t('toast_created'))
       setShowCreate(false)
       setForm({ titre: '', type_demande: 'autre', description: '', priorite: 'normale', assigned_to: '' })
+      setJustificatifFile(null)
       await loadRequests(currentUserId)
     } catch {
       toast.error(t('toast_error'))
@@ -382,10 +417,39 @@ export default function MesRequetesPage() {
                 </select>
               </div>
 
+              {/* Justificatif */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  {t('field_justificatif')}
+                </label>
+                <label className="flex items-center gap-3 px-3 py-2.5 border border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/40 transition-colors">
+                  <Paperclip className="h-4 w-4 text-slate-400 shrink-0" />
+                  <span className="text-sm text-slate-500 truncate">
+                    {justificatifFile ? justificatifFile.name : t('field_justificatif_hint')}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.odt,.rtf,image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {fileError && <p className="text-xs text-red-500 mt-1">{fileError}</p>}
+                {justificatifFile && (
+                  <button
+                    type="button"
+                    onClick={() => setJustificatifFile(null)}
+                    className="text-xs text-slate-400 hover:text-red-500 mt-1"
+                  >
+                    × Retirer le fichier
+                  </button>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowCreate(false)}
+                  onClick={() => { setShowCreate(false); setJustificatifFile(null); setFileError('') }}
                   className="flex-1 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
                 >
                   {t('btn_annuler')}
@@ -447,6 +511,24 @@ export default function MesRequetesPage() {
                 <div>
                   <p className="text-xs text-slate-400 mb-1">{t('assigned_to')}</p>
                   <p className="text-sm text-slate-700">{detailRequest.assigned_profile.full_name}</p>
+                </div>
+              )}
+
+              {/* Justificatif — visible par le créateur (cette page) */}
+              {detailRequest.justificatif_path && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">{t('field_justificatif')}</p>
+                  <button
+                    onClick={async () => {
+                      const { data } = await supabase.storage.from('sili-files')
+                        .createSignedUrl(detailRequest.justificatif_path!, 60)
+                      if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {t('justificatif_download')}
+                  </button>
                 </div>
               )}
 
