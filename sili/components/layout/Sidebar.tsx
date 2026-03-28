@@ -142,22 +142,49 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
       .then(({ data }) => setActiveModules(data?.map(r => r.module) ?? []))
   }, [societeId])
 
-  // Pour tenant_user : charge ses permissions sur la société courante
+  // Pour tenant_user : charge ses permissions effectives (individuelle + groupes)
   // pour filtrer le menu Applications (masquer les modules avec permission 'aucun')
   useEffect(() => {
     if (!societeId || userRole !== 'tenant_user') { setUserPermissions({}); return }
-    supabase.auth.getUser().then(({ data }) => {
+    const RANK: Record<string, number> = { aucun: 0, lecteur: 1, contributeur: 2, gestionnaire: 3, admin: 4 }
+    const LEVELS = ['aucun', 'lecteur', 'contributeur', 'gestionnaire', 'admin']
+
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return
-      supabase
+      const uid = data.user.id
+
+      // Permissions individuelles
+      const { data: perms } = await supabase
         .from('user_module_permissions')
         .select('module, permission')
         .eq('societe_id', societeId)
-        .eq('user_id', data.user.id)
-        .then(({ data: perms }) => {
-          const map: Record<string, string> = {}
-          perms?.forEach(p => { map[p.module] = p.permission })
-          setUserPermissions(map)
+        .eq('user_id', uid)
+
+      const map: Record<string, string> = {}
+      perms?.forEach(p => { map[p.module] = p.permission })
+
+      // Merge avec les permissions des groupes
+      const { data: memberships } = await supabase
+        .from('user_group_members')
+        .select('group_id')
+        .eq('user_id', uid)
+
+      if (memberships && memberships.length > 0) {
+        const groupIds = memberships.map((m: any) => m.group_id)
+        const { data: gPerms } = await supabase
+          .from('user_group_permissions')
+          .select('module, permission')
+          .in('group_id', groupIds)
+          .eq('societe_id', societeId)
+
+        gPerms?.forEach((gp: any) => {
+          const cur  = RANK[map[gp.module] ?? 'aucun'] ?? 0
+          const from = RANK[gp.permission] ?? 0
+          if (from > cur) map[gp.module] = LEVELS[from]
         })
+      }
+
+      setUserPermissions(map)
     })
   }, [societeId, userRole])
 

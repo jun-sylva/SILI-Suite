@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { LayoutDashboard, FileText, ClipboardList, Lock, Wrench, GitMerge } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 
 type NavItem = {
   id: string
@@ -79,10 +80,7 @@ export default function WorkflowLayout({ children }: { children: React.ReactNode
 
       if (admin) { setCanAccessAssignees(true); return }
 
-      const { data: permData } = await supabase
-        .from('user_module_permissions').select('permission')
-        .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
-      const perm = permData?.permission ?? 'aucun'
+      const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'workflow')
       setCanAccessAssignees(perm === 'gestionnaire' || perm === 'admin')
     }
     checkAccess()

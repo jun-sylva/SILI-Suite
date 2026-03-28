@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import {
   Loader2, ShieldOff, Users, Clock, Banknote, FileText,
   ChevronLeft, ChevronRight, CheckCircle2, XCircle, TrendingUp,
@@ -99,21 +100,8 @@ export default function RapportPage() {
     if (!profile) return
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
-    let access = isTenantAdmin
-
-    if (!isTenantAdmin) {
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      const perm = permData?.permission ?? 'aucun'
-      access = perm === 'gestionnaire' || perm === 'admin'
-    }
-
-    setCanAccess(access)
+    const perm = isTenantAdmin ? 'admin' : await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
+    setCanAccess(isTenantAdmin || perm === 'gestionnaire' || perm === 'admin')
     setLoading(false)
   }
 

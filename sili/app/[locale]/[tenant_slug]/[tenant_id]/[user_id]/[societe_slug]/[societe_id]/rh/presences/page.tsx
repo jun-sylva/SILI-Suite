@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { uploadFile, uniqueFilename } from '@/lib/storage'
 import {
   Loader2, ShieldOff, Clock, BarChart3, Calendar,
@@ -180,20 +181,12 @@ export default function PresencesPage() {
     setCurrentUserId(session.user.id)
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
-    let perm: string | null = null
 
     if (isTenantAdmin) {
       setCanAccessPage(true)
       setCanManage(true)
     } else {
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      perm = permData?.permission ?? 'aucun'
+      const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
       setCanAccessPage(perm !== 'aucun')
       setCanManage(perm === 'gestionnaire' || perm === 'admin')
     }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import {
   Users, UserCheck, Plus, Loader2, X, CheckCircle2,
   AlertCircle, Pencil, ChevronDown, ShieldOff,
@@ -165,14 +166,7 @@ export default function EmployesPage() {
       setCanEdit(true)
       setCanAccessPage(true)
     } else {
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      const perm = permData?.permission ?? 'aucun'
+      const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
       const hasAccess = perm === 'gestionnaire' || perm === 'admin'
       setCanAccessPage(hasAccess)
       setCanEdit(hasAccess)

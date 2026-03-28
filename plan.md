@@ -301,6 +301,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_workflow_processes.sql` | CREATE `workflow_process_templates`, `workflow_process_steps`, `workflow_instances`, `workflow_instance_steps` + RLS + indexes | ✅ |
 | `20260328_fix_workflow_rls_recursion.sql` | Fix récursion infinie entre `wi_select` et `wis_select` — fonction SECURITY DEFINER `wf_is_actor_in_instance()` + réécriture des deux politiques | ✅ |
 | `20260328_fix_user_group_members_rls.sql` | Fix RLS SELECT `user_group_members` — ajout `tenant_admin` via UNION profiles (tenant_admin absent de user_societes → loadMembers retournait vide) | ✅ |
+| `20260328_unique_group_member.sql` | Contraintes UNIQUE `(group_id, user_id)` et `(group_id, employe_id)` sur `user_group_members` — empêche d'ajouter deux fois le même membre | ✅ |
 
 ---
 
@@ -338,6 +339,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 - [x] `20260328_fix_user_groups_rls.sql` ✅
 - [x] `20260328_workflow_processes.sql` ✅
 - [x] `20260328_fix_workflow_rls_recursion.sql` ✅
+- [x] `20260328_fix_user_group_members_rls.sql` ✅
+- [x] `20260328_unique_group_member.sql` ✅
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
@@ -408,9 +411,17 @@ Gestionnaire refuse          → refuse
 #### Permissions par Groupe V3
 - **Table** `user_group_permissions` : group_id, tenant_id, societe_id, module, permission, granted_by — contrainte unique `(group_id, societe_id, module)`
 - **Résolution** : `getEffectivePermission()` dans `lib/permissions.ts` — `MAX(permission individuelle via RPC, permission max des groupes)`
+- **`fetchEffectiveModulePerm(userId, societeId, module)`** : variante avec userId explicite dans `lib/permissions.ts` — utilisée dans tous les layouts/pages (merge individuel + groupes sans passer par le RPC)
 - **Hook** : `usePermission.ts` refactoré pour appeler `getEffectivePermission()` après la vérification `sys_modules`
 - **UI** : bouton "Permissions" par groupe dans l'onglet Groupes → modal tableau croisé (module × permission) + colonne "Héritage" informative
 - **Règle** : la permission individuelle ne peut jamais être réduite par un groupe — toujours le MAX
+- **Sidebar** (`components/layout/Sidebar.tsx`) : charge maintenant individuel + groupes pour filtrer les modules visibles (avant : `user_module_permissions` uniquement → modules avec permission groupe uniquement restaient cachés)
+- **Héritage effectif dans les layouts/pages** : tous les fichiers suivants utilisent `fetchEffectiveModulePerm` à la place de requêtes directes `user_module_permissions` :
+  - `workflow/layout.tsx`, `workflow/page.tsx`, `workflow/builder/page.tsx`, `workflow/processes/page.tsx`, `workflow/processes/[instance_id]/page.tsx`, `workflow/assignees/page.tsx`
+  - `rh/layout.tsx`, `rh/page.tsx`, `rh/employes/page.tsx`, `rh/presences/page.tsx`, `rh/paie/page.tsx`, `rh/rapport/page.tsx`
+- **Sync auto à l'ajout de membre** (`utilisateurs/page.tsx`) : `addMember()` appelle `syncGroupPermsToUser()` → upsert dans `user_module_permissions` avec le MAX(individuel, groupe)
+- **Sync auto au changement de perm groupe** (`utilisateurs/page.tsx`) : `setGroupPermission()` propage la nouvelle perm à tous les membres du groupe via `syncGroupPermsToUser()`
+- **Affichage fusionné** (`utilisateurs/page.tsx`) : `fetchUsers()` merge individuel + groupes pour afficher la permission effective dans le tableau croisé
 
 ---
 

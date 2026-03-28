@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import {
   FileText, Clock, CheckCircle2, ClipboardList, ArrowRight, Loader2,
   GitMerge, Wrench,
@@ -48,13 +49,7 @@ export default function WorkflowDashboard() {
 
       const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
 
-      let perm = 'aucun'
-      if (!isTenantAdmin) {
-        const { data: permData } = await supabase
-          .from('user_module_permissions').select('permission')
-          .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
-        perm = permData?.permission ?? 'aucun'
-      }
+      const perm = isTenantAdmin ? 'admin' : await fetchEffectiveModulePerm(session.user.id, societeId, 'workflow')
 
       const isGestionnaireOrAbove = perm === 'gestionnaire' || perm === 'admin'
 

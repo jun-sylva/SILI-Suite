@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { LayoutDashboard, Users, Clock, Banknote, BarChart3, Lock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 
 type NavItem = {
   id: string
@@ -98,14 +99,7 @@ export default function RHLayout({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      const perm = permData?.permission ?? 'aucun'
+      const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
       const isManager = perm === 'gestionnaire' || perm === 'admin'
       setCanAccessEmployes(isManager)
       setCanAccessRapport(isManager)

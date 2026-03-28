@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { uploadFile as storageUpload, uniqueFilename, getSignedUrl } from '@/lib/storage'
 import {
   Loader2, ShieldOff, Banknote, Upload, Download,
@@ -100,20 +101,7 @@ export default function PaiePage() {
     setFullTenantId(profile.tenant_id)
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
-    let perm = 'aucun'
-
-    if (isTenantAdmin) {
-      perm = 'admin'
-    } else {
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      perm = permData?.permission ?? 'aucun'
-    }
+    const perm = isTenantAdmin ? 'admin' : await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
 
     setCanAccessPage(perm !== 'aucun')
     setCanManage(perm === 'gestionnaire' || perm === 'admin' || isTenantAdmin)

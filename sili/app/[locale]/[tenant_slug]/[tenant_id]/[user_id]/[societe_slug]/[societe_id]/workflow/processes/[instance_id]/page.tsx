@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
 import {
   GitMerge, Loader2, ChevronLeft, CheckCircle2, XCircle, Clock,
@@ -138,13 +139,7 @@ export default function InstanceDetailPage() {
       const isTA = profile?.role === 'tenant_admin' || profile?.role === 'super_admin'
       setIsTenantAdmin(isTA)
 
-      let perm = 'aucun'
-      if (!isTA) {
-        const { data: permData } = await supabase
-          .from('user_module_permissions').select('permission')
-          .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
-        perm = permData?.permission ?? 'aucun'
-      }
+      const perm = isTA ? 'admin' : await fetchEffectiveModulePerm(session.user.id, societeId, 'workflow')
       setCanDelete(isTA || perm === 'admin')
       await load()
       setLoading(false)

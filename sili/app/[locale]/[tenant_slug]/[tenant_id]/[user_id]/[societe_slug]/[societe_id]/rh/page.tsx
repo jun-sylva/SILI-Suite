@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Users, Clock, Banknote, BarChart3, Monitor, ChevronRight, Pencil, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
 
 export default function RHDashboard() {
@@ -41,14 +42,7 @@ export default function RHDashboard() {
     if (isTenantAdmin) {
       setCanManage(true)
     } else {
-      const { data: permData } = await supabase
-        .from('user_module_permissions')
-        .select('permission')
-        .eq('user_id', session.user.id)
-        .eq('societe_id', societeId)
-        .eq('module', 'rh')
-        .maybeSingle()
-      const perm = permData?.permission ?? 'aucun'
+      const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
       setCanManage(perm === 'gestionnaire' || perm === 'admin')
     }
 

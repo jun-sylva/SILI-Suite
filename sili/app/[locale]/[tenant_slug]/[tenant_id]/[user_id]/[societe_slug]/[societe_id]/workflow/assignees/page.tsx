@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
 import {
   Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch,
@@ -164,10 +165,7 @@ export default function AssigneesPage() {
       const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
 
       if (!isTenantAdmin) {
-        const { data: permData } = await supabase
-          .from('user_module_permissions').select('permission')
-          .eq('user_id', uid).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
-        const perm = permData?.permission ?? 'aucun'
+        const perm = await fetchEffectiveModulePerm(uid, societeId, 'workflow')
         if (perm !== 'gestionnaire' && perm !== 'admin') {
           setAccessDenied(true)
           setLoading(false)

@@ -13,6 +13,40 @@ export const PERM_RANK: Record<PermissionLevel, number> = {
 const RANK_TO_PERM: PermissionLevel[] = ['aucun', 'lecteur', 'contributeur', 'gestionnaire', 'admin']
 
 /**
+ * Résolution effective avec userId explicite (pour layouts/pages qui ont déjà la session).
+ * MAX(permission individuelle, permission max des groupes de l'utilisateur).
+ */
+export async function fetchEffectiveModulePerm(
+  userId: string,
+  societeId: string,
+  module: string,
+): Promise<PermissionLevel> {
+  const [{ data: indiv }, { data: memberships }] = await Promise.all([
+    supabase.from('user_module_permissions').select('permission')
+      .eq('user_id', userId).eq('societe_id', societeId).eq('module', module).maybeSingle(),
+    supabase.from('user_group_members').select('group_id').eq('user_id', userId),
+  ])
+
+  let maxRank = PERM_RANK[(indiv?.permission as PermissionLevel) ?? 'aucun']
+
+  if (memberships && memberships.length > 0) {
+    const groupIds = memberships.map((m: any) => m.group_id)
+    const { data: gPerms } = await supabase
+      .from('user_group_permissions')
+      .select('permission')
+      .in('group_id', groupIds)
+      .eq('societe_id', societeId)
+      .eq('module', module)
+    gPerms?.forEach((gp: any) => {
+      const rank = PERM_RANK[gp.permission as PermissionLevel] ?? 0
+      if (rank > maxRank) maxRank = rank
+    })
+  }
+
+  return RANK_TO_PERM[maxRank]
+}
+
+/**
  * Résolution effective :
  *   MAX(permission individuelle via RPC, permission max des groupes de l'utilisateur)
  *
