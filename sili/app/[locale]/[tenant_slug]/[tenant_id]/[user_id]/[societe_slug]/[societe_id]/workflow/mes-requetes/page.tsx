@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Plus, Loader2, FileText, X, Trash2, Eye, GitBranch, Download, Paperclip,
+  Plus, Loader2, FileText, X, Trash2, Eye, GitBranch, Download, Paperclip, UsersRound,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -14,6 +14,7 @@ import {
 type Statut = 'en_attente' | 'assigne' | 'approuve' | 'refuse'
 type Priorite = 'basse' | 'normale' | 'haute' | 'urgente'
 type TypeDemande = 'materiel_it' | 'finance' | 'formation' | 'deplacement' | 'rh' | 'autre'
+type AssignType = 'individual' | 'group'
 
 interface WorkflowRequest {
   id: string
@@ -23,7 +24,9 @@ interface WorkflowRequest {
   statut: Statut
   priorite: Priorite
   assigned_to: string | null
+  assigned_to_group: string | null
   assigned_profile?: { full_name: string | null } | null
+  assigned_group?: { nom: string } | null
   justificatif_path: string | null
   created_at: string
 }
@@ -39,6 +42,11 @@ interface WorkflowComment {
 interface Gestionnaire {
   id: string
   full_name: string | null
+}
+
+interface UserGroup {
+  id: string
+  nom: string
 }
 
 // ── Badges ─────────────────────────────────────────────────────────────────
@@ -69,6 +77,7 @@ export default function MesRequetesPage() {
 
   const [requests, setRequests]           = useState<WorkflowRequest[]>([])
   const [gestionnaires, setGestionnaires] = useState<Gestionnaire[]>([])
+  const [groups, setGroups]               = useState<UserGroup[]>([])
   const [loading, setLoading]             = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [currentTenantId, setCurrentTenantId] = useState<string>('')
@@ -76,9 +85,10 @@ export default function MesRequetesPage() {
   // Modal création
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating]     = useState(false)
+  const [assignType, setAssignType] = useState<AssignType>('individual')
   const [form, setForm] = useState({
     titre: '', type_demande: 'autre' as TypeDemande, description: '',
-    priorite: 'normale' as Priorite, assigned_to: '',
+    priorite: 'normale' as Priorite, assigned_to: '', assigned_to_group: '',
   })
   const [justificatifFile, setJustificatifFile] = useState<File | null>(null)
   const [fileError, setFileError]               = useState<string>('')
@@ -97,7 +107,12 @@ export default function MesRequetesPage() {
   const loadRequests = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('workflow_requests')
-      .select('id, titre, type_demande, description, statut, priorite, assigned_to, justificatif_path, created_at, assigned_profile:assigned_to(full_name)')
+      .select(`
+        id, titre, type_demande, description, statut, priorite,
+        assigned_to, assigned_to_group, justificatif_path, created_at,
+        assigned_profile:assigned_to(full_name),
+        assigned_group:assigned_to_group(nom)
+      `)
       .eq('created_by', userId)
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
@@ -134,6 +149,15 @@ export default function MesRequetesPage() {
         setGestionnaires(gProfiles?.filter(p => p.id !== uid) ?? [])
       }
 
+      // Charger les groupes de cette société
+      const { data: groupsData } = await supabase
+        .from('user_groups')
+        .select('id, nom')
+        .eq('tenant_id', tid)
+        .eq('societe_id', societeId)
+        .order('nom', { ascending: true })
+      setGroups(groupsData ?? [])
+
       await loadRequests(uid)
     }
     init()
@@ -152,24 +176,35 @@ export default function MesRequetesPage() {
     setJustificatifFile(file)
   }
 
+  function resetCreateModal() {
+    setShowCreate(false)
+    setAssignType('individual')
+    setForm({ titre: '', type_demande: 'autre', description: '', priorite: 'normale', assigned_to: '', assigned_to_group: '' })
+    setJustificatifFile(null)
+    setFileError('')
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!form.titre.trim()) return
     setCreating(true)
     try {
+      const hasAssignment = assignType === 'individual' ? !!form.assigned_to : !!form.assigned_to_group
+
       // 1. Créer la requête
       const { data: inserted, error } = await supabase
         .from('workflow_requests')
         .insert({
-          tenant_id:    currentTenantId,
-          societe_id:   societeId,
-          titre:        form.titre.trim(),
-          type_demande: form.type_demande,
-          description:  form.description.trim() || null,
-          priorite:     form.priorite,
-          statut:       form.assigned_to ? 'assigne' : 'en_attente',
-          assigned_to:  form.assigned_to || null,
-          created_by:   currentUserId,
+          tenant_id:         currentTenantId,
+          societe_id:        societeId,
+          titre:             form.titre.trim(),
+          type_demande:      form.type_demande,
+          description:       form.description.trim() || null,
+          priorite:          form.priorite,
+          statut:            hasAssignment ? 'assigne' : 'en_attente',
+          assigned_to:       assignType === 'individual' ? (form.assigned_to || null) : null,
+          assigned_to_group: assignType === 'group' ? (form.assigned_to_group || null) : null,
+          created_by:        currentUserId,
         })
         .select('id')
         .single()
@@ -192,9 +227,7 @@ export default function MesRequetesPage() {
       }
 
       toast.success(t('toast_created'))
-      setShowCreate(false)
-      setForm({ titre: '', type_demande: 'autre', description: '', priorite: 'normale', assigned_to: '' })
-      setJustificatifFile(null)
+      resetCreateModal()
       await loadRequests(currentUserId)
     } catch {
       toast.error(t('toast_error'))
@@ -233,6 +266,14 @@ export default function MesRequetesPage() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  // ── Helper: nom d'assignation ─────────────────────────────────────────────
+
+  function getAssigneeName(req: WorkflowRequest): string {
+    if (req.assigned_group?.nom) return req.assigned_group.nom
+    if (req.assigned_profile?.full_name) return req.assigned_profile.full_name
+    return '—'
   }
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
@@ -301,7 +342,10 @@ export default function MesRequetesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-slate-500">
-                      {req.assigned_profile?.full_name ?? '—'}
+                      <div className="flex items-center gap-1.5">
+                        {req.assigned_to_group && <UsersRound className="h-3.5 w-3.5 text-indigo-400 shrink-0" />}
+                        <span>{getAssigneeName(req)}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-slate-400 text-xs">
                       {new Date(req.created_at).toLocaleDateString('fr-FR')}
@@ -337,10 +381,10 @@ export default function MesRequetesPage() {
       {/* ── Modal création ──────────────────────────────────────────────────── */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 sticky top-0 bg-white">
               <h2 className="text-base font-bold text-slate-800">{t('modal_title_new')}</h2>
-              <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-slate-100">
+              <button onClick={resetCreateModal} className="p-1.5 rounded-lg hover:bg-slate-100">
                 <X className="h-4 w-4 text-slate-500" />
               </button>
             </div>
@@ -398,23 +442,65 @@ export default function MesRequetesPage() {
                 />
               </div>
 
-              {/* Assigner à */}
+              {/* Assignation — type selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_assign_to')}</label>
-                <select
-                  value={form.assigned_to}
-                  onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">{t('select_gestionnaire')}</option>
-                  {gestionnaires.length === 0 ? (
-                    <option disabled>{t('no_gestionnaire')}</option>
-                  ) : (
-                    gestionnaires.map(g => (
-                      <option key={g.id} value={g.id}>{g.full_name ?? g.id}</option>
-                    ))
-                  )}
-                </select>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">{t('field_assign_to')}</label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setAssignType('individual')}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+                      assignType === 'individual'
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {t('assign_type_individual')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignType('group')}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+                      assignType === 'group'
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {t('assign_type_group')}
+                  </button>
+                </div>
+
+                {assignType === 'individual' ? (
+                  <select
+                    value={form.assigned_to}
+                    onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">{t('select_gestionnaire')}</option>
+                    {gestionnaires.length === 0 ? (
+                      <option disabled>{t('no_gestionnaire')}</option>
+                    ) : (
+                      gestionnaires.map(g => (
+                        <option key={g.id} value={g.id}>{g.full_name ?? g.id}</option>
+                      ))
+                    )}
+                  </select>
+                ) : (
+                  <select
+                    value={form.assigned_to_group}
+                    onChange={e => setForm(f => ({ ...f, assigned_to_group: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">{t('select_group')}</option>
+                    {groups.length === 0 ? (
+                      <option disabled>{t('no_group')}</option>
+                    ) : (
+                      groups.map(g => (
+                        <option key={g.id} value={g.id}>{g.nom}</option>
+                      ))
+                    )}
+                  </select>
+                )}
               </div>
 
               {/* Justificatif */}
@@ -449,7 +535,7 @@ export default function MesRequetesPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setShowCreate(false); setJustificatifFile(null); setFileError('') }}
+                  onClick={resetCreateModal}
                   className="flex-1 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
                 >
                   {t('btn_annuler')}
@@ -507,10 +593,13 @@ export default function MesRequetesPage() {
                   <p className="text-sm text-slate-700 whitespace-pre-wrap">{detailRequest.description}</p>
                 </div>
               )}
-              {detailRequest.assigned_profile?.full_name && (
+              {(detailRequest.assigned_profile?.full_name || detailRequest.assigned_group?.nom) && (
                 <div>
                   <p className="text-xs text-slate-400 mb-1">{t('assigned_to')}</p>
-                  <p className="text-sm text-slate-700">{detailRequest.assigned_profile.full_name}</p>
+                  <div className="flex items-center gap-1.5">
+                    {detailRequest.assigned_to_group && <UsersRound className="h-3.5 w-3.5 text-indigo-400" />}
+                    <p className="text-sm text-slate-700">{getAssigneeName(detailRequest)}</p>
+                  </div>
                 </div>
               )}
 

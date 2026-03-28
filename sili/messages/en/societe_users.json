@@ -16,5 +16,53 @@
   "toast_update_error": "Error updating permission",
   "toast_reset_success": "Permissions reset",
   "toast_reset_error": "Error resetting permissions",
-  "loading": "Loading users..."
+  "loading": "Loading users...",
+
+  "tab_users": "Users",
+  "tab_groups": "Groups",
+
+  "groups_empty_title": "No groups created",
+  "groups_empty_subtitle": "Create groups to simplify Workflow request assignment.",
+  "groups_loading": "Loading groups...",
+
+  "btn_new_group": "New group",
+  "btn_edit_group": "Edit",
+  "btn_delete_group": "Delete",
+  "btn_add_member": "Add member",
+  "btn_remove_member": "Remove",
+
+  "modal_new_group_title": "New group",
+  "modal_edit_group_title": "Edit group",
+  "modal_delete_group_title": "Delete group",
+  "modal_members_title": "Group members",
+
+  "field_group_nom": "Group name",
+  "field_group_nom_placeholder": "E.g.: HR Team, Management...",
+  "field_group_description": "Description",
+  "field_group_description_placeholder": "Optional description...",
+  "field_group_type": "Group type",
+  "group_type_compte": "With account (active users)",
+  "group_type_mixte": "Mixed (with and without account)",
+
+  "field_member_role": "Role in group",
+  "member_role_membre": "Member",
+  "member_role_manager": "Manager",
+
+  "col_group_nom": "Name",
+  "col_group_type": "Type",
+  "col_group_members_count": "Members",
+  "col_group_actions": "Actions",
+
+  "col_member_name": "Name",
+  "col_member_role": "Role",
+  "col_member_actions": "Actions",
+
+  "confirm_delete_group_desc": "This action is irreversible. The group will be permanently deleted.",
+
+  "toast_group_created": "Group created successfully.",
+  "toast_group_updated": "Group updated.",
+  "toast_group_deleted": "Group deleted.",
+  "toast_member_added": "Member added.",
+  "toast_member_removed": "Member removed.",
+  "toast_group_error": "An error occurred."
 }

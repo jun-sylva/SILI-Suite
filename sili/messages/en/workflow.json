@@ -92,5 +92,19 @@
   "no_gestionnaire": "No manager available",
   "submitted_by": "Submitted by",
   "assigned_to": "Assigned to",
-  "created_at": "Created on"
+  "created_at": "Created on",
+
+  "assign_type_individual": "Individual manager",
+  "assign_type_group": "Group",
+  "field_assign_to_group": "Assign to a group",
+  "select_group": "Select a group...",
+  "no_group": "No group available",
+  "col_assigne_groupe": "Assigned group",
+
+  "conflict_title": "Conflict detected",
+  "conflict_body": "This request has just been handled by another manager.",
+  "conflict_btn_refresh": "Refresh",
+  "conflict_btn_close": "Close",
+  "badge_groupe": "Group",
+  "assigned_via_group": "Via group"
 }

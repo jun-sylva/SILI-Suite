@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
-  Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch, Download,
+  Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch,
+  Download, UsersRound, AlertTriangle,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -23,9 +24,12 @@ interface WorkflowRequest {
   statut: Statut
   priorite: Priorite
   assigned_to: string | null
+  assigned_to_group: string | null
   justificatif_path: string | null
   created_at: string
   created_profile?: { full_name: string | null } | null
+  // flag interne — non issu de Supabase directement
+  via_group?: boolean
 }
 
 interface WorkflowComment {
@@ -70,11 +74,13 @@ export default function AssigneesPage() {
   const [currentUserId, setCurrentUserId]     = useState('')
   const [currentTenantId, setCurrentTenantId] = useState('')
   const [isAdmin, setIsAdmin]                 = useState(false)
+  // IDs des groupes dont l'utilisateur est manager
+  const [managerGroupIds, setManagerGroupIds] = useState<string[]>([])
 
   // Modal détail
-  const [detailRequest, setDetailRequest]         = useState<WorkflowRequest | null>(null)
-  const [comments, setComments]                   = useState<WorkflowComment[]>([])
-  const [loadingComments, setLoadingComments]     = useState(false)
+  const [detailRequest, setDetailRequest]     = useState<WorkflowRequest | null>(null)
+  const [comments, setComments]               = useState<WorkflowComment[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
 
   // Modal action (approuver / refuser)
   const [actionTarget, setActionTarget]   = useState<{ id: string; type: 'approuve' | 'refuse' } | null>(null)
@@ -85,23 +91,60 @@ export default function AssigneesPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [deleting, setDeleting]         = useState(false)
 
+  // Conflit Realtime
+  const [conflictRequestId, setConflictRequestId] = useState<string | null>(null)
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
   // ── Chargement ────────────────────────────────────────────────────────────
 
-  const loadRequests = useCallback(async (uid: string, adminMode: boolean) => {
-    const query = supabase
-      .from('workflow_requests')
-      .select('id, titre, type_demande, description, statut, priorite, assigned_to, justificatif_path, created_at, created_profile:created_by(full_name)')
-      .eq('societe_id', societeId)
-      .order('created_at', { ascending: false })
+  const loadRequests = useCallback(async (uid: string, adminMode: boolean, groupIds: string[]) => {
+    const baseSelect = `
+      id, titre, type_demande, description, statut, priorite,
+      assigned_to, assigned_to_group, justificatif_path, created_at,
+      created_profile:created_by(full_name)
+    `
 
-    // gestionnaire = seulement les requêtes qui lui sont assignées
-    // admin / tenant_admin = toutes les requêtes de la société
-    if (!adminMode) {
-      query.eq('assigned_to', uid)
+    if (adminMode) {
+      // Admin / tenant_admin : toutes les requêtes de la société
+      const { data } = await supabase
+        .from('workflow_requests')
+        .select(baseSelect)
+        .eq('societe_id', societeId)
+        .order('created_at', { ascending: false })
+      setRequests((data as WorkflowRequest[]) ?? [])
+    } else {
+      // Gestionnaire : requêtes directement assignées + requêtes de ses groupes
+      const [directRes, groupRes] = await Promise.all([
+        supabase
+          .from('workflow_requests')
+          .select(baseSelect)
+          .eq('societe_id', societeId)
+          .eq('assigned_to', uid)
+          .order('created_at', { ascending: false }),
+        groupIds.length > 0
+          ? supabase
+              .from('workflow_requests')
+              .select(baseSelect)
+              .eq('societe_id', societeId)
+              .in('assigned_to_group', groupIds)
+              .order('created_at', { ascending: false })
+          : Promise.resolve({ data: [] }),
+      ])
+
+      const direct: WorkflowRequest[] = (directRes.data as WorkflowRequest[]) ?? []
+      const viaGroup: WorkflowRequest[] = ((groupRes.data ?? []) as WorkflowRequest[])
+        .map(r => ({ ...r, via_group: true }))
+
+      // Merge + déduplique (une requête peut être dans les deux si l'assigné est aussi dans le groupe)
+      const seen = new Set<string>()
+      const merged: WorkflowRequest[] = []
+      for (const r of [...direct, ...viaGroup]) {
+        if (!seen.has(r.id)) { seen.add(r.id); merged.push(r) }
+      }
+      merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      setRequests(merged)
     }
 
-    const { data } = await query
-    setRequests((data as WorkflowRequest[]) ?? [])
     setLoading(false)
   }, [societeId])
 
@@ -115,7 +158,8 @@ export default function AssigneesPage() {
       const { data: profile } = await supabase
         .from('profiles').select('role, tenant_id').eq('id', uid).single()
       if (!profile) return
-      setCurrentTenantId(profile.tenant_id)
+      const tid = profile.tenant_id
+      setCurrentTenantId(tid)
 
       const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
 
@@ -130,14 +174,67 @@ export default function AssigneesPage() {
           return
         }
         setIsAdmin(perm === 'admin')
-        await loadRequests(uid, false)
+
+        // Charger les groupes dont l'utilisateur est manager
+        const { data: groupMemberships } = await supabase
+          .from('user_group_members')
+          .select('group_id')
+          .eq('user_id', uid)
+          .eq('role', 'manager')
+        const gIds = (groupMemberships ?? []).map((m: any) => m.group_id)
+        setManagerGroupIds(gIds)
+
+        await loadRequests(uid, false, gIds)
       } else {
         setIsAdmin(true)
-        await loadRequests(uid, true)
+        await loadRequests(uid, true, [])
       }
     }
     init()
   }, [societeId, loadRequests])
+
+  // ── Realtime conflict detection ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!actionTarget) {
+      // Unsubscribe quand le modal se ferme
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current)
+        realtimeChannelRef.current = null
+      }
+      return
+    }
+
+    const channel = supabase
+      .channel(`conflict-${actionTarget.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'workflow_requests',
+          filter: `id=eq.${actionTarget.id}`,
+        },
+        (payload) => {
+          const newRecord = payload.new as { statut: Statut; approved_by?: string; refused_by?: string }
+          const wasHandledByOther =
+            (newRecord.approved_by && newRecord.approved_by !== currentUserId) ||
+            (newRecord.refused_by  && newRecord.refused_by  !== currentUserId)
+          if (wasHandledByOther && (newRecord.statut === 'approuve' || newRecord.statut === 'refuse')) {
+            setConflictRequestId(actionTarget.id)
+            setActionTarget(null)
+          }
+        }
+      )
+      .subscribe()
+
+    realtimeChannelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+      realtimeChannelRef.current = null
+    }
+  }, [actionTarget, currentUserId])
 
   // ── Action approuver / refuser ────────────────────────────────────────────
 
@@ -164,16 +261,13 @@ export default function AssigneesPage() {
         .eq('id', actionTarget.id)
       if (updateErr) throw updateErr
 
-      // Ajouter commentaire dans historique
-      if (actionComment.trim() || true) {
-        await supabase.from('workflow_comments').insert({
-          request_id: actionTarget.id,
-          tenant_id:  currentTenantId,
-          author_id:  currentUserId,
-          action:     actionTarget.type,
-          contenu:    actionComment.trim() || (actionTarget.type === 'approuve' ? t('action_approuve') : t('action_refuse')),
-        })
-      }
+      await supabase.from('workflow_comments').insert({
+        request_id: actionTarget.id,
+        tenant_id:  currentTenantId,
+        author_id:  currentUserId,
+        action:     actionTarget.type,
+        contenu:    actionComment.trim() || (actionTarget.type === 'approuve' ? t('action_approuve') : t('action_refuse')),
+      })
 
       toast.success(actionTarget.type === 'approuve' ? t('toast_approved') : t('toast_refused'))
       setActionTarget(null)
@@ -218,6 +312,23 @@ export default function AssigneesPage() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  // ── Refresh après conflit ──────────────────────────────────────────────────
+
+  async function refreshAfterConflict() {
+    setConflictRequestId(null)
+    setLoading(true)
+    await loadRequests(currentUserId, isAdmin, managerGroupIds)
+  }
+
+  // ── Justificatif visible : assigné direct OU membre manager du groupe ─────
+
+  function canSeeJustificatif(req: WorkflowRequest): boolean {
+    if (req.assigned_to === currentUserId) return true
+    if (req.assigned_to_group && managerGroupIds.includes(req.assigned_to_group)) return true
+    if (isAdmin) return true
+    return false
   }
 
   // ── Accès refusé ─────────────────────────────────────────────────────────
@@ -279,7 +390,17 @@ export default function AssigneesPage() {
               <tbody className="divide-y divide-slate-100">
                 {requests.map((req) => (
                   <tr key={req.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-3.5 font-medium text-slate-800 max-w-[180px] truncate">{req.titre}</td>
+                    <td className="px-5 py-3.5 font-medium text-slate-800 max-w-[180px]">
+                      <div className="flex items-start gap-1.5">
+                        <span className="truncate">{req.titre}</span>
+                        {req.via_group && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full">
+                            <UsersRound className="h-2.5 w-2.5" />
+                            {t('badge_groupe')}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3.5 text-slate-500">{req.created_profile?.full_name ?? '—'}</td>
                     <td className="px-4 py-3.5 text-slate-500">{t(`type_${req.type_demande}`)}</td>
                     <td className="px-4 py-3.5">
@@ -354,7 +475,15 @@ export default function AssigneesPage() {
             <div className="p-6 space-y-5">
               <div>
                 <p className="text-xs text-slate-400 mb-1">{t('col_titre')}</p>
-                <p className="font-semibold text-slate-800">{detailRequest.titre}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-slate-800">{detailRequest.titre}</p>
+                  {detailRequest.via_group && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full">
+                      <UsersRound className="h-2.5 w-2.5" />
+                      {t('assigned_via_group')}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -385,8 +514,8 @@ export default function AssigneesPage() {
                 </div>
               )}
 
-              {/* Justificatif — visible uniquement par l'assigné */}
-              {detailRequest.justificatif_path && detailRequest.assigned_to === currentUserId && (
+              {/* Justificatif — visible par l'assigné direct ou manager du groupe */}
+              {detailRequest.justificatif_path && canSeeJustificatif(detailRequest) && (
                 <div>
                   <p className="text-xs text-slate-400 mb-1">{t('field_justificatif')}</p>
                   <button
@@ -524,6 +653,37 @@ export default function AssigneesPage() {
               >
                 {deleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t('btn_supprimer')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Popup conflit Realtime ───────────────────────────────────────────── */}
+      {conflictRequestId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-amber-50 p-2.5 rounded-xl shrink-0">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-900">{t('conflict_title')}</h2>
+                <p className="text-sm text-slate-500 mt-1">{t('conflict_body')}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConflictRequestId(null)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+              >
+                {t('conflict_btn_close')}
+              </button>
+              <button
+                onClick={refreshAfterConflict}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              >
+                {t('conflict_btn_refresh')}
               </button>
             </div>
           </div>

@@ -92,5 +92,19 @@
   "no_gestionnaire": "Aucun gestionnaire disponible",
   "submitted_by": "Soumis par",
   "assigned_to": "Assigné à",
-  "created_at": "Créée le"
+  "created_at": "Créée le",
+
+  "assign_type_individual": "Gestionnaire individuel",
+  "assign_type_group": "Groupe",
+  "field_assign_to_group": "Assigner à un groupe",
+  "select_group": "Sélectionner un groupe...",
+  "no_group": "Aucun groupe disponible",
+  "col_assigne_groupe": "Groupe assigné",
+
+  "conflict_title": "Conflit détecté",
+  "conflict_body": "Cette requête vient d'être traitée par un autre gestionnaire.",
+  "conflict_btn_refresh": "Actualiser",
+  "conflict_btn_close": "Fermer",
+  "badge_groupe": "Groupe",
+  "assigned_via_group": "Via groupe"
 }

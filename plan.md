@@ -295,6 +295,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260327_workflow_tables.sql` | CREATE `workflow_requests` + `workflow_comments` + RLS par tenant | ✅ |
 | `20260327_notifications_tenant_id_nullable.sql` | `ALTER TABLE notifications ALTER COLUMN tenant_id DROP NOT NULL` — Masters ont `tenant_id = NULL` | ✅ |
 | `20260327_workflow_justificatif.sql` | `ALTER TABLE workflow_requests ADD COLUMN justificatif_path TEXT` | ✅ |
+| `20260327_user_groups.sql` | CREATE `user_groups` + `user_group_members` + `ALTER TABLE workflow_requests ADD COLUMN assigned_to_group` + RLS + indexes | ⏳ à exécuter |
 
 ---
 
@@ -349,16 +350,22 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 
 **Page Mes Requêtes** (`workflow/mes-requetes/page.tsx`) :
 - Tableau de toutes les requêtes créées par l'utilisateur connecté
-- Bouton "Nouvelle requête" → modal création (titre, type, priorité, description, assignation)
+- Bouton "Nouvelle requête" → modal création (titre, type, priorité, description, justificatif, assignation)
+- Assignation : bouton radio « Gestionnaire individuel » / « Groupe » → `assigned_to` ou `assigned_to_group`
 - Assignation au moment de la soumission → change le statut à `assigne` directement
-- Bouton détail → modal avec historique des actions
-- Bouton suppression → **admin module uniquement**
+- Justificatif : upload PDF/Word/image, max 5 Mo → Storage `{tenant_id}/societes/{societe_id}/workflow/{request_id}/justificatif_...`
+- Colonne « Assigné à » : icône UsersRound si groupe, nom du groupe ou du gestionnaire
+- Bouton détail → modal avec historique des actions + download justificatif (créateur)
+- Bouton suppression → **seule la personne directement assignée (`assigned_to = uid`)**
 
 **Page Requêtes Assignées** (`workflow/assignees/page.tsx`) — gestionnaire+ / tenant_admin :
-- `gestionnaire` : voit uniquement les requêtes `assigned_to = lui-même`
+- `gestionnaire` : voit les requêtes `assigned_to = lui-même` + requêtes `assigned_to_group` dans ses groupes (rôle manager)
 - `admin module` / `tenant_admin` : voit toutes les requêtes de la société
-- Actions par ligne : Voir détail, Approuver (✓), Refuser (✗), Supprimer (admin uniquement)
+- Badge « Groupe » sur les requêtes remontées via groupe
+- Actions par ligne : Voir détail, Approuver (✓), Refuser (✗), Supprimer (assigned_to uniquement)
 - Modal approuver/refuser avec commentaire optionnel → enregistré dans `workflow_comments`
+- Justificatif : visible si `assigned_to = uid` OU membre manager du groupe OU admin
+- **Conflit Realtime** : Supabase Realtime souscrit au record pendant le modal approuver/refuser → popup si un autre gestionnaire traite la requête en même temps
 
 **Flux des statuts** :
 ```
@@ -369,13 +376,24 @@ Gestionnaire refuse          → refuse
 ```
 
 **Tables SQL** :
-- `workflow_requests` : id, tenant_id, societe_id, titre, type_demande, description, statut, priorite, assigned_to, approved_by/at, refused_by/at, created_by, created_at, updated_at
+- `workflow_requests` : id, tenant_id, societe_id, titre, type_demande, description, statut, priorite, assigned_to, **assigned_to_group** (FK → user_groups), justificatif_path, approved_by/at, refused_by/at, created_by, created_at, updated_at
 - `workflow_comments` : id, request_id, tenant_id, author_id, action (assigne/approuve/refuse/commente), contenu, created_at
+- **`user_groups`** : id, tenant_id, societe_id, nom, description, type (compte/mixte), created_by, created_at, updated_at
+- **`user_group_members`** : id, group_id, user_id (nullable), employe_id (nullable), role (membre/manager), created_at
 
 **Types de demandes** : materiel_it, finance, formation, deplacement, rh, autre
 **Priorités** : basse, normale, haute, urgente
-**Permissions** : contributeur+ soumettent · gestionnaire+ gèrent (approuvent/refusent) · **seule la personne assignée peut supprimer une requête**
+**Permissions** : contributeur+ soumettent · gestionnaire+ gèrent (approuvent/refusent) · **seule la personne directement assignée peut supprimer une requête**
 **Séparé du module RH** : les congés restent dans `/rh/presences` (onglet Congés)
+
+#### Groupe Utilisateurs V2 (`utilisateurs/page.tsx` — onglet Groupes)
+- Accessible uniquement aux `tenant_admin`
+- 2 onglets : **Utilisateurs** (permissions modules, inchangé) + **Groupes** (nouveau)
+- CRUD groupes : créer, modifier, supprimer, gérer les membres + leur rôle (membre/manager)
+- Types de groupe : `compte` (utilisateurs avec compte), `mixte` (avec + sans compte via rh_employes)
+- Héritage de permissions : **aucun** (V3) — les groupes servent uniquement à l'assignation workflow
+- Un manager dans un groupe voit et peut traiter toutes les requêtes assignées à ce groupe
+- Détection de conflit temps réel : popup si un autre manager traite la même requête simultanément
 
 ---
 

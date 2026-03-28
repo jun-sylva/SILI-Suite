@@ -16,5 +16,53 @@
   "toast_update_error": "Erreur lors de la mise à jour",
   "toast_reset_success": "Permissions réinitialisées",
   "toast_reset_error": "Erreur lors de la réinitialisation",
-  "loading": "Chargement des utilisateurs..."
+  "loading": "Chargement des utilisateurs...",
+
+  "tab_users": "Utilisateurs",
+  "tab_groups": "Groupes",
+
+  "groups_empty_title": "Aucun groupe créé",
+  "groups_empty_subtitle": "Créez des groupes pour faciliter l'assignation des requêtes Workflow.",
+  "groups_loading": "Chargement des groupes...",
+
+  "btn_new_group": "Nouveau groupe",
+  "btn_edit_group": "Modifier",
+  "btn_delete_group": "Supprimer",
+  "btn_add_member": "Ajouter un membre",
+  "btn_remove_member": "Retirer",
+
+  "modal_new_group_title": "Nouveau groupe",
+  "modal_edit_group_title": "Modifier le groupe",
+  "modal_delete_group_title": "Supprimer le groupe",
+  "modal_members_title": "Membres du groupe",
+
+  "field_group_nom": "Nom du groupe",
+  "field_group_nom_placeholder": "Ex. : Équipe RH, Direction...",
+  "field_group_description": "Description",
+  "field_group_description_placeholder": "Description optionnelle...",
+  "field_group_type": "Type de groupe",
+  "group_type_compte": "Avec compte (utilisateurs actifs)",
+  "group_type_mixte": "Mixte (avec et sans compte)",
+
+  "field_member_role": "Rôle dans le groupe",
+  "member_role_membre": "Membre",
+  "member_role_manager": "Manager",
+
+  "col_group_nom": "Nom",
+  "col_group_type": "Type",
+  "col_group_members_count": "Membres",
+  "col_group_actions": "Actions",
+
+  "col_member_name": "Nom",
+  "col_member_role": "Rôle",
+  "col_member_actions": "Actions",
+
+  "confirm_delete_group_desc": "Cette action est irréversible. Le groupe sera définitivement supprimé.",
+
+  "toast_group_created": "Groupe créé avec succès.",
+  "toast_group_updated": "Groupe mis à jour.",
+  "toast_group_deleted": "Groupe supprimé.",
+  "toast_member_added": "Membre ajouté.",
+  "toast_member_removed": "Membre retiré.",
+  "toast_group_error": "Une erreur est survenue."
 }
