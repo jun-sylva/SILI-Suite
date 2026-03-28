@@ -1,0 +1,91 @@
+{
+  "page_title": "Workflow & Processes",
+  "nav_dashboard": "Dashboard",
+  "nav_mes_requetes": "My Requests",
+  "nav_assignees": "Assigned Requests",
+
+  "stat_mes_requetes": "My Requests",
+  "stat_en_attente": "Pending",
+  "stat_approuvees": "Approved",
+  "stat_assignees": "Assigned to me",
+
+  "card_mes_requetes_desc": "All your submitted requests",
+  "card_assignees_desc": "Requests to process",
+
+  "btn_nouvelle_requete": "New request",
+  "btn_approuver": "Approve",
+  "btn_refuser": "Refuse",
+  "btn_supprimer": "Delete",
+  "btn_voir": "View",
+  "btn_fermer": "Close",
+  "btn_soumettre": "Submit",
+  "btn_annuler": "Cancel",
+  "btn_confirmer": "Confirm",
+
+  "modal_title_new": "New request",
+  "modal_title_detail": "Request detail",
+  "modal_title_approve": "Approve request",
+  "modal_title_refuse": "Refuse request",
+  "modal_title_delete": "Delete request",
+
+  "field_titre": "Title",
+  "field_titre_placeholder": "Summary of your request",
+  "field_type": "Request type",
+  "field_description": "Description",
+  "field_description_placeholder": "Describe your request in detail...",
+  "field_priorite": "Priority",
+  "field_assign_to": "Assign to (manager)",
+  "field_commentaire": "Comment",
+  "field_commentaire_placeholder": "Optional comment...",
+
+  "type_materiel_it": "Hardware & IT",
+  "type_finance": "Finance & Reimbursement",
+  "type_formation": "Training",
+  "type_deplacement": "Travel",
+  "type_rh": "HR (excl. leave)",
+  "type_autre": "Other",
+
+  "priorite_basse": "Low",
+  "priorite_normale": "Normal",
+  "priorite_haute": "High",
+  "priorite_urgente": "Urgent",
+
+  "statut_en_attente": "Pending",
+  "statut_assigne": "Assigned",
+  "statut_approuve": "Approved",
+  "statut_refuse": "Refused",
+
+  "col_titre": "Title",
+  "col_type": "Type",
+  "col_priorite": "Priority",
+  "col_statut": "Status",
+  "col_assigne_a": "Assigned to",
+  "col_soumis_par": "Submitted by",
+  "col_date": "Date",
+  "col_actions": "Actions",
+
+  "empty_mes_requetes": "You have no requests yet.",
+  "empty_assignees": "No requests are assigned to you.",
+
+  "confirm_delete_desc": "This action is irreversible. The request will be permanently deleted.",
+
+  "toast_created": "Request created successfully.",
+  "toast_approved": "Request approved.",
+  "toast_refused": "Request refused.",
+  "toast_deleted": "Request deleted.",
+  "toast_error": "An error occurred.",
+
+  "historique_title": "History",
+  "historique_empty": "No actions recorded.",
+  "action_assigne": "Request assigned",
+  "action_approuve": "Request approved",
+  "action_refuse": "Request refused",
+  "action_commente": "Comment",
+
+  "acces_refuse_assignees": "Access restricted to managers and administrators.",
+  "select_gestionnaire": "Select a manager...",
+  "no_gestionnaire": "No manager available",
+  "submitted_by": "Submitted by",
+  "assigned_to": "Assigned to",
+  "created_at": "Created on"
+}

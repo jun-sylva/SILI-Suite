@@ -24,6 +24,7 @@ import {
   Grid,
   ShieldCheck,
   UserCog,
+  GitBranch,
 } from 'lucide-react'
 import { usePermission, ModuleKey } from '@/hooks/usePermission'
 
@@ -51,7 +52,8 @@ const navGroup2: NavItem[] = [
   { name: 'crm', href: '/crm', icon: HardHat, moduleKey: 'crm' },
   { name: 'comptabilite', href: '/comptabilite', icon: CircleDollarSign, moduleKey: 'comptabilite' },
   { name: 'teams', href: '/teams', icon: MessageSquare, moduleKey: 'teams' },
-  { name: 'rapports', href: '/rapports', icon: FileText, moduleKey: 'rapports' },
+  { name: 'rapports',  href: '/rapports',  icon: FileText,    moduleKey: 'rapports' },
+  { name: 'workflow',  href: '/workflow',  icon: GitBranch,   moduleKey: 'workflow' },
 ]
 
 interface ProtectedSidebarItemProps {

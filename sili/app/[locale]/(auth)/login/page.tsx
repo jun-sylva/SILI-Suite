@@ -7,7 +7,7 @@ import { Link } from '@/i18n/routing'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { Loader2, CheckCircle2, ShoppingCart, PackageSearch, Users, HardHat, CircleDollarSign, Shield, ArrowRight, Check, X, Eye, EyeOff } from 'lucide-react'
+import { Loader2, CheckCircle2, ShoppingCart, PackageSearch, Users, HardHat, CircleDollarSign, Shield, ArrowRight, Check, X, Eye, EyeOff, GitBranch } from 'lucide-react'
 import { SuperAdminModal } from '@/components/auth/SuperAdminModal'
 
 export default function UnifiedAuthPage() {
@@ -59,6 +59,7 @@ export default function UnifiedAuthPage() {
     { name: tAuth('module_rh'), desc: tAuth('module_rh_desc'), icon: Users },
     { name: tAuth('module_crm'), desc: tAuth('module_crm_desc'), icon: HardHat },
     { name: tAuth('module_compta'), desc: tAuth('module_compta_desc'), icon: CircleDollarSign },
+    { name: tAuth('module_workflow'), desc: tAuth('module_workflow_desc'), icon: GitBranch },
   ]
 
   async function handleLogin(e: React.FormEvent) {
@@ -441,8 +442,8 @@ export default function UnifiedAuthPage() {
                   
                   {/* Modules List Scrollable */}
                   <div className="flex-1 overflow-y-auto pr-4 scrollbar-hide space-y-3 my-2 border-y border-indigo-500/30 py-4 custom-scrollbar">
-                    {modules.map((mod, i) => (
-                      <div key={i} className="flex items-start bg-indigo-800/40 p-3 rounded-xl border border-indigo-400/20 backdrop-blur-sm">
+                    {modules.map((mod) => (
+                      <div key={mod.name} className="flex items-start bg-indigo-800/40 p-3 rounded-xl border border-indigo-400/20 backdrop-blur-sm">
                         <div className="bg-indigo-500/30 p-2 rounded-lg mr-4 shrink-0">
                           <mod.icon className="h-5 w-5 text-indigo-100" />
                         </div>

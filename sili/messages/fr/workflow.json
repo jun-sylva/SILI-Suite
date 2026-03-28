@@ -1,0 +1,91 @@
+{
+  "page_title": "Workflow & Processus",
+  "nav_dashboard": "Tableau de bord",
+  "nav_mes_requetes": "Mes Requêtes",
+  "nav_assignees": "Requêtes Assignées",
+
+  "stat_mes_requetes": "Mes Requêtes",
+  "stat_en_attente": "En Attente",
+  "stat_approuvees": "Approuvées",
+  "stat_assignees": "Assignées à moi",
+
+  "card_mes_requetes_desc": "Toutes vos demandes soumises",
+  "card_assignees_desc": "Demandes à traiter",
+
+  "btn_nouvelle_requete": "Nouvelle requête",
+  "btn_approuver": "Approuver",
+  "btn_refuser": "Refuser",
+  "btn_supprimer": "Supprimer",
+  "btn_voir": "Voir",
+  "btn_fermer": "Fermer",
+  "btn_soumettre": "Soumettre",
+  "btn_annuler": "Annuler",
+  "btn_confirmer": "Confirmer",
+
+  "modal_title_new": "Nouvelle requête",
+  "modal_title_detail": "Détail de la requête",
+  "modal_title_approve": "Approuver la requête",
+  "modal_title_refuse": "Refuser la requête",
+  "modal_title_delete": "Supprimer la requête",
+
+  "field_titre": "Titre",
+  "field_titre_placeholder": "Résumé de votre demande",
+  "field_type": "Type de demande",
+  "field_description": "Description",
+  "field_description_placeholder": "Décrivez votre demande en détail...",
+  "field_priorite": "Priorité",
+  "field_assign_to": "Assigner à (gestionnaire)",
+  "field_commentaire": "Commentaire",
+  "field_commentaire_placeholder": "Commentaire optionnel...",
+
+  "type_materiel_it": "Matériel & IT",
+  "type_finance": "Finance & Remboursement",
+  "type_formation": "Formation",
+  "type_deplacement": "Déplacement",
+  "type_rh": "RH (hors congé)",
+  "type_autre": "Autre",
+
+  "priorite_basse": "Basse",
+  "priorite_normale": "Normale",
+  "priorite_haute": "Haute",
+  "priorite_urgente": "Urgente",
+
+  "statut_en_attente": "En attente",
+  "statut_assigne": "Assigné",
+  "statut_approuve": "Approuvé",
+  "statut_refuse": "Refusé",
+
+  "col_titre": "Titre",
+  "col_type": "Type",
+  "col_priorite": "Priorité",
+  "col_statut": "Statut",
+  "col_assigne_a": "Assigné à",
+  "col_soumis_par": "Soumis par",
+  "col_date": "Date",
+  "col_actions": "Actions",
+
+  "empty_mes_requetes": "Vous n'avez aucune requête pour le moment.",
+  "empty_assignees": "Aucune requête ne vous est assignée.",
+
+  "confirm_delete_desc": "Cette action est irréversible. La requête sera définitivement supprimée.",
+
+  "toast_created": "Requête créée avec succès.",
+  "toast_approved": "Requête approuvée.",
+  "toast_refused": "Requête refusée.",
+  "toast_deleted": "Requête supprimée.",
+  "toast_error": "Une erreur est survenue.",
+
+  "historique_title": "Historique",
+  "historique_empty": "Aucune action enregistrée.",
+  "action_assigne": "Demande assignée",
+  "action_approuve": "Demande approuvée",
+  "action_refuse": "Demande refusée",
+  "action_commente": "Commentaire",
+
+  "acces_refuse_assignees": "Accès réservé aux gestionnaires et administrateurs.",
+  "select_gestionnaire": "Sélectionner un gestionnaire...",
+  "no_gestionnaire": "Aucun gestionnaire disponible",
+  "submitted_by": "Soumis par",
+  "assigned_to": "Assigné à",
+  "created_at": "Créée le"
+}

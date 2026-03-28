@@ -33,6 +33,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'tenants',
     'utilisateurs',
     'validation',
+    'workflow',
   ];
   const messages: Record<string, any> = {};
 

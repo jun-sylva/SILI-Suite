@@ -290,12 +290,15 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260326_rh_employe_documents.sql` | CREATE `rh_employe_documents` (CNI, Passeport, CNPS, Diplôme, Contrat, Autre) + RLS + indexes | ✅ |
 | `20260327_societes_portail_pin.sql` | `ALTER TABLE societes ADD COLUMN portail_pin text DEFAULT '0000'` | ✅ |
 | `20260327_rh_conges_typologie.sql` | `ALTER TABLE rh_conges ADD COLUMN typologie text DEFAULT 'daily'`, `nb_heures numeric(5,2)`, `justificatif_path text` | ✅ |
-| `20260327_rh_bulletins_paie.sql` | CREATE `rh_bulletins_paie` (bulletins de salaire PDF, unique par employe+mois+annee) + RLS + indexes | ⏳ |
+| `20260327_rh_bulletins_paie.sql` | CREATE `rh_bulletins_paie` (bulletins de salaire PDF, unique par employe+mois+annee) + RLS + indexes | ✅ |
+| `20260327_add_workflow_module.sql` | INSERT `workflow` dans `sys_modules` avec `is_active = false` (désactivé globalement par défaut) | ✅ |
+| `20260327_workflow_tables.sql` | CREATE `workflow_requests` + `workflow_comments` + RLS par tenant | ✅ |
+| `20260327_notifications_tenant_id_nullable.sql` | `ALTER TABLE notifications ALTER COLUMN tenant_id DROP NOT NULL` — Masters ont `tenant_id = NULL` | ✅ |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -330,6 +333,50 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ### Fonctionnalités
 - [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
 - [x] **`user_module_permissions`** : UI implémentée — page `/[societe_id]/utilisateurs` (tableau croisé utilisateurs × modules). Migration RLS ⚠️ À exécuter.
+
+#### Module Workflow `/[societe_id]/workflow`
+
+**Layout** (`workflow/layout.tsx`) — navbar module sticky, 3 onglets :
+- Tableau de bord → `/workflow`
+- Mes Requêtes → `/workflow/mes-requetes` (tous les niveaux)
+- Requêtes Assignées → `/workflow/assignees` (verrouillé si `< gestionnaire`)
+
+**Dashboard** (`workflow/page.tsx`) — 4 cartes stats + 2 cartes cliquables :
+- Stats : Mes Requêtes, En Attente, Approuvées, Assignées à moi
+- Carte cliquable → `/workflow/mes-requetes`
+- Carte cliquable → `/workflow/assignees` (désactivée si non gestionnaire)
+
+**Page Mes Requêtes** (`workflow/mes-requetes/page.tsx`) :
+- Tableau de toutes les requêtes créées par l'utilisateur connecté
+- Bouton "Nouvelle requête" → modal création (titre, type, priorité, description, assignation)
+- Assignation au moment de la soumission → change le statut à `assigne` directement
+- Bouton détail → modal avec historique des actions
+- Bouton suppression → **admin module uniquement**
+
+**Page Requêtes Assignées** (`workflow/assignees/page.tsx`) — gestionnaire+ / tenant_admin :
+- `gestionnaire` : voit uniquement les requêtes `assigned_to = lui-même`
+- `admin module` / `tenant_admin` : voit toutes les requêtes de la société
+- Actions par ligne : Voir détail, Approuver (✓), Refuser (✗), Supprimer (admin uniquement)
+- Modal approuver/refuser avec commentaire optionnel → enregistré dans `workflow_comments`
+
+**Flux des statuts** :
+```
+Soumission sans assignation → en_attente
+Soumission avec assignation → assigne  (remplace en_attente)
+Gestionnaire approuve        → approuve
+Gestionnaire refuse          → refuse
+```
+
+**Tables SQL** :
+- `workflow_requests` : id, tenant_id, societe_id, titre, type_demande, description, statut, priorite, assigned_to, approved_by/at, refused_by/at, created_by, created_at, updated_at
+- `workflow_comments` : id, request_id, tenant_id, author_id, action (assigne/approuve/refuse/commente), contenu, created_at
+
+**Types de demandes** : materiel_it, finance, formation, deplacement, rh, autre
+**Priorités** : basse, normale, haute, urgente
+**Permissions** : contributeur+ soumettent · gestionnaire+ gèrent (approuvent/refusent) · **seule la personne assignée peut supprimer une requête**
+**Séparé du module RH** : les congés restent dans `/rh/presences` (onglet Congés)
+
+---
 
 #### Modules par société (implémenté)
 - [x] **Migration** `20260326_create_societe_modules.sql` ✅ exécutée
@@ -381,6 +428,50 @@ Désactiver un module (au niveau tenant via Master, ou au niveau société via `
 - `tenant_admin` bloqué → redirigé vers `/tenant-bloque?role=admin` → voit les coordonnées du Master (Michael Biya)
 - `tenant_user` bloqué → redirigé vers `/tenant-bloque?role=user` → voit un message pour contacter son admin
 - La page Master `/admin/[adminId]/tenants` n'est pas affectée (exemptée du check)
+
+---
+
+## Checklist d'intégration — Nouveau module
+
+À chaque fois qu'un nouveau module est créé, appliquer les étapes suivantes dans l'ordre :
+
+### 1. Base de données
+- [ ] **Migration SQL** : `INSERT INTO sys_modules (key, name, description, icon, is_active) VALUES ('...', ..., false)` — **`is_active = false` par défaut**, le Master l'active manuellement
+- [ ] Exécuter la migration dans Supabase Dashboard
+
+### 2. Typage (1 fichier)
+- [ ] [hooks/usePermission.ts](sili/hooks/usePermission.ts) — ajouter `'<module>'` au type `ModuleKey`
+  - ⚠️ `'workflow'` est **déjà présent** dans `ModuleKey`
+
+### 3. Navigation (4 fichiers)
+- [ ] [components/layout/Sidebar.tsx](sili/components/layout/Sidebar.tsx) — ajouter l'entrée dans `navGroup2` avec `moduleKey` et icône lucide-react
+- [ ] Vérifier que `societe_modules` filtre bien l'entrée (automatique via `activeModules`)
+- [ ] [messages/fr/navigation.json](sili/messages/fr/navigation.json) — ajouter `"<key>": "Nom FR"` (utilisé par `tNav(moduleKey)` dans settings + utilisateurs)
+- [ ] [messages/en/navigation.json](sili/messages/en/navigation.json) — idem EN
+
+### 4. Icônes dans les pages d'administration (2 fichiers)
+- [ ] [settings/page.tsx](sili/app/%5Blocale%5D/%5Btenant_slug%5D/%5Btenant_id%5D/%5Buser_id%5D/%5Bsociete_slug%5D/%5Bsociete_id%5D/settings/page.tsx) — ajouter l'icône dans `MODULE_ICONS`
+- [ ] [utilisateurs/page.tsx](sili/app/%5Blocale%5D/%5Btenant_slug%5D/%5Btenant_id%5D/%5Buser_id%5D/%5Bsociete_slug%5D/%5Bsociete_id%5D/utilisateurs/page.tsx) — ajouter l'icône dans `MODULE_ICONS`
+
+### 5. Page de login (3 fichiers)
+- [ ] [messages/fr/auth.json](sili/messages/fr/auth.json) — ajouter `module_<key>` et `module_<key>_desc`
+- [ ] [messages/en/auth.json](sili/messages/en/auth.json) — idem en anglais
+- [ ] [login/page.tsx](sili/app/%5Blocale%5D/%28auth%29/login/page.tsx) — ajouter l'entrée dans le tableau `modules` + import de l'icône
+
+### 6. Pages du module (nouveaux fichiers)
+- [ ] `app/[locale]/[...]/[societe_id]/<module>/layout.tsx` — layout avec navbar interne si sous-pages
+- [ ] `app/[locale]/[...]/[societe_id]/<module>/page.tsx` — page principale (dashboard du module)
+- [ ] Sous-pages selon les fonctionnalités
+
+### 7. i18n
+- [ ] Créer `messages/fr/<module>.json` et `messages/en/<module>.json`
+- [ ] Ajouter le namespace dans [i18n/request.ts](sili/i18n/request.ts)
+
+### 8. Documentation
+- [ ] Documenter le module dans ce fichier `plan.md` (tables SQL, pages, règles métier)
+
+### Règle : désactivation par défaut
+Tout nouveau module est inséré dans `sys_modules` avec **`is_active = false`**. Il n'est activé pour aucun tenant ni société. Le Master l'active via la page `/admin/[adminId]/modules`, puis le tenant_admin l'active pour ses sociétés.
 
 ---
 
