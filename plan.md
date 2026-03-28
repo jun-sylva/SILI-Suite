@@ -300,6 +300,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_fix_user_groups_rls.sql` | Fix RLS SELECT `user_groups` — ajout `tenant_admin` via UNION profiles | ✅ |
 | `20260328_workflow_processes.sql` | CREATE `workflow_process_templates`, `workflow_process_steps`, `workflow_instances`, `workflow_instance_steps` + RLS + indexes | ✅ |
 | `20260328_fix_workflow_rls_recursion.sql` | Fix récursion infinie entre `wi_select` et `wis_select` — fonction SECURITY DEFINER `wf_is_actor_in_instance()` + réécriture des deux politiques | ✅ |
+| `20260328_fix_user_group_members_rls.sql` | Fix RLS SELECT `user_group_members` — ajout `tenant_admin` via UNION profiles (tenant_admin absent de user_societes → loadMembers retournait vide) | ✅ |
 
 ---
 

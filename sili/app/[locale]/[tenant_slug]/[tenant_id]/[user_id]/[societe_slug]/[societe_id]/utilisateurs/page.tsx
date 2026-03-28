@@ -410,7 +410,6 @@ export default function SocieteUsersPage() {
       .from('profiles')
       .select('id, full_name')
       .in('id', userIds)
-      .eq('role', 'tenant_user')
       .eq('tenant_id', fullTenantId)
 
     setAvailableUsers((profilesData ?? []).map((p: any) => ({ user_id: p.id, full_name: p.full_name ?? null, email: null })))
