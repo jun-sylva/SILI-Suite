@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
   Wrench, Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight,
-  GitMerge, X, ChevronRight,
+  GitMerge, X,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -58,12 +58,12 @@ export default function BuilderPage() {
   const societeId   = params.societe_id   as string
   const base = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/workflow`
 
-  const [templates, setTemplates]   = useState<ProcessTemplate[]>([])
-  const [loading, setLoading]       = useState(true)
+  const [templates, setTemplates]     = useState<ProcessTemplate[]>([])
+  const [loading, setLoading]         = useState(true)
   const [fullTenantId, setFullTenantId] = useState('')
-  const [isTenantAdmin, setIsTenantAdmin] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [toggling, setToggling]     = useState<string | null>(null)
+  const [canDelete, setCanDelete]     = useState(false)   // admin ou tenant_admin
+  const [deletingId, setDeletingId]   = useState<string | null>(null)
+  const [toggling, setToggling]       = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<ProcessTemplate | null>(null)
 
   useEffect(() => {
@@ -75,9 +75,22 @@ export default function BuilderPage() {
         .from('profiles').select('role, tenant_id').eq('id', session.user.id).single()
       if (!profile) return
 
-      const admin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
-      setIsTenantAdmin(admin)
-      if (!admin) { router.push(`${base}/builder`); return }
+      const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
+
+      // Vérifier la permission module
+      let perm = 'aucun'
+      if (!isTenantAdmin) {
+        const { data: permData } = await supabase
+          .from('user_module_permissions').select('permission')
+          .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
+        perm = permData?.permission ?? 'aucun'
+      }
+
+      const canAccess = isTenantAdmin || perm === 'gestionnaire' || perm === 'admin'
+      if (!canAccess) { router.push(`${base}`); return }
+
+      // Suppression : admin ou tenant_admin seulement
+      setCanDelete(isTenantAdmin || perm === 'admin')
 
       setFullTenantId(profile.tenant_id)
       await loadTemplates(profile.tenant_id)
@@ -95,7 +108,6 @@ export default function BuilderPage() {
 
     if (error) { console.error('[loadTemplates]', error.message); return }
 
-    // Compter les étapes par template
     const ids = (data ?? []).map((t: any) => t.id)
     let countMap: Record<string, number> = {}
     if (ids.length > 0) {
@@ -247,12 +259,14 @@ export default function BuilderPage() {
                           <Pencil className="h-3.5 w-3.5" />
                           {t('btn_edit_template')}
                         </button>
-                        <button
-                          onClick={() => setConfirmDelete(tpl)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => setConfirmDelete(tpl)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -282,7 +296,7 @@ export default function BuilderPage() {
                 onClick={() => setConfirmDelete(null)}
                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
-                Annuler
+                {t('btn_cancel')}
               </button>
               <button
                 onClick={deleteTemplate}
@@ -290,7 +304,7 @@ export default function BuilderPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50"
               >
                 {deletingId && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Supprimer
+                {t('btn_delete_template')}
               </button>
             </div>
           </div>

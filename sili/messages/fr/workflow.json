@@ -11,6 +11,12 @@
 
   "card_mes_requetes_desc": "Toutes vos demandes soumises",
   "card_assignees_desc": "Demandes à traiter",
+  "stat_processus": "Processus actifs",
+  "card_processus_title": "Processus",
+  "card_processus_desc": "Processus multi-étapes en cours",
+  "card_builder_title": "Process Builder",
+  "card_builder_desc": "Créer et gérer les modèles de processus",
+  "acces_refuse_processus": "Accès réservé aux gestionnaires et administrateurs.",
 
   "btn_nouvelle_requete": "Nouvelle requête",
   "btn_approuver": "Approuver",

@@ -31,6 +31,7 @@
   "btn_save": "Enregistrer",
   "btn_save_continue": "Enregistrer et continuer",
   "btn_cancel": "Annuler",
+  "btn_confirm": "Confirmer",
   "btn_publish": "Publier",
 
   "field_nom": "Nom du modèle",
@@ -118,6 +119,17 @@
   "select_role": "Sélectionner un rôle...",
   "select_escalation": "Sélectionner un destinataire d'escalade...",
   "no_deadline": "Aucun délai",
+
+  "btn_voir": "Voir",
+  "btn_agir": "Agir",
+  "no_active_template": "Aucun modèle actif disponible.",
+  "field_titre_process": "Titre du processus",
+  "error_field_required": "Champ requis : {field}",
+  "process_not_found": "Processus introuvable.",
+  "action_approbation_hint": "Cliquez sur Approuver ou Refuser pour traiter cette étape.",
+  "action_avis_hint": "Votre avis sera enregistré. Le processus continuera indépendamment de votre réponse.",
+  "action_verification_hint": "Confirmez que vous avez vérifié les documents associés.",
+  "acces_refuse_builder": "Accès réservé aux gestionnaires et administrateurs.",
 
   "toast_template_created": "Modèle créé avec succès.",
   "toast_template_updated": "Modèle mis à jour.",

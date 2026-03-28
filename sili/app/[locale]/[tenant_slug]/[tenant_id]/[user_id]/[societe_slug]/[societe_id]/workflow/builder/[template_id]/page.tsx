@@ -9,7 +9,7 @@ import {
   Loader2, ArrowLeft, Save, Plus, Trash2, ChevronUp, ChevronDown,
   Info, FormInput, GitMerge, GripVertical, X,
 } from 'lucide-react'
-import { v4 as uuidv4 } from 'uuid'
+const uuidv4 = () => crypto.randomUUID()
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

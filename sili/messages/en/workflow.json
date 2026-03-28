@@ -11,6 +11,12 @@
 
   "card_mes_requetes_desc": "All your submitted requests",
   "card_assignees_desc": "Requests to process",
+  "stat_processus": "Active processes",
+  "card_processus_title": "Processes",
+  "card_processus_desc": "Ongoing multi-step processes",
+  "card_builder_title": "Process Builder",
+  "card_builder_desc": "Create and manage process templates",
+  "acces_refuse_processus": "Access restricted to managers and administrators.",
 
   "btn_nouvelle_requete": "New request",
   "btn_approuver": "Approve",

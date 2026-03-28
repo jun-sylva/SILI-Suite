@@ -297,12 +297,14 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260327_workflow_justificatif.sql` | `ALTER TABLE workflow_requests ADD COLUMN justificatif_path TEXT` | ✅ |
 | `20260327_user_groups.sql` | CREATE `user_groups` + `user_group_members` + `ALTER TABLE workflow_requests ADD COLUMN assigned_to_group` + RLS + indexes | ✅ |
 | `20260328_user_group_permissions.sql` | CREATE `user_group_permissions` (héritage permissions modules par groupe) + RLS + indexes | ✅ |
-| `20260328_fix_user_groups_rls.sql` | Fix RLS SELECT `user_groups` — ajout `tenant_admin` via UNION profiles | ⏳ à exécuter |
+| `20260328_fix_user_groups_rls.sql` | Fix RLS SELECT `user_groups` — ajout `tenant_admin` via UNION profiles | ✅ |
+| `20260328_workflow_processes.sql` | CREATE `workflow_process_templates`, `workflow_process_steps`, `workflow_instances`, `workflow_instance_steps` + RLS + indexes | ✅ |
+| `20260328_fix_workflow_rls_recursion.sql` | Fix récursion infinie entre `wi_select` et `wis_select` — fonction SECURITY DEFINER `wf_is_actor_in_instance()` + réécriture des deux politiques | ✅ |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -313,23 +315,28 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ## À faire / Prochaines étapes
 
 ### Migrations SQL à exécuter dans Supabase (dans l'ordre)
-- [x] `20260324_create_user_societes.sql` ✅ exécutée
+- [x] `20260324_create_user_societes.sql` ✅
 - [ ] `20260324_fix_tenants_quotas_notnull.sql` — fix NULL sur quotas
 - [ ] `20260324_fix_tenants_rls.sql` — RLS `tenants` pour tenant_admin
 - [ ] `20260324_societes_storage_cleanup.sql` — nettoyage colonnes storage
-- [x] `20260325_notifications_rls.sql` ✅ exécutée
-- [x] `20260325_create_audit_logs.sql` ✅ exécutée
-- [x] `20260325_create_tenant_backups.sql` ✅ exécutée
-- [x] `20260325_remove_securite_module.sql` ✅ exécutée
-- [x] `20260325_fix_rls_master_operations.sql` ✅ exécutée
-- [x] `20260325_create_master_audit_logs.sql` ✅ exécutée
-- [x] `20260326_create_societe_modules.sql` ✅ exécutée
-- [x] `20260326_create_societe_data_sharing.sql` ✅ exécutée
-- [x] `20260326_user_module_permissions_rls.sql` ✅ exécutée
-- [x] `20260326_tenants_rls_tenant_user.sql` ✅ exécutée — policy SELECT `tenants` pour `tenant_user`
-- [x] `20260326_storage_phase1.sql` ✅ exécutée — bucket + RLS storage + tenant_storage_usage + triggers
-- [x] `20260326_rh_employes.sql` ✅ exécutée — table `rh_employes` + trigger matricule + RLS
-- [x] `20260326_rh_presences.sql` ✅ exécutée — table `rh_presences` + RLS + indexes
+- [x] `20260325_notifications_rls.sql` ✅
+- [x] `20260325_create_audit_logs.sql` ✅
+- [x] `20260325_create_tenant_backups.sql` ✅
+- [x] `20260325_remove_securite_module.sql` ✅
+- [x] `20260325_fix_rls_master_operations.sql` ✅
+- [x] `20260325_create_master_audit_logs.sql` ✅
+- [x] `20260326_create_societe_modules.sql` ✅
+- [x] `20260326_create_societe_data_sharing.sql` ✅
+- [x] `20260326_user_module_permissions_rls.sql` ✅
+- [x] `20260326_tenants_rls_tenant_user.sql` ✅
+- [x] `20260326_storage_phase1.sql` ✅
+- [x] `20260326_rh_employes.sql` ✅
+- [x] `20260326_rh_presences.sql` ✅
+- [x] `20260327_user_groups.sql` ✅
+- [x] `20260328_user_group_permissions.sql` ✅
+- [x] `20260328_fix_user_groups_rls.sql` ✅
+- [x] `20260328_workflow_processes.sql` ✅
+- [x] `20260328_fix_workflow_rls_recursion.sql` ✅
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
@@ -403,6 +410,88 @@ Gestionnaire refuse          → refuse
 - **Hook** : `usePermission.ts` refactoré pour appeler `getEffectivePermission()` après la vérification `sys_modules`
 - **UI** : bouton "Permissions" par groupe dans l'onglet Groupes → modal tableau croisé (module × permission) + colonne "Héritage" informative
 - **Règle** : la permission individuelle ne peut jamais être réduite par un groupe — toujours le MAX
+
+---
+
+#### Workflow V2 — Processus Multi-Étapes
+
+**Nouvelles tables SQL** (migration `20260328_workflow_processes.sql` ✅) :
+- `workflow_process_templates` : id, tenant_id, societe_id (nullable → global), nom, description, type_process (11 types), form_schema JSONB, is_active, created_by
+- `workflow_process_steps` : id, template_id, ordre (même ordre = étapes parallèles), nom, action_type (approbation/signature/avis/verification), mode_signature (canvas/approbation/both), assignee_type (user/group/role), assignee_id, assignee_role, deadline_days, escalation_to
+- `workflow_instances` : id, template_id, tenant_id, societe_id, titre, statut (brouillon/en_cours/approuve/refuse/annule), current_step_ordre, form_data JSONB, initiator_id
+- `workflow_instance_steps` : id, instance_id, step_id, ordre, statut (7 valeurs), actor_id, commentaire, signature_data, deadline_at, escalated_at, traite_le
+
+**Fix récursion RLS** (`20260328_fix_workflow_rls_recursion.sql` ✅) :
+- Fonction `wf_is_actor_in_instance(UUID)` SECURITY DEFINER — interroge `workflow_instance_steps` sans déclencher ses propres politiques
+- `wi_select` réécrit — utilise la fonction au lieu d'une sous-requête directe
+- `wis_select` réécrit — EXISTS sur les colonnes brutes de `workflow_instances`
+
+**Tableau de bord** (`workflow/page.tsx`) :
+- 5ᵉ carte stat "Processus actifs" (visible gestionnaire+)
+- Carte cliquable → `/workflow/processes` (gestionnaire+ / tenant_admin)
+- Carte cliquable → `/workflow/builder` (gestionnaire+ / tenant_admin)
+- Cartes grisées + curseur bloqué si permission insuffisante
+
+**Navigation** (`workflow/layout.tsx`) :
+- Nav "Processus" : gestionnaire+ / tenant_admin
+- Nav "Builder" : gestionnaire+ / tenant_admin (anciennement tenant_admin uniquement)
+
+**Process Builder — Liste** (`workflow/builder/page.tsx`) :
+- Tableau de tous les modèles du tenant (nom, type badge, nb étapes, portée global/société, toggle actif/inactif)
+- Bouton "Modifier" → éditeur
+- Bouton "Supprimer" visible uniquement si `admin` ou `tenant_admin`
+- Accès : gestionnaire+ / tenant_admin (redirection vers dashboard sinon)
+
+**Process Builder — Éditeur** (`workflow/builder/[template_id]/page.tsx`) :
+- 3 onglets progressifs : **Infos** → **Formulaire** → **Étapes**
+- Tabs Form/Étapes verrouillés jusqu'à la sauvegarde initiale
+- `isNew = templateId === 'new'` — mode création ou édition
+- **Onglet Infos** : nom, description, type (11 options), portée (global/société spécifique)
+- **Onglet Formulaire** : form builder (ajouter/supprimer/réordonner des champs) — types : text, textarea, number, date, select, multiselect, file, checkbox, signature ; options → séparées par newlines
+- **Onglet Étapes** : builder avec boutons "Ajouter une étape" (séquentielle) et "Ajouter en parallèle" (même ordre) — config par étape : nom, action_type, mode_signature (si signature), assignee_type + assignee_id/role, deadline_days, escalation_to
+- `saveSteps()` → DELETE + INSERT (remplacement complet) puis active le modèle → retour liste
+- `crypto.randomUUID()` utilisé pour les IDs locaux (pas de dépendance `uuid`)
+
+**Processus — Liste** (`workflow/processes/page.tsx`) :
+- Tableau de toutes les instances (titre, modèle, type badge, progression étapes, statut, initiateur, date)
+- Barre de progression (étapes complètes / total)
+- Modal "Lancer un processus" : sélection modèle actif → remplissage `form_schema` → création `workflow_instances` + `workflow_instance_steps` avec `deadline_at`
+- Bouton "Supprimer" masqué (cancel depuis le détail, admin/tenant_admin uniquement)
+- Accès : gestionnaire+ / tenant_admin
+
+**Processus — Détail** (`workflow/processes/[instance_id]/page.tsx`) :
+- En-tête : titre, statut badge, modèle, initiateur, date
+- Bouton "Annuler le processus" visible uniquement si `admin` / `tenant_admin` + statut `en_cours`
+- Panneau gauche : données du formulaire (`form_data` × `form_schema`)
+- Timeline groupée par `ordre` — étapes parallèles marquées (badge violet, bordure gauche violet)
+- Chaque étape : statut badge, type d'action, acteur + date si traitée, commentaire, badge délai/escalade
+- Bouton "Agir" → modal action (visible uniquement si c'est l'acteur assigné + étape `en_cours`)
+- **Modal action adapté par `action_type`** :
+  - `approbation` → boutons Approuver / Refuser + commentaire
+  - `signature` → sélecteur mode (si `both`) : canvas de dessin OU confirmation identité
+  - `avis` → bouton Donner mon avis + commentaire
+  - `verification` → bouton Vérifier + commentaire
+- **Avancement automatique** : après chaque action, vérifie si toutes les étapes parallèles du même `ordre` sont terminées → active le prochain `ordre` ou marque l'instance `approuve`
+- Si un acteur refuse → instance marquée `refuse`, étapes restantes `skipped`
+
+**Règles de permission Workflow V2** :
+
+| Action | Lecteur | Contributeur | Gestionnaire | Admin | tenant_admin |
+|---|---|---|---|---|---|
+| Voir tableau de bord + stats processus | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Lancer un processus | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Accéder au builder | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Créer/modifier un modèle | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Annuler un processus | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Supprimer un modèle | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+**Types de processus** (11) : note_de_frais, bon_de_commande, demande_recrutement, contrat_prestataire, validation_budget, deplacement_pro, demande_investissement, onboarding, offboarding, rapport_audit, autre
+
+**Modes de signature** : `canvas` (dessin), `approbation` (confirmation identité + timestamp), `both` (au choix de l'acteur)
+
+**Étapes parallèles** : même entier `ordre` sur plusieurs `workflow_process_steps` → toutes activées simultanément, toutes doivent être complètes avant d'avancer
+
+**Templates globaux** : `societe_id IS NULL` → visible pour toutes les sociétés du tenant
 
 ---
 

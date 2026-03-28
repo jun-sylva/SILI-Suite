@@ -93,7 +93,7 @@ export default function WorkflowLayout({ children }: { children: React.ReactNode
     { id: 'mes-requetes', label: t('nav_mes_requetes'), href: `${base}/mes-requetes`,  icon: FileText,        exact: false, restricted: false },
     { id: 'assignees',    label: t('nav_assignees'),    href: `${base}/assignees`,     icon: ClipboardList,   exact: false, restricted: !canAccessAssignees },
     { id: 'processes',    label: tb('nav_processes'),   href: `${base}/processes`,     icon: GitMerge,        exact: false, restricted: !canAccessAssignees },
-    { id: 'builder',      label: tb('nav_builder'),     href: `${base}/builder`,       icon: Wrench,          exact: false, restricted: !isTenantAdmin },
+    { id: 'builder',      label: tb('nav_builder'),     href: `${base}/builder`,       icon: Wrench,          exact: false, restricted: !canAccessAssignees },
   ]
 
   return (

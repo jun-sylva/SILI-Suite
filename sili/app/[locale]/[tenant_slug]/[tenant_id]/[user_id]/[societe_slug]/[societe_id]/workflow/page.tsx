@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import {
   FileText, Clock, CheckCircle2, ClipboardList, ArrowRight, Loader2,
+  GitMerge, Wrench,
 } from 'lucide-react'
 
 interface Stats {
@@ -13,10 +14,12 @@ interface Stats {
   enAttente: number
   approuvees: number
   assignees: number
+  processusActifs: number
 }
 
 export default function WorkflowDashboard() {
-  const t = useTranslations('workflow')
+  const t  = useTranslations('workflow')
+  const tb = useTranslations('workflow_builder')
   const params = useParams()
   const router = useRouter()
   const tenantSlug  = params.tenant_slug  as string
@@ -26,8 +29,12 @@ export default function WorkflowDashboard() {
   const societeId   = params.societe_id   as string
   const base = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/workflow`
 
-  const [stats, setStats] = useState<Stats>({ mesRequetes: 0, enAttente: 0, approuvees: 0, assignees: 0 })
-  const [canAccessAssignees, setCanAccessAssignees] = useState(false)
+  const [stats, setStats] = useState<Stats>({
+    mesRequetes: 0, enAttente: 0, approuvees: 0, assignees: 0, processusActifs: 0,
+  })
+  const [canAccessAssignees, setCanAccessAssignees]   = useState(false)
+  const [canAccessProcesses, setCanAccessProcesses]   = useState(false)
+  const [canAccessBuilder, setCanAccessBuilder]       = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,19 +46,23 @@ export default function WorkflowDashboard() {
         .from('profiles').select('role, tenant_id').eq('id', session.user.id).single()
       if (!profile) return
 
-      const isAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
+      const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
 
-      if (!isAdmin) {
+      let perm = 'aucun'
+      if (!isTenantAdmin) {
         const { data: permData } = await supabase
           .from('user_module_permissions').select('permission')
           .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
-        const perm = permData?.permission ?? 'aucun'
-        if (perm === 'gestionnaire' || perm === 'admin') setCanAccessAssignees(true)
-      } else {
-        setCanAccessAssignees(true)
+        perm = permData?.permission ?? 'aucun'
       }
 
-      // Mes requêtes (créées par moi)
+      const isGestionnaireOrAbove = perm === 'gestionnaire' || perm === 'admin'
+
+      setCanAccessAssignees(isTenantAdmin || isGestionnaireOrAbove)
+      setCanAccessProcesses(isTenantAdmin || isGestionnaireOrAbove)
+      setCanAccessBuilder(isTenantAdmin || isGestionnaireOrAbove)
+
+      // Mes requêtes
       const { data: myRequests } = await supabase
         .from('workflow_requests')
         .select('id, statut')
@@ -59,10 +70,10 @@ export default function WorkflowDashboard() {
         .eq('societe_id', societeId)
 
       const mesRequetes = myRequests?.length ?? 0
-      const enAttente = myRequests?.filter(r => r.statut === 'en_attente' || r.statut === 'assigne').length ?? 0
-      const approuvees = myRequests?.filter(r => r.statut === 'approuve').length ?? 0
+      const enAttente   = myRequests?.filter(r => r.statut === 'en_attente' || r.statut === 'assigne').length ?? 0
+      const approuvees  = myRequests?.filter(r => r.statut === 'approuve').length ?? 0
 
-      // Requêtes assignées à moi
+      // Requêtes assignées
       const { data: assignedRequests } = await supabase
         .from('workflow_requests')
         .select('id')
@@ -72,7 +83,18 @@ export default function WorkflowDashboard() {
 
       const assignees = assignedRequests?.length ?? 0
 
-      setStats({ mesRequetes, enAttente, approuvees, assignees })
+      // Processus actifs
+      let processusActifs = 0
+      if (isTenantAdmin || isGestionnaireOrAbove) {
+        const { count } = await supabase
+          .from('workflow_instances')
+          .select('id', { count: 'exact', head: true })
+          .eq('societe_id', societeId)
+          .eq('statut', 'en_cours')
+        processusActifs = count ?? 0
+      }
+
+      setStats({ mesRequetes, enAttente, approuvees, assignees, processusActifs })
       setLoading(false)
     }
     load()
@@ -111,6 +133,14 @@ export default function WorkflowDashboard() {
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
+    ...(canAccessProcesses ? [{
+      key: 'processusActifs',
+      label: t('stat_processus'),
+      value: stats.processusActifs,
+      icon: GitMerge,
+      color: 'text-teal-600',
+      bg: 'bg-teal-50',
+    }] : []),
   ]
 
   if (loading) {
@@ -124,7 +154,7 @@ export default function WorkflowDashboard() {
   return (
     <div className="space-y-8">
       {/* Cartes statistiques */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {statCards.map((card) => {
           const Icon = card.icon
           return (
@@ -186,6 +216,58 @@ export default function WorkflowDashboard() {
             <ArrowRight className={`h-5 w-5 text-slate-300 ${canAccessAssignees ? 'group-hover:text-purple-500' : ''} transition-colors`} />
           </div>
           <p className="text-3xl font-bold text-purple-600">{stats.assignees}</p>
+        </button>
+
+        {/* Processus */}
+        <button
+          onClick={() => canAccessProcesses && router.push(`${base}/processes`)}
+          disabled={!canAccessProcesses}
+          className={`bg-white rounded-xl border border-slate-200 p-6 shadow-sm text-left transition-all group ${
+            canAccessProcesses
+              ? 'hover:border-teal-300 hover:shadow-md cursor-pointer'
+              : 'opacity-50 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-teal-50 p-3 rounded-xl">
+                <GitMerge className="h-6 w-6 text-teal-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 text-base">{t('card_processus_title')}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{t('card_processus_desc')}</p>
+              </div>
+            </div>
+            <ArrowRight className={`h-5 w-5 text-slate-300 ${canAccessProcesses ? 'group-hover:text-teal-500' : ''} transition-colors`} />
+          </div>
+          <p className="text-3xl font-bold text-teal-600">{stats.processusActifs}</p>
+        </button>
+
+        {/* Process Builder */}
+        <button
+          onClick={() => canAccessBuilder && router.push(`${base}/builder`)}
+          disabled={!canAccessBuilder}
+          className={`bg-white rounded-xl border border-slate-200 p-6 shadow-sm text-left transition-all group ${
+            canAccessBuilder
+              ? 'hover:border-amber-300 hover:shadow-md cursor-pointer'
+              : 'opacity-50 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-50 p-3 rounded-xl">
+                <Wrench className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 text-base">{t('card_builder_title')}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{t('card_builder_desc')}</p>
+              </div>
+            </div>
+            <ArrowRight className={`h-5 w-5 text-slate-300 ${canAccessBuilder ? 'group-hover:text-amber-500' : ''} transition-colors`} />
+          </div>
+          <p className="text-sm font-semibold text-amber-600">
+            {canAccessBuilder ? tb('builder_subtitle') : t('acces_refuse_processus')}
+          </p>
         </button>
       </div>
     </div>

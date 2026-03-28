@@ -6,7 +6,9 @@
       "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rh -name \"*.tsx\" -type f)",
       "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/node_modules -name *.development.js -path */react-dom/*)",
       "Bash(grep -r \"CREATE FUNCTION.*get_user_permission\\\\|CREATE OR REPLACE FUNCTION\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
-      "Bash(grep -r \"user_module_permissions\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)"
+      "Bash(grep -r \"user_module_permissions\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
+      "Bash(npm install:*)",
+      "Bash(sudo npm:*)"
     ],
     "additionalDirectories": [
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",

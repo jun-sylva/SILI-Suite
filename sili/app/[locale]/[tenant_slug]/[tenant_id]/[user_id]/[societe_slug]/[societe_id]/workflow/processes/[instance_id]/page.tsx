@@ -110,6 +110,7 @@ export default function InstanceDetailPage() {
   const [loading, setLoading]     = useState(true)
   const [currentUid, setCurrentUid] = useState('')
   const [isTenantAdmin, setIsTenantAdmin] = useState(false)
+  const [canDelete, setCanDelete]         = useState(false)
 
   // Action modal
   const [actionStep, setActionStep] = useState<InstanceStep | null>(null)
@@ -134,7 +135,17 @@ export default function InstanceDetailPage() {
         .from('profiles').select('role').eq('id', session.user.id).single()
 
       setCurrentUid(session.user.id)
-      setIsTenantAdmin(profile?.role === 'tenant_admin' || profile?.role === 'super_admin')
+      const isTA = profile?.role === 'tenant_admin' || profile?.role === 'super_admin'
+      setIsTenantAdmin(isTA)
+
+      let perm = 'aucun'
+      if (!isTA) {
+        const { data: permData } = await supabase
+          .from('user_module_permissions').select('permission')
+          .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
+        perm = permData?.permission ?? 'aucun'
+      }
+      setCanDelete(isTA || perm === 'admin')
       await load()
       setLoading(false)
     }
@@ -145,27 +156,45 @@ export default function InstanceDetailPage() {
     const { data: inst } = await supabase
       .from('workflow_instances')
       .select(`
-        id, titre, statut, current_step_ordre, form_data, created_at,
-        template:template_id ( id, nom, type_process, form_schema ),
-        initiator:initiator_id ( full_name )
+        id, titre, statut, current_step_ordre, form_data, created_at, initiator_id,
+        template:template_id ( id, nom, type_process, form_schema )
       `)
       .eq('id', instanceId)
       .single()
 
-    setInstance(inst as any)
+    // Fetch initiator name from profiles
+    let initiatorName = '—'
+    if (inst?.initiator_id) {
+      const { data: prof } = await supabase
+        .from('profiles').select('full_name').eq('id', inst.initiator_id).single()
+      initiatorName = prof?.full_name ?? '—'
+    }
+
+    setInstance(inst ? { ...inst, initiator: { full_name: initiatorName } } as any : null)
 
     const { data: isteps } = await supabase
       .from('workflow_instance_steps')
       .select(`
         id, step_id, ordre, statut, actor_id, commentaire, signature_data,
         deadline_at, escalated_at, traite_le,
-        step:step_id ( id, ordre, nom, action_type, mode_signature, assignee_type, assignee_id, assignee_role, deadline_days, escalation_to ),
-        actor:actor_id ( full_name )
+        step:step_id ( id, ordre, nom, action_type, mode_signature, assignee_type, assignee_id, assignee_role, deadline_days, escalation_to )
       `)
       .eq('instance_id', instanceId)
       .order('ordre')
 
-    setSteps((isteps as any) ?? [])
+    // Fetch actor names
+    const actorIds = [...new Set((isteps ?? []).map((s: any) => s.actor_id).filter(Boolean))]
+    let actorMap: Record<string, string> = {}
+    if (actorIds.length > 0) {
+      const { data: actors } = await supabase
+        .from('profiles').select('id, full_name').in('id', actorIds)
+      actors?.forEach((a: any) => { actorMap[a.id] = a.full_name })
+    }
+
+    setSteps(((isteps ?? []) as any[]).map((s: any) => ({
+      ...s,
+      actor: s.actor_id ? { full_name: actorMap[s.actor_id] ?? '—' } : null,
+    })))
   }
 
   // ── Canvas signature ──────────────────────────────────────────────────────
@@ -353,7 +382,7 @@ export default function InstanceDetailPage() {
 
   if (!instance) {
     return (
-      <div className="text-center py-16 text-slate-400">Processus introuvable.</div>
+      <div className="text-center py-16 text-slate-400">{t('process_not_found')}</div>
     )
   }
 
@@ -385,7 +414,7 @@ export default function InstanceDetailPage() {
             </p>
           </div>
         </div>
-        {instance.statut === 'en_cours' && (instance.initiator?.full_name != null || isTenantAdmin) && (
+        {instance.statut === 'en_cours' && canDelete && (
           <button
             onClick={() => setShowCancel(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
@@ -504,7 +533,7 @@ export default function InstanceDetailPage() {
                               onClick={() => { setActionStep(is); setComment(''); setConfirmed(false); setSignMode('approbation'); clearCanvas() }}
                               className="shrink-0 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
                             >
-                              Agir
+                              {t('btn_agir')}
                             </button>
                           )}
                         </div>
@@ -556,7 +585,7 @@ export default function InstanceDetailPage() {
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowCancel(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">
-                Annuler
+                {t('btn_cancel')}
               </button>
               <button
                 onClick={cancelProcess}
@@ -564,7 +593,7 @@ export default function InstanceDetailPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50"
               >
                 {cancelling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Confirmer
+                {t('btn_confirm')}
               </button>
             </div>
           </div>
@@ -716,23 +745,17 @@ function ActionModal({
 
           {/* Approbation confirm */}
           {actionType === 'approbation' && (
-            <p className="text-xs text-slate-500">
-              Cliquez sur <strong>Approuver</strong> ou <strong>Refuser</strong> pour traiter cette étape.
-            </p>
+            <p className="text-xs text-slate-500">{t('action_approbation_hint')}</p>
           )}
 
           {/* Avis confirm */}
           {actionType === 'avis' && (
-            <p className="text-xs text-slate-500">
-              Votre avis sera enregistré. Le processus continuera indépendamment de votre réponse.
-            </p>
+            <p className="text-xs text-slate-500">{t('action_avis_hint')}</p>
           )}
 
           {/* Verification */}
           {actionType === 'verification' && (
-            <p className="text-xs text-slate-500">
-              Confirmez que vous avez vérifié les documents associés.
-            </p>
+            <p className="text-xs text-slate-500">{t('action_verification_hint')}</p>
           )}
 
           {/* Comment */}

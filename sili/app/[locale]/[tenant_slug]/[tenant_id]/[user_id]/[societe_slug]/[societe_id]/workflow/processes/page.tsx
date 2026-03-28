@@ -76,6 +76,7 @@ const TYPE_COLORS: Record<TypeProcess, string> = {
 
 export default function ProcessesPage() {
   const t  = useTranslations('workflow_builder')
+  const tw = useTranslations('workflow')
   const params = useParams()
   const router = useRouter()
   const tenantSlug  = params.tenant_slug  as string
@@ -88,6 +89,7 @@ export default function ProcessesPage() {
   const [instances, setInstances]   = useState<ProcessInstance[]>([])
   const [loading, setLoading]       = useState(true)
   const [tenantIdFull, setTenantId] = useState('')
+  const [canDelete, setCanDelete]   = useState(false)
 
   // Launch modal
   const [showLaunch, setShowLaunch]         = useState(false)
@@ -104,9 +106,22 @@ export default function ProcessesPage() {
       if (!session) { router.push('/login'); return }
 
       const { data: profile } = await supabase
-        .from('profiles').select('tenant_id').eq('id', session.user.id).single()
+        .from('profiles').select('role, tenant_id').eq('id', session.user.id).single()
       if (!profile) return
 
+      const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
+      let perm = 'aucun'
+      if (!isTenantAdmin) {
+        const { data: permData } = await supabase
+          .from('user_module_permissions').select('permission')
+          .eq('user_id', session.user.id).eq('societe_id', societeId).eq('module', 'workflow').maybeSingle()
+        perm = permData?.permission ?? 'aucun'
+      }
+
+      const canAccess = isTenantAdmin || perm === 'gestionnaire' || perm === 'admin'
+      if (!canAccess) { router.push(`${base}`); return }
+
+      setCanDelete(isTenantAdmin || perm === 'admin')
       setTenantId(profile.tenant_id)
       await loadInstances(profile.tenant_id)
       setLoading(false)
@@ -118,15 +133,23 @@ export default function ProcessesPage() {
     const { data, error } = await supabase
       .from('workflow_instances')
       .select(`
-        id, titre, statut, current_step_ordre, created_at,
-        template:template_id ( nom, type_process ),
-        initiator:initiator_id ( full_name )
+        id, titre, statut, current_step_ordre, created_at, initiator_id,
+        template:template_id ( nom, type_process )
       `)
       .eq('tenant_id', tid)
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
 
     if (error) { console.error('[loadInstances]', error.message); return }
+
+    // Fetch initiator names from profiles
+    const initiatorIds = [...new Set((data ?? []).map((i: any) => i.initiator_id).filter(Boolean))]
+    let nameMap: Record<string, string> = {}
+    if (initiatorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles').select('id, full_name').in('id', initiatorIds)
+      profiles?.forEach((p: any) => { nameMap[p.id] = p.full_name })
+    }
 
     // Count steps per instance
     const ids = (data ?? []).map((i: any) => i.id)
@@ -147,6 +170,7 @@ export default function ProcessesPage() {
 
     setInstances((data ?? []).map((i: any) => ({
       ...i,
+      initiator: { full_name: nameMap[i.initiator_id] ?? '—' },
       step_count: stepMap[i.id]?.total ?? 0,
       completed_steps: stepMap[i.id]?.done ?? 0,
     })))
@@ -183,7 +207,7 @@ export default function ProcessesPage() {
     // Validate required fields
     for (const field of selectedTemplate.form_schema) {
       if (field.required && !formValues[field.key]?.trim()) {
-        toast.error(`Champ requis : ${field.label}`)
+        toast.error(t('error_field_required', { field: field.label }))
         return
       }
     }
@@ -369,7 +393,7 @@ export default function ProcessesPage() {
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors"
                           >
                             <ChevronRight className="h-3.5 w-3.5" />
-                            Voir
+                            {t('btn_voir')}
                           </button>
                         </div>
                       </td>
@@ -409,7 +433,7 @@ export default function ProcessesPage() {
                 ) : templates.length === 0 ? (
                   <p className="text-sm text-slate-400 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Aucun modèle actif disponible.
+                    {t('no_active_template')}
                   </p>
                 ) : (
                   <div className="relative">
@@ -437,7 +461,7 @@ export default function ProcessesPage() {
                 <>
                   {/* Titre */}
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-slate-700">Titre du processus <span className="text-red-500">*</span></label>
+                    <label className="text-sm font-semibold text-slate-700">{t('field_titre_process')} <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       value={titre}

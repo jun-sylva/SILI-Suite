@@ -31,6 +31,7 @@
   "btn_save": "Save",
   "btn_save_continue": "Save and continue",
   "btn_cancel": "Cancel",
+  "btn_confirm": "Confirm",
   "btn_publish": "Publish",
 
   "field_nom": "Template name",
@@ -118,6 +119,17 @@
   "select_role": "Select a role...",
   "select_escalation": "Select an escalation recipient...",
   "no_deadline": "No deadline",
+
+  "btn_voir": "View",
+  "btn_agir": "Act",
+  "no_active_template": "No active templates available.",
+  "field_titre_process": "Process title",
+  "error_field_required": "Required field: {field}",
+  "process_not_found": "Process not found.",
+  "action_approbation_hint": "Click Approve or Refuse to process this step.",
+  "action_avis_hint": "Your opinion will be recorded. The process continues regardless of your response.",
+  "action_verification_hint": "Confirm that you have reviewed the associated documents.",
+  "acces_refuse_builder": "Access restricted to managers and administrators.",
 
   "toast_template_created": "Template created successfully.",
   "toast_template_updated": "Template updated.",
