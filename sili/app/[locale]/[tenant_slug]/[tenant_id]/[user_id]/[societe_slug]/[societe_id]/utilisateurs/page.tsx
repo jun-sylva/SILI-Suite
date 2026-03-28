@@ -196,6 +196,7 @@ export default function SocieteUsersPage() {
 
     if (filtered.length === 0) return
 
+    // Perms individuelles
     const { data: existingPerms } = await supabase
       .from('user_module_permissions')
       .select('user_id, module, permission')
@@ -207,6 +208,32 @@ export default function SocieteUsersPage() {
     existingPerms?.forEach(r => {
       if (map[r.user_id]) map[r.user_id][r.module] = r.permission as PermissionLevel
     })
+
+    // Perms héritées des groupes — merge (prend la plus haute)
+    const { data: memberships } = await supabase
+      .from('user_group_members')
+      .select('user_id, group_id')
+      .in('user_id', userIds)
+
+    const groupIds = [...new Set((memberships ?? []).map((m: any) => m.group_id))]
+    if (groupIds.length > 0) {
+      const { data: gPerms } = await supabase
+        .from('user_group_permissions')
+        .select('group_id, module, permission')
+        .in('group_id', groupIds)
+        .eq('societe_id', societeId)
+
+      memberships?.forEach((mb: any) => {
+        if (!map[mb.user_id]) return
+        gPerms?.forEach((gp: any) => {
+          if (gp.group_id !== mb.group_id) return
+          const cur  = PERM_RANK[map[mb.user_id][gp.module] ?? 'aucun']
+          const from = PERM_RANK[gp.permission as PermissionLevel]
+          if (from > cur) map[mb.user_id][gp.module] = gp.permission as PermissionLevel
+        })
+      })
+    }
+
     setPerms(map)
   }
 
@@ -360,6 +387,38 @@ export default function SocieteUsersPage() {
     await fetchGroups(fullTenantId)
   }
 
+  // ── Group perms sync ────────────────────────────────────────────────────
+
+  // Propage les permissions d'un groupe vers user_module_permissions d'un utilisateur
+  // (prend la permission la plus haute entre individuelle et groupe)
+  async function syncGroupPermsToUser(userId: string, groupId: string) {
+    const [{ data: gPerms }, { data: userPerms }] = await Promise.all([
+      supabase.from('user_group_permissions').select('module, permission').eq('group_id', groupId).eq('societe_id', societeId),
+      supabase.from('user_module_permissions').select('module, permission').eq('user_id', userId).eq('societe_id', societeId),
+    ])
+
+    if (!gPerms || gPerms.length === 0) return
+
+    const currentMap: Record<string, PermissionLevel> = {}
+    userPerms?.forEach((p: any) => { currentMap[p.module] = p.permission as PermissionLevel })
+
+    const toUpsert = gPerms
+      .filter((gp: any) => PERM_RANK[gp.permission as PermissionLevel] > PERM_RANK[currentMap[gp.module] ?? 'aucun'])
+      .map((gp: any) => ({
+        user_id:    userId,
+        tenant_id:  fullTenantId,
+        societe_id: societeId,
+        module:     gp.module,
+        permission: gp.permission,
+        granted_by: currentUserId,
+        updated_at: new Date().toISOString(),
+      }))
+
+    if (toUpsert.length > 0) {
+      await supabase.from('user_module_permissions').upsert(toUpsert, { onConflict: 'user_id,societe_id,module' })
+    }
+  }
+
   // ── Members helpers ─────────────────────────────────────────────────────
 
   async function openMembers(g: UserGroup) {
@@ -426,13 +485,15 @@ export default function SocieteUsersPage() {
     })
 
     if (error) { toast.error(t('toast_group_error')); setAddingMember(false); return }
+    // Propager les permissions du groupe vers l'utilisateur
+    await syncGroupPermsToUser(newMemberId, membersGroup.id)
     toast.success(t('toast_member_added'))
     setNewMemberId('')
     setNewMemberRole('membre')
     await loadMembers(membersGroup.id)
     setAddingMember(false)
-    // Refresh member count
-    await fetchGroups(fullTenantId)
+    // Refresh member count + permissions affichées
+    await Promise.all([fetchGroups(fullTenantId), fetchUsers(fullTenantId)])
   }
 
   async function removeMember(memberId: string) {
@@ -494,6 +555,16 @@ export default function SocieteUsersPage() {
       }))
     } else {
       toast.success(t('toast_group_perm_updated'))
+      // Propager la nouvelle perm à tous les membres du groupe
+      const { data: mbrs } = await supabase
+        .from('user_group_members')
+        .select('user_id')
+        .eq('group_id', groupId)
+        .not('user_id', 'is', null)
+      if (mbrs && mbrs.length > 0) {
+        await Promise.all(mbrs.map((m: any) => syncGroupPermsToUser(m.user_id, groupId)))
+        await fetchUsers(fullTenantId)
+      }
     }
   }
 
