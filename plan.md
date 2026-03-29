@@ -307,7 +307,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `rapports`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -517,7 +517,19 @@ Gestionnaire refuse          → refuse
   - **Onglet Modules** : modules disponibles depuis `tenant_modules`, toggle → upsert `societe_modules`
   - **Onglet Partage de données** : autres sociétés du tenant, toggles par module commun → upsert `societe_data_sharing`. Seuls les modules actifs des deux côtés sont proposables.
 - [x] **Sidebar espace société** — groupe **"Applications"** chargé depuis `societe_modules WHERE is_active = true`. Lien "Paramètres Société" visible uniquement pour tenant_admin.
-- [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité, Rapports (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
+- [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
+
+#### Module Rapports `/[societe_id]/rapports`
+- **Layout** (`rapports/layout.tsx`) — navbar sticky, 1 onglet pour l'instant : Tableau de bord
+- **Dashboard** (`rapports/page.tsx`) :
+  - Accès : `lecteur+` sur le module `rapports` (ou tenant_admin) — sinon redirect dashboard
+  - Affiche uniquement les modules actifs sur la société (`societe_modules WHERE is_active = true`)
+  - Chaque module actif → carte avec icône colorée, titre, description, stats inline en temps réel
+  - Stats RH : employés actifs / présences du jour / congés en attente
+  - Stats Workflow : requêtes en cours / en attente
+  - Badge "Bientôt disponible" sur tous les modules sans rapport implémenté
+  - Architecture extensible : ajouter `href` dans `MODULE_CONFIGS` quand un rapport est prêt
+- **i18n** : namespace `rapports` (fr + en)
 - [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
 - [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif / Congés)
   - Contributeur : self-pointage (entrée/sortie) + demande congé + mes récapitulatifs + mes congés

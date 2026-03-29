@@ -1,0 +1,34 @@
+{
+  "title": "Rapports",
+  "subtitle": "Reporting de vos modules actifs",
+  "nav_dashboard": "Tableau de bord",
+  "acces_refuse": "Vous n'avez pas accès au module Rapports.",
+
+  "modules_section": "Modules actifs",
+  "stat_employes": "Employés actifs",
+  "stat_presences_today": "Présences aujourd'hui",
+  "stat_conges_pending": "Congés en attente",
+  "stat_workflow_en_cours": "Requêtes en cours",
+  "stat_workflow_pending": "En attente de traitement",
+
+  "card_rh_title": "Ressources Humaines",
+  "card_rh_desc": "Présences, congés et paie",
+  "card_workflow_title": "Workflow",
+  "card_workflow_desc": "Requêtes et processus",
+  "card_vente_title": "Vente",
+  "card_vente_desc": "CA, devis et commandes",
+  "card_achat_title": "Achat",
+  "card_achat_desc": "Commandes fournisseurs",
+  "card_stock_title": "Stock",
+  "card_stock_desc": "Niveaux et mouvements",
+  "card_crm_title": "CRM",
+  "card_crm_desc": "Contacts et opportunités",
+  "card_comptabilite_title": "Comptabilité",
+  "card_comptabilite_desc": "Finances et bilans",
+  "card_teams_title": "Teams",
+  "card_teams_desc": "Activité et messages",
+
+  "btn_voir": "Voir le rapport",
+  "badge_soon": "Bientôt disponible",
+  "no_modules": "Aucun module actif sur cette société."
+}

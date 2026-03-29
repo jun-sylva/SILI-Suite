@@ -33,6 +33,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'tenants',
     'utilisateurs',
     'validation',
+    'rapports',
     'workflow',
     'workflow_builder',
   ];

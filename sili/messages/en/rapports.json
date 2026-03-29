@@ -1,0 +1,34 @@
+{
+  "title": "Reports",
+  "subtitle": "Reporting for your active modules",
+  "nav_dashboard": "Dashboard",
+  "acces_refuse": "You do not have access to the Reports module.",
+
+  "modules_section": "Active modules",
+  "stat_employes": "Active employees",
+  "stat_presences_today": "Attendances today",
+  "stat_conges_pending": "Pending leave requests",
+  "stat_workflow_en_cours": "Requests in progress",
+  "stat_workflow_pending": "Awaiting processing",
+
+  "card_rh_title": "Human Resources",
+  "card_rh_desc": "Attendance, leave and payroll",
+  "card_workflow_title": "Workflow",
+  "card_workflow_desc": "Requests and processes",
+  "card_vente_title": "Sales",
+  "card_vente_desc": "Revenue, quotes and orders",
+  "card_achat_title": "Purchasing",
+  "card_achat_desc": "Supplier orders",
+  "card_stock_title": "Inventory",
+  "card_stock_desc": "Levels and movements",
+  "card_crm_title": "CRM",
+  "card_crm_desc": "Contacts and opportunities",
+  "card_comptabilite_title": "Accounting",
+  "card_comptabilite_desc": "Finances and reports",
+  "card_teams_title": "Teams",
+  "card_teams_desc": "Activity and messages",
+
+  "btn_voir": "View report",
+  "badge_soon": "Coming soon",
+  "no_modules": "No active modules on this company."
+}
