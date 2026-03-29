@@ -157,7 +157,7 @@ export default function EmployesPage() {
 
     if (!profile) return
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
     setCurrentUserId(session.user.id)
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'

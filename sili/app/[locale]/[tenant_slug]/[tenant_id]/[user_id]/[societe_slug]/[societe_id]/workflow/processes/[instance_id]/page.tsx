@@ -635,7 +635,7 @@ function ActionModal({
   onSignModeChange: (v: 'canvas' | 'approbation') => void
   confirmed: boolean
   onConfirmedChange: (v: boolean) => void
-  canvasRef: React.RefObject<HTMLCanvasElement>
+  canvasRef: React.RefObject<HTMLCanvasElement | null>
   hasSignature: boolean
   onStartDraw: (e: React.MouseEvent<HTMLCanvasElement>) => void
   onDraw: (e: React.MouseEvent<HTMLCanvasElement>) => void

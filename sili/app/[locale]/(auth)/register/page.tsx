@@ -52,10 +52,11 @@ export default function RegisterTenantPage() {
     }
 
     // 2. Création de la Société + Liaison via notre RPC
-    const { error: rpcError } = await supabase.rpc('register_new_tenant', { 
+    const { error: rpcError } = await supabase.rpc('register_new_tenant', {
       p_raison_sociale: raisonSociale,
       p_devise: devise,
-      p_admin_name: nom
+      p_admin_name: nom,
+      p_phone: ''
     })
 
     if (rpcError) {
