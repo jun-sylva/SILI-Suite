@@ -521,7 +521,8 @@ Gestionnaire refuse          → refuse
 - [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
 - [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif / Congés)
   - Contributeur : self-pointage (entrée/sortie) + demande congé + mes récapitulatifs + mes congés
-  - Gestionnaire/Admin : pointage global + récapitulatif global + approbation congés
+  - Gestionnaire/Admin : carte self-pointage (Mon pointage) affichée au-dessus de la liste si `myEmployeId` défini + pointage global + récapitulatif global + approbation congés
+  - Fix RLS `rh_conges` (`20260328_rh_conges_rls.sql` ✅) — congés portail visibles dans "Demandes en attente" + FK `employe_id → rh_employes` pour join PostgREST
   - tenant_admin : accès total
   - Fuseau horaire depuis `tenants.timezone` (IANA)
   - Statut `present` = heure_entree + heure_sortie ; sinon `absent`
