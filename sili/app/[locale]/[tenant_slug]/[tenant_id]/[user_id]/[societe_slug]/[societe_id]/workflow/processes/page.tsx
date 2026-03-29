@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
+import { writeLog } from '@/lib/audit'
 import {
   GitMerge, Plus, Loader2, ChevronRight, X, AlertCircle,
   CheckCircle2, XCircle, Clock, Ban, FileText, ChevronDown,
@@ -264,6 +265,7 @@ export default function ProcessesPage() {
     }
 
     toast.success(t('toast_process_launched'))
+    await writeLog({ tenantId: tenantIdFull, userId: session.user.id, action: 'process_launched', resourceType: 'workflow_instances', resourceId: instance.id, metadata: { titre: titre.trim(), template: selectedTemplate.nom } })
     setShowLaunch(false)
     setLaunching(false)
     await loadInstances(tenantIdFull)

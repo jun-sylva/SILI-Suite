@@ -11,6 +11,7 @@ import {
   FileText, Download, Trash2,
 } from 'lucide-react'
 import { uploadFile, deleteFiles, uniqueFilename } from '@/lib/storage'
+import { writeLog } from '@/lib/audit'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import dayjs from 'dayjs'
@@ -358,9 +359,10 @@ export default function EmployesPage() {
 
       if (error) { toast.error(t('toast_update_error')); setSaving(false); return }
       toast.success(t('toast_update_success'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'employe_updated', resourceType: 'rh_employes', resourceId: editingId, metadata: { nom: payload.nom, prenom: payload.prenom } })
     } else {
       // INSERT
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from('rh_employes')
         .insert({
           ...payload,
@@ -369,9 +371,12 @@ export default function EmployesPage() {
           user_id:    linkedUserId ?? null,
           created_by: currentUserId,
         })
+        .select('id')
+        .single()
 
       if (error) { toast.error(t('toast_create_error')); setSaving(false); return }
       toast.success(t('toast_create_success'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'employe_created', resourceType: 'rh_employes', resourceId: inserted?.id, metadata: { nom: payload.nom, prenom: payload.prenom, poste: payload.poste } })
     }
 
     setModalOpen(false)

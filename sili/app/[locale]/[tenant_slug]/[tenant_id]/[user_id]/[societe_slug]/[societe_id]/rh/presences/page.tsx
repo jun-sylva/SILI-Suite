@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { uploadFile, uniqueFilename } from '@/lib/storage'
+import { writeLog } from '@/lib/audit'
 import {
   Loader2, ShieldOff, Clock, BarChart3, Calendar,
   CheckCircle2, XCircle, LogIn, LogOut, Plus, X,
@@ -470,6 +471,7 @@ export default function PresencesPage() {
       const range = conge?.date_fin ? `du ${conge.date_debut} au ${conge.date_fin}` : `le ${conge?.date_debut}`
       await notifyEmploye(empUserId, 'Congé approuvé', `Votre demande de congé ${range} a été approuvée`)
     }
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId!, action: 'conge_approved', resourceType: 'rh_conges', resourceId: id, metadata: { employe: conge?.rh_employes ? `${conge.rh_employes.prenom} ${conge.rh_employes.nom}` : '' } })
   }
 
   async function handleRefuse(id: string) {
@@ -488,6 +490,7 @@ export default function PresencesPage() {
       const range = conge?.date_fin ? `du ${conge.date_debut} au ${conge.date_fin}` : `le ${conge?.date_debut}`
       await notifyEmploye(empUserId, 'Congé refusé', `Votre demande de congé ${range} a été refusée`)
     }
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId!, action: 'conge_refused', resourceType: 'rh_conges', resourceId: id, metadata: { employe: conge?.rh_employes ? `${conge.rh_employes.prenom} ${conge.rh_employes.nom}` : '' } })
   }
 
   // ── Guards ───────────────────────────────────────────────

@@ -11,6 +11,7 @@ import {
   UsersRound, Plus, Pencil, Trash2, X, ChevronRight, ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { writeLog } from '@/lib/audit'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -264,6 +265,8 @@ export default function SocieteUsersPage() {
         ...prev,
         [userId]: { ...prev[userId], [moduleKey]: prev[userId]?.[moduleKey] ?? 'aucun' },
       }))
+    } else {
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'user_permission_modified', resourceType: 'user_module_permissions', resourceId: userId, metadata: { module: moduleKey, level } })
     }
   }
 
@@ -488,6 +491,7 @@ export default function SocieteUsersPage() {
     // Propager les permissions du groupe vers l'utilisateur
     await syncGroupPermsToUser(newMemberId, membersGroup.id)
     toast.success(t('toast_member_added'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'group_member_added', resourceType: 'user_group_members', resourceId: membersGroup.id, metadata: { group: membersGroup.nom, added_user: newMemberId, role: newMemberRole } })
     setNewMemberId('')
     setNewMemberRole('membre')
     await loadMembers(membersGroup.id)
@@ -555,6 +559,7 @@ export default function SocieteUsersPage() {
       }))
     } else {
       toast.success(t('toast_group_perm_updated'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'group_permission_modified', resourceType: 'user_group_permissions', resourceId: groupId, metadata: { module: moduleKey, level } })
       // Propager la nouvelle perm à tous les membres du groupe
       const { data: mbrs } = await supabase
         .from('user_group_members')

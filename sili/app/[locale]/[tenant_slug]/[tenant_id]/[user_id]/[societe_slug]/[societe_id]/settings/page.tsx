@@ -11,6 +11,7 @@ import {
   AlertCircle, CheckCircle2, Layers, GitBranch,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { writeLog } from '@/lib/audit'
 
 // ── Icônes par module ──────────────────────────────────────────────────────
 const MODULE_ICONS: Record<string, React.ElementType> = {
@@ -40,6 +41,8 @@ export default function SocieteSettingsPage() {
   const [loading, setLoading]     = useState(true)
   const [isAdmin, setIsAdmin]     = useState(false)
   const [activeTab, setActiveTab] = useState<'modules' | 'sharing'>('modules')
+  const [currentUserId, setCurrentUserId] = useState('')
+  const [fullTenantId, setFullTenantId]   = useState('')
 
   // Modules
   const [availableModules, setAvailableModules] = useState<string[]>([])
@@ -66,7 +69,9 @@ export default function SocieteSettingsPage() {
 
     const admin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
     setIsAdmin(admin)
+    setCurrentUserId(session.user.id)
     const tenantId = profile.tenant_id
+    setFullTenantId(tenantId ?? '')
 
     await Promise.all([
       fetchModules(tenantId),
@@ -133,6 +138,9 @@ export default function SocieteSettingsPage() {
         wasActive ? next.add(moduleKey) : next.delete(moduleKey)
         return next
       })
+    } else {
+      const action = newActive ? 'module_activated' : 'module_deactivated'
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action, resourceType: 'societe_modules', resourceId: societeId, metadata: { module: moduleKey } })
     }
   }
 
@@ -161,6 +169,8 @@ export default function SocieteSettingsPage() {
         wasActive ? next[targetId].add(moduleKey) : next[targetId].delete(moduleKey)
         return next
       })
+    } else {
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'data_sharing_configured', resourceType: 'societe_data_sharing', resourceId: societeId, metadata: { module: moduleKey, target_societe_id: targetId, is_active: newActive } })
     }
   }
 

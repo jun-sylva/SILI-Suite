@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
+import { writeLog } from '@/lib/audit'
 import {
   GitMerge, Loader2, ChevronLeft, CheckCircle2, XCircle, Clock,
   Ban, FileText, PenLine, MessageSquare, ShieldCheck, AlertTriangle,
@@ -395,6 +396,7 @@ export default function InstanceDetailPage() {
       .in('statut', ['en_attente', 'en_cours'])
 
     toast.success(t('toast_process_cancelled'))
+    await writeLog({ tenantId: instance.tenant_id, userId: currentUid, action: 'process_cancelled', resourceType: 'workflow_instances', resourceId: instance.id, metadata: { titre: instance.titre } })
     setCancelling(false)
     setShowCancel(false)
     await load()

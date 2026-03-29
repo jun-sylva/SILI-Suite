@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
+import { writeLog } from '@/lib/audit'
 import {
   Loader2, ClipboardList, CheckCircle2, XCircle, Eye, Trash2, X, GitBranch,
   Download, UsersRound, AlertTriangle,
@@ -270,8 +271,11 @@ export default function AssigneesPage() {
 
       toast.success(actionTarget.type === 'approuve' ? t('toast_approved') : t('toast_refused'))
 
-      // Notifier le créateur de la requête
       const req = requests.find(r => r.id === actionTarget.id)
+      const action = actionTarget.type === 'approuve' ? 'workflow_request_approved' : 'workflow_request_refused'
+      await writeLog({ tenantId: currentTenantId, userId: currentUserId!, action, resourceType: 'workflow_requests', resourceId: actionTarget.id, metadata: { titre: req?.titre ?? '' } })
+
+      // Notifier le créateur de la requête
       if (req?.created_by && req.created_by !== currentUserId) {
         const decision = actionTarget.type === 'approuve' ? 'approuvée' : 'refusée'
         await supabase.from('notifications').insert({

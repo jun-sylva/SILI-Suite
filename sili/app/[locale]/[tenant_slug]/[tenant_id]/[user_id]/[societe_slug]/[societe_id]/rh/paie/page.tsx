@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { uploadFile as storageUpload, uniqueFilename, getSignedUrl } from '@/lib/storage'
+import { writeLog } from '@/lib/audit'
 import {
   Loader2, ShieldOff, Banknote, Upload, Download,
   Trash2, FileText, X, ChevronLeft, ChevronRight,
@@ -241,6 +242,7 @@ export default function PaiePage() {
     }
 
     toast.success(t('paie_upload_success'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: existing ? 'bulletin_replaced' : 'bulletin_uploaded', resourceType: 'rh_bulletins_paie', resourceId: uploadEmploye.id, metadata: { employe: `${uploadEmploye.prenom} ${uploadEmploye.nom}`, mois: selectedMois, annee: selectedAnnee } })
     setUploadOpen(false)
     setUploadFileObj(null)
     await Promise.all([fetchGestionData(), fetchMesBulletins()])
@@ -268,6 +270,7 @@ export default function PaiePage() {
     if (error) toast.error(t('paie_delete_error'))
     else {
       toast.success(t('paie_delete_success'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'bulletin_deleted', resourceType: 'rh_bulletins_paie', resourceId: deleteId })
       setDeleteId(null)
       await Promise.all([fetchGestionData(), fetchMesBulletins()])
     }
