@@ -346,6 +346,10 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅
+- [x] **`NEXT_PUBLIC_SUPABASE_URL`** ajoutée dans Hostinger dashboard ✅
+- [x] **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** ajoutée dans Hostinger dashboard ✅
+- [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans Hostinger dashboard ✅
+- [ ] **Supabase → Site URL + Redirect URLs** à mettre à jour avec le domaine de production
 
 ### Fonctionnalités
 - [ ] **RLS `societes` pour `tenant_user`** : lecture uniquement des sociétés assignées via `user_societes`
@@ -546,6 +550,60 @@ Gestionnaire refuse          → refuse
   - Bouton ← Retour protégé par PIN 4 chiffres (stocké dans `societes.portail_pin`, défaut `'0000'`)
   - PIN modifiable depuis la carte Portail du dashboard RH
   - Visible uniquement pour gestionnaire+ et tenant_admin sur le dashboard
+
+---
+
+## Déploiement — Hostinger Node.js Hosting
+
+### Plateforme
+Hostinger **Node.js Web Apps Hosting** — supporte Next.js App Router + SSR complet. Pas de `output: 'export'` nécessaire.
+
+### Variables d'environnement (configurées dans le dashboard Hostinger)
+
+| Variable | Description | Obligatoire |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL publique du projet Supabase | ✅ |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé anonyme Supabase (safe côté client) | ✅ |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clé service role (API route `/api/admin/create-user` uniquement) | ✅ |
+
+⚠️ Le fichier `.env.local` **n'est pas déployé** (dans `.gitignore`). Toutes ces variables doivent être re-saisies manuellement dans l'interface Hostinger → **App Settings → Environment Variables**.
+
+### Commandes de build/démarrage
+
+| Champ Hostinger | Valeur |
+|---|---|
+| **Install** | `npm ci` |
+| **Build** | `npm run build` |
+| **Start** | `npm run start -- -p $PORT` |
+| **Node.js version** | **20** (LTS) |
+
+> ⚠️ **Point critique** : Hostinger assigne le port dynamiquement via `$PORT`. Sans `-p $PORT` dans la commande start, l'application ne répond pas (erreur 502/504). Ne jamais utiliser `npm run start` seul.
+
+### Configuration Supabase côté production
+
+Dans le **Dashboard Supabase → Authentication → URL Configuration** :
+
+1. **Site URL** → `https://ton-domaine.hostinger.app` (ou domaine custom)
+2. **Redirect URLs** → `https://ton-domaine.hostinger.app/**`
+
+Sans cette configuration, les redirections après login/magic link pointent vers `localhost` en production → authentification impossible.
+
+### Vérifications avant déploiement
+
+- [ ] `npm run build` passe sans erreur en local
+- [ ] Variables d'environnement renseignées dans Hostinger dashboard
+- [ ] Supabase → Site URL + Redirect URLs mis à jour
+- [ ] Storage CORS : vérifier les policies RLS du bucket `sili-files` sont bien en place (migration `20260326_storage_phase1.sql` ✅)
+
+### Architecture compatible
+- ✅ Next.js App Router avec routes dynamiques `[locale]/[tenant_slug]/...`
+- ✅ next-intl (SSR, namespaces multiples)
+- ✅ PWA (`@ducanh2912/next-pwa`, désactivé en dev, actif en prod)
+- ✅ `@react-pdf/renderer` (génération PDF côté client)
+- ✅ Supabase Realtime (websocket)
+
+### Déploiement via GitHub
+Hostinger se connecte à un dépôt GitHub et redéploie automatiquement à chaque push sur la branche configurée. **Un seul compte GitHub par plan Hostinger** (toutes les apps du plan partagent le même compte GitHub connecté).
 
 ---
 
