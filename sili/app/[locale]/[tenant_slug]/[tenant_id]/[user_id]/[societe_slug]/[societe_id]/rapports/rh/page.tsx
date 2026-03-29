@@ -10,6 +10,10 @@ import {
 } from 'lucide-react'
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
+// ── Listes (identiques au formulaire "Ajouter un Employé") ────────────────────
+const POSTES       = ['Directeur', 'Manager', 'Chef de Projet', 'Développeur', 'Designer', 'Commercial', 'Comptable', 'Assistant', 'Technicien', 'Consultant', 'Autre']
+const DEPARTEMENTS = ['Direction / Management', 'Ressources Humaines', 'Informatique / IT', 'Finance / Comptabilité', 'Commercial / Vente', 'Marketing', 'Opérations / Logistique']
+
 // ── helpers ────────────────────────────────────────────────────────────────────
 
 function workingDaysInMonth(year: number, month: number): number {
@@ -308,8 +312,8 @@ export default function RapportsRhPage() {
       .eq('societe_id', societeId)
       .order('nom')
 
-    if (fPoste)    q = q.ilike('poste', `%${fPoste}%`)
-    if (fDept)     q = q.ilike('departement', `%${fDept}%`)
+    if (fPoste)    q = q.eq('poste', fPoste)
+    if (fDept)     q = q.eq('departement', fDept)
     if (fContrat)  q = q.eq('type_contrat', fContrat)
     if (fStatut)   q = q.eq('statut', fStatut)
     if (fSalaireMin) q = q.gte('salaire_base', Number(fSalaireMin))
@@ -552,8 +556,14 @@ export default function RapportsRhPage() {
           {/* ── Employés filters ── */}
           {reportType === 'employes' && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <input value={fPoste}      onChange={e => setFPoste(e.target.value)}      placeholder={t('f_poste')}      className="input-filter" />
-              <input value={fDept}       onChange={e => setFDept(e.target.value)}        placeholder={t('f_dept')}       className="input-filter" />
+              <select value={fPoste}  onChange={e => setFPoste(e.target.value)}  className="input-filter">
+                <option value="">{t('f_poste')}</option>
+                {POSTES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <select value={fDept}   onChange={e => setFDept(e.target.value)}   className="input-filter">
+                <option value="">{t('f_dept')}</option>
+                {DEPARTEMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
               <select value={fContrat}   onChange={e => setFContrat(e.target.value)}     className="input-filter">
                 <option value="">{t('f_contrat_all')}</option>
                 {['CDI','CDD','Stage','Freelance','Consultant'].map(v => (
