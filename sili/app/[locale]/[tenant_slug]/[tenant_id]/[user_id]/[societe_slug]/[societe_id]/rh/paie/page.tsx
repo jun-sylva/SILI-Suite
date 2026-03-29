@@ -21,6 +21,7 @@ type Employe = {
   prenom: string
   matricule: string
   poste: string | null
+  user_id: string | null
 }
 
 type Bulletin = {
@@ -151,7 +152,7 @@ export default function PaiePage() {
     const [empRes, bulRes] = await Promise.all([
       supabase
         .from('rh_employes')
-        .select('id, nom, prenom, matricule, poste')
+        .select('id, nom, prenom, matricule, poste, user_id')
         .eq('societe_id', societeId)
         .eq('statut', 'actif')
         .order('nom', { ascending: true }),
@@ -243,6 +244,18 @@ export default function PaiePage() {
     setUploadOpen(false)
     setUploadFileObj(null)
     await Promise.all([fetchGestionData(), fetchMesBulletins()])
+    // Notifier l'employé si il a un compte
+    if (uploadEmploye.user_id && uploadEmploye.user_id !== currentUserId) {
+      const moisLabel = new Date(selectedAnnee, selectedMois - 1, 1)
+        .toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
+      await supabase.from('notifications').insert({
+        tenant_id: fullTenantId,
+        user_id:   uploadEmploye.user_id,
+        type:      'info',
+        titre:     'Bulletin de paie disponible',
+        message:   `Votre bulletin de paie de ${moisLabel} est disponible`,
+      })
+    }
     setUploading(false)
   }
 

@@ -39,7 +39,7 @@ Toujours récupérer `profiles.tenant_id` (UUID complet) via `supabase.from('pro
 | `public.rh_presences` | Pointage quotidien. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id` (FK → `rh_employes`), `date`, `statut` ('present'/'absent'/'retard'/'conge'/'mission'), `note`, `heure_entree timestamptz`, `heure_sortie timestamptz`, `created_by`, `created_at`, `updated_at`. Contrainte unique : `(employe_id, date)`. RLS : SELECT/INSERT/UPDATE/DELETE pour le même tenant. |
 | `public.rh_bulletins_paie` | Bulletins de salaire. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id`, `mois` (1-12), `annee`, `storage_path`, `nom_fichier`, `taille_kb`, `uploaded_by`, `created_at`. Contrainte unique : `(employe_id, mois, annee)`. RLS par tenant. |
 | `public.rh_conges` | Demandes de congé. Colonnes : `id`, `tenant_id`, `societe_id`, `employe_id`, `type_conge`, `typologie` ('daily'/'hourly'), `date_debut`, `date_fin` (nullable si horaire), `nb_jours` (nullable si horaire), `nb_heures numeric(5,2)` (nullable si journalier), `statut` ('en_attente'/'approuve'/'refuse'), `motif`, `justificatif_path` (Storage), `commentaire_rh`, `approuve_par`, `approuve_le`, `created_by`, `created_at`, `updated_at`. Pas de RLS. |
-| `public.rh_employes` | Employés RH. Colonnes : `id`, `tenant_id`, `societe_id`, `user_id` (nullable — NULL = sans compte plateforme), `matricule` (8 chiffres, auto-généré via trigger), `nom`, `prenom`, `sexe` ('M'/'F'), `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`, `email`, `telephone`, `poste`, `departement`, `date_embauche`, `type_contrat` ('CDI'/'CDD'/'Stage'/'Freelance'/'Consultant'), `salaire_base`, `cni_numero`, `cnps_numero`, `photo_url`, `statut` ('actif'/'inactif'/'suspendu'/'conge'), `created_by`, `created_at`, `updated_at`. RLS : SELECT (même tenant), INSERT/UPDATE/DELETE (tenant_admin uniquement). |
+| `public.rh_employes` | Employés RH. Colonnes : `id`, `tenant_id`, `societe_id`, `user_id` (nullable — NULL = sans compte plateforme), `matricule` (8 chiffres, auto-généré via trigger), `nom`, `prenom`, `sexe` ('M'/'F'), `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`, `email`, `telephone`, `poste`, `departement`, `date_embauche`, `type_contrat` ('CDI'/'CDD'/'Stage'/'Freelance'/'Consultant'), `salaire_base`, `etat_civil` ('celibataire'/'marie'/'veuf'/'separe'/'divorce' — nullable), `nb_enfants` (int NOT NULL DEFAULT 0), `cni_numero`, `cnps_numero`, `photo_url`, `statut` ('actif'/'inactif'/'suspendu'/'conge'), `created_by`, `created_at`, `updated_at`. RLS : SELECT (même tenant), INSERT/UPDATE/DELETE (tenant_admin uniquement). |
 
 ### Rôles globaux (`global_role` enum)
 - `super_admin` — accès total à tout *(non utilisé en pratique — remplacé par `is_super_admin`)*
@@ -155,6 +155,7 @@ Ces rôles s'appliquent **par module** (vente, achat, stock, rh, crm, comptabili
 - **Matricule** : auto-généré via trigger Postgres (8 chiffres uniques), affiché en lecture seule
 - **Statuts** : actif (emerald), inactif (slate), suspendu (red), conge (amber)
 - **Poste / Département** : listes déroulantes prédéfinies (11 postes, 7 départements)
+- **Situation familiale** : section entre Contact et Poste — état civil (Célibataire/Marié(e)/Veuf/Séparé(e)/Divorcé(e)) + nombre d'enfants (int ≥ 0). Données utilisées pour le calcul des allocations familiales CNPS.
 - **Documents officiels** : drawer latéral par employé — upload CNI, Passeport, CNPS, Diplôme, Contrat, Autre. Storage : `{tenant_id}/societes/{societe_id}/rh/employes/{employe_id}/`. Table `rh_employe_documents`. Téléchargement via URL signée (60s). Max 5 Mo, formats PDF/JPG/PNG.
 - **i18n** : namespace `rh` (FR + EN)
 
@@ -303,6 +304,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_fix_user_group_members_rls.sql` | Fix RLS SELECT `user_group_members` — ajout `tenant_admin` via UNION profiles (tenant_admin absent de user_societes → loadMembers retournait vide) | ✅ |
 | `20260328_unique_group_member.sql` | Contraintes UNIQUE `(group_id, user_id)` et `(group_id, employe_id)` sur `user_group_members` — empêche d'ajouter deux fois le même membre | ✅ |
 | `20260328_rh_conges_rls.sql` | Fix RLS `rh_conges` — SELECT/INSERT/UPDATE par `tenant_id` (congés portail invisibles aux managers) + FK `employe_id → rh_employes` pour le join PostgREST | ✅ |
+| `20260329_rh_employes_situation_familiale.sql` | `ALTER TABLE rh_employes ADD COLUMN etat_civil text CHECK (5 valeurs)` + `nb_enfants int NOT NULL DEFAULT 0` — pour le calcul des allocations familiales CNPS | ✅ |
 
 ---
 

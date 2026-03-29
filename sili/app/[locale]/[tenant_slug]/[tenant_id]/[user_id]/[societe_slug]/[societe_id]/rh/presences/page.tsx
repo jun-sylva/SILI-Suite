@@ -46,7 +46,7 @@ type Conge = {
   approuve_par: string | null
   approuve_le: string | null
   created_at: string
-  rh_employes: { nom: string; prenom: string; matricule: string } | null
+  rh_employes: { nom: string; prenom: string; matricule: string; user_id: string | null } | null
 }
 
 type CongeForm = {
@@ -131,6 +131,7 @@ export default function PresencesPage() {
   const [fullTenantId, setFullTenantId]   = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
   const [myEmployeId, setMyEmployeId]     = useState<string | null>(null)
+  const [myEmployeName, setMyEmployeName] = useState('')
   const [timezone, setTimezone]           = useState('Africa/Douala')
 
   // ── Tabs ──────────────────────────────────────────────────
@@ -202,11 +203,12 @@ export default function PresencesPage() {
     // Fiche employé liée à ce user (pour self-pointage)
     const { data: ficheData } = await supabase
       .from('rh_employes')
-      .select('id')
+      .select('id, nom, prenom')
       .eq('societe_id', societeId)
       .eq('user_id', session.user.id)
       .maybeSingle()
     setMyEmployeId(ficheData?.id ?? null)
+    if (ficheData) setMyEmployeName(`${ficheData.prenom} ${ficheData.nom}`)
 
     await fetchEmployees()
     setLoading(false)
@@ -343,7 +345,7 @@ export default function PresencesPage() {
     setCongesLoading(true)
     const { data, error } = await supabase
       .from('rh_conges')
-      .select('*, rh_employes!employe_id(nom, prenom, matricule)')
+      .select('*, rh_employes!employe_id(nom, prenom, matricule, user_id)')
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
 
@@ -354,6 +356,32 @@ export default function PresencesPage() {
     setPendingConges(all.filter(c => c.statut === 'en_attente'))
     setHistoryConges(all.filter(c => c.statut !== 'en_attente'))
     setCongesLoading(false)
+  }
+
+  // ── Notifications RH ─────────────────────────────────────
+
+  async function notifyGestionnaires(titre: string, message: string) {
+    const [{ data: perms }, { data: admins }] = await Promise.all([
+      supabase.from('user_module_permissions').select('user_id')
+        .eq('societe_id', societeId).eq('module', 'rh').in('permission', ['gestionnaire', 'admin']),
+      supabase.from('profiles').select('id')
+        .eq('tenant_id', fullTenantId).eq('role', 'tenant_admin'),
+    ])
+    const ids = [...new Set([
+      ...(perms ?? []).map((p: any) => p.user_id as string),
+      ...(admins ?? []).map((a: any) => a.id as string),
+    ])].filter(id => id !== currentUserId)
+    if (ids.length === 0) return
+    await supabase.from('notifications').insert(
+      ids.map(uid => ({ tenant_id: fullTenantId, user_id: uid, type: 'info', titre, message }))
+    )
+  }
+
+  async function notifyEmploye(userId: string, titre: string, message: string) {
+    if (!userId || userId === currentUserId) return
+    await supabase.from('notifications').insert({
+      tenant_id: fullTenantId, user_id: userId, type: 'info', titre, message,
+    })
   }
 
   async function handleSubmitConge() {
@@ -415,10 +443,19 @@ export default function PresencesPage() {
     setCongeForm({ type_conge: 'annuel', typologie: 'daily', date_debut: '', date_fin: '', nb_heures: '', motif: '' })
     setJustificatifFile(null)
     await fetchConges()
+    // Notifier les gestionnaires RH
+    const dateRange = congeForm.typologie === 'daily'
+      ? `du ${congeForm.date_debut} au ${congeForm.date_fin}`
+      : `le ${congeForm.date_debut} (${congeForm.nb_heures}h)`
+    await notifyGestionnaires(
+      'Demande de congé',
+      `${myEmployeName || 'Un employé'} a soumis une demande de congé ${dateRange}`
+    )
     setSavingConge(false)
   }
 
   async function handleApprove(id: string) {
+    const conge = pendingConges.find(c => c.id === id)
     const { error } = await supabase.from('rh_conges').update({
       statut: 'approuve', approuve_par: currentUserId,
       approuve_le: new Date().toISOString(), commentaire_rh: comment || null,
@@ -427,9 +464,16 @@ export default function PresencesPage() {
     toast.success(t('toast_approve_success'))
     setActionId(null); setComment('')
     await fetchConges()
+    // Notifier l'employé
+    const empUserId = conge?.rh_employes?.user_id
+    if (empUserId) {
+      const range = conge?.date_fin ? `du ${conge.date_debut} au ${conge.date_fin}` : `le ${conge?.date_debut}`
+      await notifyEmploye(empUserId, 'Congé approuvé', `Votre demande de congé ${range} a été approuvée`)
+    }
   }
 
   async function handleRefuse(id: string) {
+    const conge = pendingConges.find(c => c.id === id)
     const { error } = await supabase.from('rh_conges').update({
       statut: 'refuse', approuve_par: currentUserId,
       approuve_le: new Date().toISOString(), commentaire_rh: comment || null,
@@ -438,6 +482,12 @@ export default function PresencesPage() {
     toast.success(t('toast_refuse_success'))
     setActionId(null); setComment('')
     await fetchConges()
+    // Notifier l'employé
+    const empUserId = conge?.rh_employes?.user_id
+    if (empUserId) {
+      const range = conge?.date_fin ? `du ${conge.date_debut} au ${conge.date_fin}` : `le ${conge?.date_debut}`
+      await notifyEmploye(empUserId, 'Congé refusé', `Votre demande de congé ${range} a été refusée`)
+    }
   }
 
   // ── Guards ───────────────────────────────────────────────
