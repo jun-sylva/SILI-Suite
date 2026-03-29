@@ -28,6 +28,7 @@ interface WorkflowRequest {
   assigned_to_group: string | null
   justificatif_path: string | null
   created_at: string
+  created_by?: string | null
   created_profile?: { full_name: string | null } | null
   // flag interne — non issu de Supabase directement
   via_group?: boolean
@@ -101,7 +102,7 @@ export default function AssigneesPage() {
   const loadRequests = useCallback(async (uid: string, adminMode: boolean, groupIds: string[]) => {
     const baseSelect = `
       id, titre, type_demande, description, statut, priorite,
-      assigned_to, assigned_to_group, justificatif_path, created_at,
+      assigned_to, assigned_to_group, justificatif_path, created_at, created_by,
       created_profile:created_by(full_name)
     `
 
@@ -268,6 +269,20 @@ export default function AssigneesPage() {
       })
 
       toast.success(actionTarget.type === 'approuve' ? t('toast_approved') : t('toast_refused'))
+
+      // Notifier le créateur de la requête
+      const req = requests.find(r => r.id === actionTarget.id)
+      if (req?.created_by && req.created_by !== currentUserId) {
+        const decision = actionTarget.type === 'approuve' ? 'approuvée' : 'refusée'
+        await supabase.from('notifications').insert({
+          tenant_id: currentTenantId,
+          user_id:   req.created_by,
+          type:      'info',
+          titre:     `Requête ${decision}`,
+          message:   `Votre requête "${req.titre}" a été ${decision}`,
+        })
+      }
+
       setActionTarget(null)
       setActionComment('')
       setRequests(prev => prev.map(r =>

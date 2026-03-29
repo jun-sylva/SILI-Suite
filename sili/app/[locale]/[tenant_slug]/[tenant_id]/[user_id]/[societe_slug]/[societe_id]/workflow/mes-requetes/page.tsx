@@ -195,6 +195,15 @@ export default function MesRequetesPage() {
     setFileError('')
   }
 
+  // ── Notifications Workflow ───────────────────────────────────────────────
+
+  async function sendNotif(userId: string, titre: string, message: string) {
+    if (!userId || userId === currentUserId) return
+    await supabase.from('notifications').insert({
+      tenant_id: currentTenantId, user_id: userId, type: 'info', titre, message,
+    })
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!form.titre.trim()) return
@@ -240,6 +249,23 @@ export default function MesRequetesPage() {
       toast.success(t('toast_created'))
       resetCreateModal()
       await loadRequests(currentUserId)
+
+      // Notifier le destinataire
+      const { data: me } = await supabase.from('profiles').select('full_name').eq('id', currentUserId).single()
+      const myName = me?.full_name ?? 'Quelqu\'un'
+      const titre = form.titre.trim()
+
+      if (assignType === 'individual' && form.assigned_to) {
+        await sendNotif(form.assigned_to, 'Nouvelle requête assignée', `${myName} vous a assigné une requête : ${titre}`)
+      } else if (assignType === 'group' && form.assigned_to_group) {
+        const groupName = groups.find(g => g.id === form.assigned_to_group)?.nom ?? 'un groupe'
+        const { data: managers } = await supabase
+          .from('user_group_members').select('user_id')
+          .eq('group_id', form.assigned_to_group).eq('role', 'manager').not('user_id', 'is', null)
+        for (const m of managers ?? []) {
+          await sendNotif(m.user_id as string, 'Nouvelle requête assignée au groupe', `Nouvelle requête assignée au groupe ${groupName} : ${titre}`)
+        }
+      }
     } catch {
       toast.error(t('toast_error'))
     } finally {

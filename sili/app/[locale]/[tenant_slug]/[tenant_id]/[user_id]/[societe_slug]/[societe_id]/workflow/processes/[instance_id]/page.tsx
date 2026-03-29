@@ -56,6 +56,8 @@ interface Instance {
   current_step_ordre: number
   form_data: Record<string, string>
   created_at: string
+  tenant_id: string
+  initiator_id: string | null
   template: {
     id: string
     nom: string
@@ -151,7 +153,7 @@ export default function InstanceDetailPage() {
     const { data: inst } = await supabase
       .from('workflow_instances')
       .select(`
-        id, titre, statut, current_step_ordre, form_data, created_at, initiator_id,
+        id, titre, statut, current_step_ordre, form_data, created_at, initiator_id, tenant_id,
         template:template_id ( id, nom, type_process, form_schema )
       `)
       .eq('id', instanceId)
@@ -305,8 +307,14 @@ export default function InstanceDetailPage() {
     const anyRefused = parallelSteps?.some(s => s.statut === 'refuse')
 
     if (anyRefused) {
-      // Refuse the whole instance
       await supabase.from('workflow_instances').update({ statut: 'refuse', updated_at: new Date().toISOString() }).eq('id', inst.id)
+      // Notifier l'initiateur
+      if (inst.initiator_id && inst.initiator_id !== currentUid) {
+        await supabase.from('notifications').insert({
+          tenant_id: inst.tenant_id, user_id: inst.initiator_id, type: 'info',
+          titre: 'Processus refusé', message: `Le processus "${inst.titre}" a été refusé`,
+        })
+      }
       return
     }
 
@@ -315,7 +323,7 @@ export default function InstanceDetailPage() {
     // Find next step order
     const { data: nextSteps } = await supabase
       .from('workflow_instance_steps')
-      .select('id, ordre')
+      .select('id, ordre, step:step_id(nom, assignee_id)')
       .eq('instance_id', inst.id)
       .eq('statut', 'en_attente')
       .order('ordre')
@@ -324,12 +332,26 @@ export default function InstanceDetailPage() {
     if (!nextSteps || nextSteps.length === 0) {
       // All done — approve
       await supabase.from('workflow_instances').update({ statut: 'approuve', updated_at: new Date().toISOString() }).eq('id', inst.id)
+      // Notifier l'initiateur
+      if (inst.initiator_id && inst.initiator_id !== currentUid) {
+        await supabase.from('notifications').insert({
+          tenant_id: inst.tenant_id, user_id: inst.initiator_id, type: 'info',
+          titre: 'Processus approuvé', message: `Le processus "${inst.titre}" a été approuvé`,
+        })
+      }
       return
     }
 
     const nextOrdre = nextSteps[0].ordre
 
-    // Activate all steps at next order
+    // Activer toutes les étapes de ce prochain ordre
+    const { data: stepsToActivate } = await supabase
+      .from('workflow_instance_steps')
+      .select('id, step:step_id(nom, assignee_id)')
+      .eq('instance_id', inst.id)
+      .eq('ordre', nextOrdre)
+      .eq('statut', 'en_attente')
+
     await supabase
       .from('workflow_instance_steps')
       .update({ statut: 'en_cours' })
@@ -340,6 +362,19 @@ export default function InstanceDetailPage() {
       .from('workflow_instances')
       .update({ current_step_ordre: nextOrdre, updated_at: new Date().toISOString() })
       .eq('id', inst.id)
+
+    // Notifier chaque acteur des étapes activées
+    for (const s of stepsToActivate ?? []) {
+      const assigneeId = (s.step as any)?.assignee_id
+      const stepNom    = (s.step as any)?.nom ?? 'une étape'
+      if (assigneeId && assigneeId !== currentUid) {
+        await supabase.from('notifications').insert({
+          tenant_id: inst.tenant_id, user_id: assigneeId, type: 'info',
+          titre: 'Action requise',
+          message: `Action requise sur le processus "${inst.titre}" — étape : ${stepNom}`,
+        })
+      }
+    }
   }
 
   async function cancelProcess() {
