@@ -67,6 +67,7 @@
 
   "section_identite": "Identité",
   "section_contact": "Contact",
+  "section_situation_familiale": "Situation familiale",
   "section_poste": "Poste & Contrat",
   "section_documents": "Documents officiels",
 
@@ -85,6 +86,13 @@
   "field_date_embauche": "Date d'embauche",
   "field_type_contrat": "Type de contrat",
   "field_salaire_base": "Salaire de base (FCFA)",
+  "field_etat_civil": "État civil",
+  "field_nb_enfants": "Nombre d'enfants",
+  "etat_civil_celibataire": "Célibataire",
+  "etat_civil_marie": "Marié(e)",
+  "etat_civil_veuf": "Veuf/Veuve",
+  "etat_civil_separe": "Séparé(e)",
+  "etat_civil_divorce": "Divorcé(e)",
   "field_cni_numero": "N° CNI",
   "field_cnps_numero": "N° CNPS",
   "field_statut": "Statut",

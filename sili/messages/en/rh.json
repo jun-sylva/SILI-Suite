@@ -67,6 +67,7 @@
 
   "section_identite": "Identity",
   "section_contact": "Contact",
+  "section_situation_familiale": "Family situation",
   "section_poste": "Position & Contract",
   "section_documents": "Official documents",
 
@@ -85,6 +86,13 @@
   "field_date_embauche": "Hire date",
   "field_type_contrat": "Contract type",
   "field_salaire_base": "Base salary (FCFA)",
+  "field_etat_civil": "Marital status",
+  "field_nb_enfants": "Number of children",
+  "etat_civil_celibataire": "Single",
+  "etat_civil_marie": "Married",
+  "etat_civil_veuf": "Widowed",
+  "etat_civil_separe": "Separated",
+  "etat_civil_divorce": "Divorced",
   "field_cni_numero": "ID card number",
   "field_cnps_numero": "CNPS number",
   "field_statut": "Status",

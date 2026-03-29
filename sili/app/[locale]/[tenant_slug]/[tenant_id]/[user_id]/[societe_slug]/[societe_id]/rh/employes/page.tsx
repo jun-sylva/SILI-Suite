@@ -67,6 +67,8 @@ type EmployeForm = {
   cni_numero: string
   cnps_numero: string
   statut: string
+  etat_civil: string
+  nb_enfants: string
 }
 
 const defaultForm: EmployeForm = {
@@ -74,7 +76,10 @@ const defaultForm: EmployeForm = {
   nationalite: '', adresse: '', email: '', telephone: '', poste: '',
   departement: '', date_embauche: '', type_contrat: '', salaire_base: '',
   cni_numero: '', cnps_numero: '', statut: 'actif',
+  etat_civil: '', nb_enfants: '0',
 }
+
+const ETATS_CIVILS = ['celibataire','marie','veuf','separe','divorce'] as const
 
 type ModalMode = 'create' | 'edit' | 'fiche'
 
@@ -266,6 +271,8 @@ export default function EmployesPage() {
         cni_numero:    emp.fiche.cni_numero ?? '',
         cnps_numero:   emp.fiche.cnps_numero ?? '',
         statut:        emp.fiche.statut,
+        etat_civil:    (emp.fiche as any).etat_civil ?? '',
+        nb_enfants:    String((emp.fiche as any).nb_enfants ?? 0),
       })
       setEditingId(emp.fiche.id)
     } else {
@@ -303,6 +310,8 @@ export default function EmployesPage() {
       cni_numero:    emp.cni_numero ?? '',
       cnps_numero:   emp.cnps_numero ?? '',
       statut:        emp.statut,
+      etat_civil:    (emp as any).etat_civil ?? '',
+      nb_enfants:    String((emp as any).nb_enfants ?? 0),
     })
     setEditingId(emp.id)
     setLinkedUserId(null)
@@ -336,6 +345,8 @@ export default function EmployesPage() {
       cni_numero:     form.cni_numero || null,
       cnps_numero:    form.cnps_numero || null,
       statut:         form.statut,
+      etat_civil:     form.etat_civil || null,
+      nb_enfants:     parseInt(form.nb_enfants) || 0,
     }
 
     if (editingId) {
@@ -864,6 +875,20 @@ export default function EmployesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputField label={t('field_email')}     type="email" {...f('email')}     placeholder="jean@example.com" />
                   <InputField label={t('field_telephone')} type="tel"   {...f('telephone')} placeholder="+237 6XX XXX XXX" />
+                </div>
+              </fieldset>
+
+              <div className="border-t border-slate-100" />
+
+              {/* Situation familiale */}
+              <fieldset>
+                <legend className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-3">{t('section_situation_familiale')}</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SelectField label={t('field_etat_civil')} {...f('etat_civil')}>
+                    <option value="">— Sélectionner —</option>
+                    {ETATS_CIVILS.map(e => <option key={e} value={e}>{t(`etat_civil_${e}` as any)}</option>)}
+                  </SelectField>
+                  <InputField label={t('field_nb_enfants')} type="number" {...f('nb_enfants')} placeholder="0" />
                 </div>
               </fieldset>
 
