@@ -1,0 +1,25 @@
+{
+  "title": "HR Report",
+  "subtitle": "Analytics on employees, attendance, leaves and payroll",
+
+  "tab_employes":  "Employees",
+  "tab_presences": "Attendance",
+  "tab_conges":    "Leaves",
+  "tab_paie":      "Payroll",
+
+  "f_poste":        "Position",
+  "f_dept":         "Department",
+  "f_contrat_all":  "All contracts",
+  "f_statut_all":   "All statuses",
+  "f_salaire_min":  "Min salary",
+  "f_salaire_max":  "Max salary",
+
+  "periode_semaine":    "This week",
+  "periode_mois":       "Month",
+  "periode_annee":      "Year",
+  "periode_intervalle": "Custom range",
+
+  "btn_generate": "Generate",
+  "results":      "results",
+  "no_results":   "No results for the selected filters."
+}

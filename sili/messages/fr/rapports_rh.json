@@ -1,0 +1,25 @@
+{
+  "title": "Rapport RH",
+  "subtitle": "Analyses sur les employés, présences, congés et paie",
+
+  "tab_employes":  "Employés",
+  "tab_presences": "Présences",
+  "tab_conges":    "Congés",
+  "tab_paie":      "Paie",
+
+  "f_poste":        "Poste",
+  "f_dept":         "Département",
+  "f_contrat_all":  "Tous les contrats",
+  "f_statut_all":   "Tous les statuts",
+  "f_salaire_min":  "Salaire min",
+  "f_salaire_max":  "Salaire max",
+
+  "periode_semaine":    "Cette semaine",
+  "periode_mois":       "Mois",
+  "periode_annee":      "Année",
+  "periode_intervalle": "Intervalle",
+
+  "btn_generate": "Générer",
+  "results":      "résultats",
+  "no_results":   "Aucun résultat pour les filtres sélectionnés."
+}

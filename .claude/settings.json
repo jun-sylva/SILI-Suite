@@ -11,11 +11,15 @@
       "Bash(sudo npm:*)",
       "Bash(grep -r z-[ /Users/junior/Documents/project/github/SILI-Suite/sili/components --include=*.tsx)",
       "Bash(grep -r \"profile\\\\|Profile\\\\|user.*menu\\\\|UserMenu\\\\|UserDropdown\" /Users/junior/Documents/project/github/SILI-Suite/sili/components --include=*.tsx)",
-      "Bash(grep -r \"z-\\\\|zIndex\" /Users/junior/Documents/project/github/SILI-Suite/sili/app --include=*.tsx)"
+      "Bash(grep -r \"z-\\\\|zIndex\" /Users/junior/Documents/project/github/SILI-Suite/sili/app --include=*.tsx)",
+      "Bash(grep -A5 \"from\\(''''societes''''\\)\" app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/settings/page.tsx)",
+      "Bash(ls /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rapports/)",
+      "Bash(npx tsc:*)"
     ],
     "additionalDirectories": [
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",
-      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow/processes"
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow/processes",
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rapports"
     ]
   }
 }

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, Users } from 'lucide-react'
 
 type NavItem = {
   id: string
@@ -44,7 +44,8 @@ export default function RapportsLayout({ children }: { children: React.ReactNode
   const base = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/rapports`
 
   const navItems: NavItem[] = [
-    { id: 'dashboard', label: t('nav_dashboard'), href: base, icon: LayoutDashboard, exact: true },
+    { id: 'dashboard', label: t('nav_dashboard'), href: base,          icon: LayoutDashboard, exact: true },
+    { id: 'rh',        label: t('nav_rh'),        href: `${base}/rh`,  icon: Users,           exact: false },
   ]
 
   return (

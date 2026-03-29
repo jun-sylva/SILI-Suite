@@ -2,6 +2,7 @@
   "title": "Rapports",
   "subtitle": "Reporting de vos modules actifs",
   "nav_dashboard": "Tableau de bord",
+  "nav_rh": "Ressources Humaines",
   "acces_refuse": "Vous n'avez pas accès au module Rapports.",
 
   "modules_section": "Modules actifs",

@@ -31,7 +31,7 @@ const MODULE_CONFIGS: ModuleConfig[] = [
     icon:     Users,
     color:    'border-emerald-200 hover:border-emerald-400',
     iconBg:   'bg-emerald-50 text-emerald-600',
-    href:     null,
+    href:     '/rh',
   },
   {
     key: 'workflow',
@@ -239,6 +239,7 @@ export default function RapportsDashboard() {
               return (
                 <div
                   key={mod.key}
+                  onClick={() => !isSoon && mod.href && router.push(`${base}${mod.href}`)}
                   className={`relative bg-white rounded-2xl border-2 p-6 transition-all duration-200 ${mod.color} ${isSoon ? 'opacity-80' : 'cursor-pointer'}`}
                 >
                   {/* Badge bientôt */}
