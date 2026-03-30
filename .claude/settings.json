@@ -24,7 +24,18 @@
       "Bash(grep -v \"^T$\")",
       "Bash(grep -v \"^id$\")",
       "Bash(grep -v \"^role$\")",
-      "Bash(grep -v \"^from$\")"
+      "Bash(grep -v \"^from$\")",
+      "WebFetch(domain:www.odoo.com)",
+      "Bash(ls -la /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/crm/)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(grep -l \"crm\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
+      "Bash(grep -r \"crm\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql -A 5 -B 5)",
+      "Bash(ls /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
+      "Bash(grep -l \"crm_leads\\\\|crm_opportunites\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
+      "Bash(xargs cat:*)",
+      "Bash(cat /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
+      "Bash(ls -la /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/crm/)",
+      "Bash(cat /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning/page.tsx)"
     ],
     "additionalDirectories": [
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",

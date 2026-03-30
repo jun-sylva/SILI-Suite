@@ -309,11 +309,12 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260330_planning_module.sql` | 4 tables : `plan_projets`, `plan_taches`, `plan_jalons`, `plan_evenements` + RLS (tenant_id) + `INSERT INTO sys_modules` pour `planning` (désactivé par défaut) | ✅ exécutée |
 | `20260330_planning_enable_sys_module.sql` | `UPDATE sys_modules SET is_active = true WHERE key = 'planning'` — active le module planning globalement | ✅ |
 | `20260330_planning_add_to_module_key_enum.sql` | `ALTER TYPE module_key ADD VALUE IF NOT EXISTS 'planning'` — ajoute `planning` à l'enum Postgres utilisé par `tenant_modules.module` | ✅ |
+| `20260330_crm_tables.sql` | 8 tables CRM : `crm_contacts`, `crm_activites`, `crm_sequences`, `crm_devis`, `crm_devis_lignes`, `crm_factures`, `crm_factures_lignes`, `crm_paiements` + triggers numérotation auto + trigger recalcul paiements factures + RLS + indexes | ⏳ à exécuter |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `crm`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -476,6 +477,95 @@ Notification **"Tâche complétée"** : insérée dans `public.notifications` (t
 - Fix : suppression de `module_key` du payload, cast `as any` pour `module: moduleKey`
 - Types TS : `planning` ajouté à l'enum `module_key` dans `lib/supabase/types.ts`
 - Migration `20260330_planning_add_to_module_key_enum.sql` ✅ exécutée
+
+---
+
+#### Module CRM `/[societe_id]/crm`
+
+**Migration** (`20260330_crm_tables.sql`) — à exécuter :
+- `crm_contacts` : id, tenant_id, societe_id, nom, prenom, email, telephone, entreprise, poste, notes, created_by, created_at, updated_at — RLS tenant
+- `crm_activites` : id, tenant_id, societe_id, type (appel/email/reunion/autre), titre, description, date_prevue, statut (a_faire/fait/annule), assigne_a, lead_id, opportunite_id, created_by — RLS tenant
+- `crm_sequences` : PK (tenant_id, societe_id, type, annee), dernier_numero — numérotation auto thread-safe via `crm_next_numero()` (ON CONFLICT DO UPDATE)
+- `crm_devis` : numéro auto `DEV-YYYY-NNNN` (trigger `trg_crm_devis_numero`), objet, statut (brouillon/envoye/accepte/refuse/expire), client_nom, contact_id, opportunite_id, dates, remise_globale, tva_pct, montant_ht, montant_ttc — RLS tenant
+- `crm_devis_lignes` : devis_id, ordre, designation, description, quantite, prix_unitaire, remise_pct, montant_ht — RLS via join crm_devis
+- `crm_factures` : numéro auto `FAC-YYYY-NNNN` (trigger `trg_crm_facture_numero`), statut (brouillon/emise/partiellement_payee/payee/en_retard/annulee), montant_paye, montant_restant (recalculés par trigger), conditions_paiement — RLS tenant
+- `crm_factures_lignes` : même structure que devis_lignes — RLS via join crm_factures
+- `crm_paiements` : facture_id, montant, mode_paiement (virement/especes/cheque/mobile_money/carte), date_paiement, reference, enregistre_par — trigger `trg_crm_paiement_recalc` → recalcule `montant_paye`, `montant_restant`, `statut` de la facture automatiquement
+
+**Layout** (`crm/layout.tsx`) :
+- 8 onglets : Tableau de bord, Pipeline, Leads, Activités, Contacts, Devis, Factures, Paiements
+- Guard : `fetchEffectiveModulePerm` module `crm`, lecteur+ ou tenant_admin
+
+**Dashboard** (`crm/page.tsx`) :
+- 8 KPIs en parallèle : opportunités actives, CA prévisionnel, leads en cours, taux de conversion, devis en attente, factures impayées, CA encaissé ce mois, montant en retard
+- Résumé pipeline : 5 étapes avec barres CSS + montants
+- Mes activités du jour (date_prevue = aujourd'hui, assigne_a = currentUser)
+- Factures en retard (statut en_retard ou partiellement_payee + échéance dépassée)
+
+**Pipeline** (`crm/pipeline/page.tsx`) :
+- Kanban 5 colonnes : qualification, proposition, négociation, gagnée, perdue
+- Slide-in panel détail avec boutons changement d'étape
+- CRUD opportunités : titre, valeur, probabilité, date_cloture, contact, notes
+- Logs : `opportunite_created/updated/deleted/etape_changed/gagnee/perdue`
+
+**Leads** (`crm/leads/page.tsx`) :
+- Tableau avec filtres statut + recherche
+- Barre score (0–100), badge source/statut coloré
+- Convertir en opportunité : crée `crm_opportunites` + met à jour lead statut `converti` + notifie gestionnaires CRM
+- Logs : `lead_created/updated/deleted/converti`
+
+**Activités** (`crm/activites/page.tsx`) :
+- Liste filtrée par type + statut
+- Bouton "Marquer comme fait" (inline)
+- Logs : `activite_created/updated/deleted/completed`
+
+**Contacts** (`crm/contacts/page.tsx`) :
+- Grille cards : nom/prénom/poste/entreprise, liens email (mailto:) + téléphone (tel:)
+- Recherche multi-champs (nom, prénom, entreprise, email)
+- Logs : `contact_created/updated/deleted`
+
+**Devis** (`crm/devis/page.tsx` + `devis/[devis_id]/page.tsx`) :
+- Liste avec filtre statut + recherche, tableau cliquable
+- Page détail (3 colonnes) : header fields + lignes inline-editables + récapitulatif totaux sticky
+- Calcul live : `qté × pu × (1 - remise%)` par ligne → sous-total HT → remise globale → total HT → TVA → total TTC
+- Actions statut : Marquer envoyé / Accepter / Refuser
+- Bouton **"Créer la facture"** (depuis statut `accepte`) : clone lignes, crée `crm_factures` + `crm_factures_lignes`, redirige vers facture
+- Logs : `devis_created/updated/deleted/envoye/accepte/refuse/facture_created_from_devis`
+
+**Factures** (`crm/factures/page.tsx` + `factures/[facture_id]/page.tsx`) :
+- Liste avec barre de progression de paiement inline, filtre statut
+- Page détail : header fields + lignes + section paiements reçus + totaux sticky + barre progression paiement
+- Actions : Émettre la facture (brouillon → emise) / Annuler / Enregistrer un paiement (modal)
+- Statut recalculé automatiquement par trigger Postgres après chaque INSERT/UPDATE/DELETE sur `crm_paiements`
+- Logs : `facture_created/updated/deleted/emise/annulee/paiement_created/paiement_deleted`
+
+**Paiements** (`crm/paiements/page.tsx`) :
+- Vue globale de tous les paiements de la société
+- 3 KPIs : encaissé ce mois, ce trimestre, en attente (somme `montant_restant` des factures ouvertes)
+- Modal : choisir facture ouverte (pré-remplit le montant restant), mode, date, référence
+- Logs : `paiement_created/paiement_deleted`
+
+**Permissions CRM** :
+| Action | Lecteur | Contributeur | Gestionnaire | Admin | tenant_admin |
+|---|---|---|---|---|---|
+| Voir | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Créer/modifier | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Supprimer | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Déplacer statuts devis/facture | ❌ | ✅ | ✅ | ✅ | ✅ |
+
+**Logs CRM** :
+| Action | resourceType | Fichier |
+|---|---|---|
+| `opportunite_created/updated/deleted/etape_changed/gagnee/perdue` | `crm_opportunites` | `pipeline/page.tsx` |
+| `lead_created/updated/deleted/converti` | `crm_leads` | `leads/page.tsx` |
+| `activite_created/updated/deleted/completed` | `crm_activites` | `activites/page.tsx` |
+| `contact_created/updated/deleted` | `crm_contacts` | `contacts/page.tsx` |
+| `devis_created/updated/deleted/envoye/accepte/refuse` | `crm_devis` | `devis/[devis_id]/page.tsx` |
+| `facture_created_from_devis` | `crm_factures` | `devis/[devis_id]/page.tsx` |
+| `facture_created/updated/deleted/emise/annulee` | `crm_factures` | `factures/[facture_id]/page.tsx` |
+| `paiement_created/deleted` | `crm_paiements` | `factures/[facture_id]/page.tsx` + `paiements/page.tsx` |
+
+**i18n** : namespace `crm` (fr + en), ~120 clés couvrant tous les modules, champs, statuts, modes de paiement, toasts.
 
 ---
 

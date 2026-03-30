@@ -595,6 +595,190 @@ export type Database = {
           },
         ]
       }
+      crm_activites: {
+        Row: {
+          id: string; tenant_id: string; societe_id: string
+          type: 'appel' | 'email' | 'reunion' | 'autre'
+          titre: string; description: string | null
+          date_prevue: string | null
+          statut: 'a_faire' | 'fait' | 'annule'
+          assigne_a: string | null; lead_id: string | null; opportunite_id: string | null
+          created_by: string | null; created_at: string | null; updated_at: string | null
+        }
+        Insert: {
+          id?: string; tenant_id: string; societe_id: string
+          type?: 'appel' | 'email' | 'reunion' | 'autre'
+          titre: string; description?: string | null
+          date_prevue?: string | null
+          statut?: 'a_faire' | 'fait' | 'annule'
+          assigne_a?: string | null; lead_id?: string | null; opportunite_id?: string | null
+          created_by?: string | null; created_at?: string | null; updated_at?: string | null
+        }
+        Update: {
+          id?: string; tenant_id?: string; societe_id?: string
+          type?: 'appel' | 'email' | 'reunion' | 'autre'
+          titre?: string; description?: string | null
+          date_prevue?: string | null
+          statut?: 'a_faire' | 'fait' | 'annule'
+          assigne_a?: string | null; lead_id?: string | null; opportunite_id?: string | null
+          created_by?: string | null; updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crm_contacts: {
+        Row: {
+          id: string; tenant_id: string; societe_id: string
+          nom: string; prenom: string | null; email: string | null
+          telephone: string | null; entreprise: string | null; poste: string | null
+          notes: string | null
+          created_by: string | null; created_at: string | null; updated_at: string | null
+        }
+        Insert: {
+          id?: string; tenant_id: string; societe_id: string
+          nom: string; prenom?: string | null; email?: string | null
+          telephone?: string | null; entreprise?: string | null; poste?: string | null
+          notes?: string | null
+          created_by?: string | null; created_at?: string | null; updated_at?: string | null
+        }
+        Update: {
+          id?: string; tenant_id?: string; societe_id?: string
+          nom?: string; prenom?: string | null; email?: string | null
+          telephone?: string | null; entreprise?: string | null; poste?: string | null
+          notes?: string | null; updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crm_devis: {
+        Row: {
+          id: string; tenant_id: string; societe_id: string
+          numero: string | null; objet: string
+          statut: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
+          client_nom: string | null; contact_id: string | null; opportunite_id: string | null
+          date_emission: string; date_expiration: string | null
+          remise_globale: number; tva_pct: number
+          montant_ht: number; montant_ttc: number
+          notes: string | null
+          assigne_a: string | null; created_by: string | null
+          created_at: string | null; updated_at: string | null
+        }
+        Insert: {
+          id?: string; tenant_id: string; societe_id: string
+          numero?: string | null; objet: string
+          statut?: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
+          client_nom?: string | null; contact_id?: string | null; opportunite_id?: string | null
+          date_emission?: string; date_expiration?: string | null
+          remise_globale?: number; tva_pct?: number
+          montant_ht?: number; montant_ttc?: number
+          notes?: string | null
+          assigne_a?: string | null; created_by?: string | null
+        }
+        Update: {
+          objet?: string; statut?: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
+          client_nom?: string | null; contact_id?: string | null; opportunite_id?: string | null
+          date_emission?: string; date_expiration?: string | null
+          remise_globale?: number; tva_pct?: number
+          montant_ht?: number; montant_ttc?: number
+          notes?: string | null; assigne_a?: string | null; updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crm_devis_lignes: {
+        Row: {
+          id: string; devis_id: string; ordre: number
+          designation: string; description: string | null
+          quantite: number; prix_unitaire: number; remise_pct: number; montant_ht: number
+        }
+        Insert: {
+          id?: string; devis_id: string; ordre?: number
+          designation: string; description?: string | null
+          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
+        }
+        Update: {
+          ordre?: number; designation?: string; description?: string | null
+          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
+        }
+        Relationships: []
+      }
+      crm_factures: {
+        Row: {
+          id: string; tenant_id: string; societe_id: string
+          numero: string | null; devis_id: string | null; opportunite_id: string | null
+          objet: string
+          statut: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
+          client_nom: string | null; contact_id: string | null
+          date_emission: string; date_echeance: string | null
+          remise_globale: number; tva_pct: number
+          montant_ht: number; montant_ttc: number
+          montant_paye: number; montant_restant: number
+          notes: string | null; conditions_paiement: string | null
+          assigne_a: string | null; created_by: string | null
+          created_at: string | null; updated_at: string | null
+        }
+        Insert: {
+          id?: string; tenant_id: string; societe_id: string
+          numero?: string | null; devis_id?: string | null; opportunite_id?: string | null
+          objet: string
+          statut?: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
+          client_nom?: string | null; contact_id?: string | null
+          date_emission?: string; date_echeance?: string | null
+          remise_globale?: number; tva_pct?: number
+          montant_ht?: number; montant_ttc?: number
+          montant_paye?: number; montant_restant?: number
+          notes?: string | null; conditions_paiement?: string | null
+          assigne_a?: string | null; created_by?: string | null
+        }
+        Update: {
+          devis_id?: string | null; opportunite_id?: string | null
+          objet?: string
+          statut?: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
+          client_nom?: string | null; contact_id?: string | null
+          date_emission?: string; date_echeance?: string | null
+          remise_globale?: number; tva_pct?: number
+          montant_ht?: number; montant_ttc?: number
+          montant_paye?: number; montant_restant?: number
+          notes?: string | null; conditions_paiement?: string | null
+          assigne_a?: string | null; updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crm_factures_lignes: {
+        Row: {
+          id: string; facture_id: string; ordre: number
+          designation: string; description: string | null
+          quantite: number; prix_unitaire: number; remise_pct: number; montant_ht: number
+        }
+        Insert: {
+          id?: string; facture_id: string; ordre?: number
+          designation: string; description?: string | null
+          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
+        }
+        Update: {
+          ordre?: number; designation?: string; description?: string | null
+          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
+        }
+        Relationships: []
+      }
+      crm_paiements: {
+        Row: {
+          id: string; tenant_id: string; societe_id: string; facture_id: string
+          reference: string | null; montant: number
+          mode_paiement: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
+          date_paiement: string; notes: string | null
+          enregistre_par: string | null; created_at: string | null
+        }
+        Insert: {
+          id?: string; tenant_id: string; societe_id: string; facture_id: string
+          reference?: string | null; montant: number
+          mode_paiement?: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
+          date_paiement?: string; notes?: string | null; enregistre_par?: string | null
+        }
+        Update: {
+          reference?: string | null; montant?: number
+          mode_paiement?: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
+          date_paiement?: string; notes?: string | null
+        }
+        Relationships: []
+      }
       master_audit_logs: {
         Row: {
           action: string
