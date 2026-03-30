@@ -380,6 +380,11 @@ writeLog({ tenantId, userId, action, resourceType, resourceId?, metadata? })
 | `workflow/assignees/page.tsx` | `workflow_request_refused` | `workflow_requests` |
 | `workflow/processes/page.tsx` | `process_launched` | `workflow_instances` |
 | `workflow/processes/[instance_id]/page.tsx` | `process_cancelled` | `workflow_instances` |
+| `planning/projets/page.tsx` | `projet_created`, `projet_updated`, `projet_deleted` | `plan_projets` |
+| `planning/projets/page.tsx` | `tache_created`, `tache_updated`, `tache_completed` | `plan_taches` |
+| `planning/projets/page.tsx` | `jalon_created`, `jalon_deleted` | `plan_jalons` |
+| `planning/page.tsx` | `tache_completed` | `plan_taches` |
+| `planning/calendrier/page.tsx` | `event_created`, `event_updated`, `event_deleted` | `plan_evenements` |
 
 Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journal d'activité" (accessible aux `tenant_admin`).
 
@@ -443,6 +448,24 @@ Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journ
 | Créer des tâches + événements | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Créer/modifier des projets | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Voir ressources + raccourcis | ❌ | ❌ | ✅ | ✅ | ✅ |
+
+**Logs & Notifications (2026-03-30)** :
+
+| Action loggée | resourceType | Fichier | Notification |
+|---|---|---|---|
+| `projet_created` | `plan_projets` | `projets/page.tsx` | — |
+| `projet_updated` | `plan_projets` | `projets/page.tsx` | — |
+| `projet_deleted` | `plan_projets` | `projets/page.tsx` | — |
+| `tache_created` | `plan_taches` | `projets/page.tsx` | — |
+| `tache_updated` | `plan_taches` | `projets/page.tsx` | — |
+| `tache_completed` | `plan_taches` | `projets/page.tsx` + `page.tsx` | ✅ → responsable du projet (si ≠ acteur) |
+| `jalon_created` | `plan_jalons` | `projets/page.tsx` | — |
+| `jalon_deleted` | `plan_jalons` | `projets/page.tsx` | — |
+| `event_created` | `plan_evenements` | `calendrier/page.tsx` | — |
+| `event_updated` | `plan_evenements` | `calendrier/page.tsx` | — |
+| `event_deleted` | `plan_evenements` | `calendrier/page.tsx` | — |
+
+Notification **"Tâche complétée"** : insérée dans `public.notifications` (tenant_id, user_id = responsable_id, type = 'info') — skippée si responsable = acteur courant.
 
 **i18n** : namespace `planning` (fr + en), ~130 clés couvrant dashboard, projets, calendrier, ressources. Corrections appliquées (2026-03-30) :
 - Ajout des alias manquants : `dashboard_desc`, `btn_voir_projets`, `section_alertes`, `alertes_empty`, `section_mes_taches`, `voir_tout`, `shortcut_*`

@@ -20,17 +20,18 @@ type TacheStatut   = 'todo' | 'en_cours' | 'revue' | 'fait'
 type Priorite      = 'basse' | 'normale' | 'haute' | 'critique'
 
 interface Projet {
-  id:             string
-  titre:          string
-  description:    string | null
-  statut:         ProjetStatut
-  priorite:       Priorite
-  couleur:        string
-  date_debut:     string | null
-  date_fin:       string | null
-  responsable:    { full_name: string } | null
-  taches_total:   number
-  taches_faites:  number
+  id:               string
+  titre:            string
+  description:      string | null
+  statut:           ProjetStatut
+  priorite:         Priorite
+  couleur:          string
+  date_debut:       string | null
+  date_fin:         string | null
+  responsable_id:   string | null
+  responsable:      { full_name: string } | null
+  taches_total:     number
+  taches_faites:    number
 }
 
 interface Tache {
@@ -150,7 +151,7 @@ export default function ProjetsPage() {
   const loadProjets = useCallback(async () => {
     const { data } = await (supabase as any)
       .from('plan_projets')
-      .select(`id, titre, description, statut, priorite, couleur, date_debut, date_fin,
+      .select(`id, titre, description, statut, priorite, couleur, date_debut, date_fin, responsable_id,
         responsable:profiles!responsable_id(full_name)`)
       .eq('societe_id', societeId)
       .order('created_at', { ascending: false })
@@ -233,6 +234,7 @@ export default function ProjetsPage() {
     const { error } = await (supabase as any).from('plan_projets').delete().eq('id', p.id)
     if (error) { toast.error(t('toast_error')); return }
     toast.success(t('toast_projet_deleted'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'projet_deleted', resourceType: 'plan_projets', resourceId: p.id, metadata: { titre: p.titre } })
     if (detailProjet?.id === p.id) setDetailProjet(null)
     await loadProjets()
   }
@@ -240,34 +242,55 @@ export default function ProjetsPage() {
   async function saveTache() {
     if (!tTitre.trim() || !detailProjet) return
     setSavingTache(true)
-    const { error } = await (supabase as any).from('plan_taches').insert({
+    const { data: newTache, error } = await (supabase as any).from('plan_taches').insert({
       titre: tTitre.trim(), statut: tacheStatutCible, priorite: tPriorite,
       date_echeance: tEcheance || null, projet_id: detailProjet.id,
       societe_id: societeId, tenant_id: fullTenantId, created_by: currentUserId,
-    })
+    }).select('id').single()
     if (error) { toast.error(t('toast_error')); setSavingTache(false); return }
     toast.success(t('toast_tache_created'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'tache_created', resourceType: 'plan_taches', resourceId: newTache?.id, metadata: { titre: tTitre.trim(), projet_titre: detailProjet.titre, projet_id: detailProjet.id } })
     setShowTacheModal(false); setTTitre(''); setTPriorite('normale'); setTEcheance('')
     setSavingTache(false)
     await loadDetail(detailProjet)
   }
 
   async function updateTacheStatut(tacheId: string, newStatut: TacheStatut) {
+    const tache = taches.find(t => t.id === tacheId)
     await (supabase as any).from('plan_taches').update({ statut: newStatut, updated_at: new Date().toISOString(), ...(newStatut === 'fait' ? { date_completee: new Date().toISOString() } : {}) }).eq('id', tacheId)
     setTaches(prev => prev.map(t => t.id === tacheId ? { ...t, statut: newStatut } : t))
+    if (tache) {
+      const action = newStatut === 'fait' ? 'tache_completed' : 'tache_updated'
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action, resourceType: 'plan_taches', resourceId: tacheId, metadata: { titre: tache.titre, nouveau_statut: newStatut, projet_id: detailProjet?.id, projet_titre: detailProjet?.titre } })
+      // Notifier le responsable du projet si quelqu'un d'autre complète la tâche
+      if (newStatut === 'fait' && detailProjet?.responsable_id && detailProjet.responsable_id !== currentUserId) {
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId,
+          user_id: detailProjet.responsable_id,
+          type: 'info',
+          titre: 'Tâche complétée',
+          message: `La tâche "${tache.titre}" sur le projet "${detailProjet.titre}" a été complétée.`,
+        })
+      }
+    }
   }
 
   async function deleteJalon(jalonId: string) {
+    const jalon = jalons.find(j => j.id === jalonId)
     await (supabase as any).from('plan_jalons').delete().eq('id', jalonId)
     setJalons(prev => prev.filter(j => j.id !== jalonId))
+    if (jalon) {
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'jalon_deleted', resourceType: 'plan_jalons', resourceId: jalonId, metadata: { titre: jalon.titre, projet_id: detailProjet?.id, projet_titre: detailProjet?.titre } })
+    }
   }
 
   async function saveJalon() {
     if (!jTitre.trim() || !jDate || !detailProjet) return
     setSavingJalon(true)
-    const { error } = await (supabase as any).from('plan_jalons').insert({ titre: jTitre.trim(), date_cible: jDate, projet_id: detailProjet.id })
+    const { data: newJalon, error } = await (supabase as any).from('plan_jalons').insert({ titre: jTitre.trim(), date_cible: jDate, projet_id: detailProjet.id }).select('id').single()
     if (error) { toast.error(t('toast_error')); setSavingJalon(false); return }
     toast.success(t('toast_jalon_created'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'jalon_created', resourceType: 'plan_jalons', resourceId: newJalon?.id, metadata: { titre: jTitre.trim(), date_cible: jDate, projet_titre: detailProjet.titre, projet_id: detailProjet.id } })
     setShowJalonModal(false); setJTitre(''); setJDate('')
     setSavingJalon(false)
     await loadDetail(detailProjet)

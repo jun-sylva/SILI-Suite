@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
+import { writeLog } from '@/lib/audit'
 import {
   CalendarDays, FolderKanban, Users, Loader2,
   AlertTriangle, CheckCircle2, Clock, TrendingUp,
@@ -26,12 +27,13 @@ interface AlerteItem {
 }
 
 interface MaTache {
-  id:           string
-  titre:        string
-  projet_titre: string
-  date_echeance: string | null
-  statut:       string
-  priorite:     string
+  id:             string
+  titre:          string
+  projet_titre:   string
+  responsable_id: string | null
+  date_echeance:  string | null
+  statut:         string
+  priorite:       string
 }
 
 const PRIORITE_COLOR: Record<string, string> = {
@@ -65,6 +67,7 @@ export default function PlanningDashboard() {
   const [alertes,      setAlertes]      = useState<AlerteItem[]>([])
   const [mesTaches,    setMesTaches]    = useState<MaTache[]>([])
   const [currentUserId, setCurrentUserId] = useState('')
+  const [fullTenantId,  setFullTenantId]  = useState('')
   const [canManage,    setCanManage]    = useState(false)
 
   useEffect(() => {
@@ -73,7 +76,8 @@ export default function PlanningDashboard() {
       if (!session) return
       setCurrentUserId(session.user.id)
 
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('role, tenant_id').eq('id', session.user.id).single()
+      setFullTenantId(profile?.tenant_id ?? '')
       const isAdmin = profile?.role === 'tenant_admin'
       if (!isAdmin) {
         const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'planning')
@@ -171,7 +175,7 @@ export default function PlanningDashboard() {
   async function loadMesTaches(uid: string) {
     const { data } = await (supabase as any)
       .from('plan_taches')
-      .select('id, titre, statut, priorite, date_echeance, projet:plan_projets!projet_id(titre)')
+      .select('id, titre, statut, priorite, date_echeance, projet:plan_projets!projet_id(titre, responsable_id)')
       .eq('societe_id', societeId)
       .eq('assigne_a', uid)
       .neq('statut', 'fait')
@@ -179,18 +183,33 @@ export default function PlanningDashboard() {
       .limit(8)
 
     setMesTaches((data ?? []).map((t: any) => ({
-      id:            t.id,
-      titre:         t.titre,
-      projet_titre:  t.projet?.titre ?? '—',
-      date_echeance: t.date_echeance,
-      statut:        t.statut,
-      priorite:      t.priorite,
+      id:               t.id,
+      titre:            t.titre,
+      projet_titre:     t.projet?.titre ?? '—',
+      responsable_id:   t.projet?.responsable_id ?? null,
+      date_echeance:    t.date_echeance,
+      statut:           t.statut,
+      priorite:         t.priorite,
     })))
   }
 
   async function markFait(tacheId: string) {
+    const tache = mesTaches.find(t => t.id === tacheId)
     await (supabase as any).from('plan_taches').update({ statut: 'fait', date_completee: new Date().toISOString() }).eq('id', tacheId)
     setMesTaches(prev => prev.filter(t => t.id !== tacheId))
+    if (tache) {
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'tache_completed', resourceType: 'plan_taches', resourceId: tacheId, metadata: { titre: tache.titre, projet_titre: tache.projet_titre } })
+      // Notifier le responsable du projet si c'est quelqu'un d'autre
+      if (tache.responsable_id && tache.responsable_id !== currentUserId) {
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId,
+          user_id:   tache.responsable_id,
+          type:      'info',
+          titre:     'Tâche complétée',
+          message:   `La tâche "${tache.titre}" sur le projet "${tache.projet_titre}" a été complétée.`,
+        })
+      }
+    }
   }
 
   if (loading) {

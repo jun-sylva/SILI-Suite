@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
+import { writeLog } from '@/lib/audit'
 import { toast } from 'sonner'
 import {
   CalendarDays, ChevronLeft, ChevronRight, Plus, X, Loader2,
@@ -210,10 +211,12 @@ export default function CalendrierPage() {
       const { error } = await (supabase as any).from('plan_evenements').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedEvent.id)
       if (error) { toast.error(t('toast_error')); setSaving(false); return }
       toast.success(t('toast_event_updated'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'event_updated', resourceType: 'plan_evenements', resourceId: selectedEvent.id, metadata: { titre: eTitre.trim(), type: eType } })
     } else {
-      const { error } = await (supabase as any).from('plan_evenements').insert(payload)
+      const { data: newEvent, error } = await (supabase as any).from('plan_evenements').insert(payload).select('id').single()
       if (error) { toast.error(t('toast_error')); setSaving(false); return }
       toast.success(t('toast_event_created'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'event_created', resourceType: 'plan_evenements', resourceId: newEvent?.id, metadata: { titre: eTitre.trim(), type: eType, date_debut: eDateDebut } })
     }
 
     setShowModal(false); setSaving(false)
@@ -225,6 +228,7 @@ export default function CalendrierPage() {
     const { error } = await (supabase as any).from('plan_evenements').delete().eq('id', selectedEvent.id)
     if (error) { toast.error(t('toast_error')); return }
     toast.success(t('toast_event_deleted'))
+    await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'event_deleted', resourceType: 'plan_evenements', resourceId: selectedEvent.id, metadata: { titre: selectedEvent.titre, type: selectedEvent.type } })
     setShowModal(false)
     await loadEvents()
   }
