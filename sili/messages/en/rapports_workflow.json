@@ -1,0 +1,42 @@
+{
+  "page_title": "Workflow Report",
+  "page_desc": "Analysis of requests, processes and workflow activity",
+
+  "tab_requetes":    "Requests",
+  "tab_par_assigne": "By Assignee",
+  "tab_processus":   "Processes",
+  "tab_activite":    "Activity",
+
+  "filter_year":     "Year",
+  "filter_month":    "Month",
+  "filter_type":     "Request type",
+  "filter_statut":   "Status",
+  "filter_priorite": "Priority",
+  "filter_action":   "Action type",
+  "filter_all":      "All",
+
+  "btn_generate": "Generate report",
+
+  "results_count": "{count} result(s)",
+  "no_results":    "No results for this period",
+
+  "col_titre":      "Title",
+  "col_type":       "Type",
+  "col_priorite":   "Priority",
+  "col_statut":     "Status",
+  "col_assigne_a":  "Assigned to",
+  "col_date":       "Date",
+  "col_assigne":    "Assignee",
+  "col_total":      "Total",
+  "col_en_attente": "Pending",
+  "col_approuvees": "Approved",
+  "col_refusees":   "Refused",
+  "col_taux":       "Approval rate",
+  "col_modele":     "Template",
+  "col_progression":"Progress",
+  "col_initiateur": "Initiator",
+  "col_requete":    "Request",
+  "col_auteur":     "Author",
+  "col_action":     "Action",
+  "col_commentaire":"Comment"
+}

@@ -305,15 +305,80 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_unique_group_member.sql` | Contraintes UNIQUE `(group_id, user_id)` et `(group_id, employe_id)` sur `user_group_members` — empêche d'ajouter deux fois le même membre | ✅ |
 | `20260328_rh_conges_rls.sql` | Fix RLS `rh_conges` — SELECT/INSERT/UPDATE par `tenant_id` (congés portail invisibles aux managers) + FK `employe_id → rh_employes` pour le join PostgREST | ✅ |
 | `20260329_rh_employes_situation_familiale.sql` | `ALTER TABLE rh_employes ADD COLUMN etat_civil text CHECK (5 valeurs)` + `nb_enfants int NOT NULL DEFAULT 0` — pour le calcul des allocations familiales CNPS | ✅ |
+| *(pas de migration)* | `lib/audit.ts` — helper `writeLog()` créé, 14 actions instrumentées dans 7 fichiers | ✅ |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `rapports`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `rapports`, `rapports_rh`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
 - `securite.json` : page complète Sécurité & Backup (tabs audit/permissions/backups)
+
+---
+
+## Notifications in-app
+
+Toutes les notifications sont insérées dans `public.notifications` via `supabase.from('notifications').insert(...)`.
+La cloche (`NotificationBell.tsx`) écoute les INSERT via Supabase Realtime.
+
+### Module RH — 3 cas
+| Déclencheur | Destinataire | Titre |
+|---|---|---|
+| Employé soumet un congé | Tous les gestionnaires/admins RH + tenant_admin (excluant l'émetteur) | `Nouvelle demande de congé` |
+| Gestionnaire approuve un congé | Employé concerné (via `rh_employes.user_id`) | `Congé approuvé` |
+| Gestionnaire refuse un congé | Employé concerné (via `rh_employes.user_id`) | `Congé refusé` |
+| Bulletin de paie uploadé | Employé concerné (via `rh_employes.user_id`) | `Bulletin de paie disponible` |
+
+**Helpers dans `rh/presences/page.tsx`** :
+- `notifyGestionnaires()` — fetch `user_module_permissions` gestionnaire/admin + `tenant_admin` profiles, exclut `currentUserId`, bulk insert
+- `notifyEmploye(userId, titre, message)` — single insert, no-op si même utilisateur
+
+### Module Workflow — 5 cas
+| Déclencheur | Destinataire | Titre |
+|---|---|---|
+| Requête soumise avec assignation individuelle | Gestionnaire assigné | `Nouvelle requête assignée` |
+| Requête soumise avec assignation groupe | Tous les managers du groupe (`user_group_members WHERE role='manager'`) | `Nouvelle requête assignée à votre groupe` |
+| Gestionnaire approuve une requête | Créateur de la requête (`created_by`) | `Requête approuvée` |
+| Gestionnaire refuse une requête | Créateur de la requête (`created_by`) | `Requête refusée` |
+| Étape de processus activée (`en_cours`) | Acteur de l'étape (`assignee_id`) | `Action requise sur un processus` |
+| Processus terminé (`approuve`) | Initiateur du processus (`initiator_id`) | `Processus approuvé` |
+| Processus refusé (`refuse`) | Initiateur du processus (`initiator_id`) | `Processus refusé` |
+
+**Helper `sendNotif(userId, titre, message)` dans `workflow/mes-requetes/page.tsx`** — skip si destinataire = émetteur.
+
+---
+
+## Journal d'activité (`audit_logs`)
+
+**Helper** : `lib/audit.ts` → `writeLog(params)` — INSERT best-effort dans `audit_logs`, ne lance jamais d'erreur.
+
+```typescript
+writeLog({ tenantId, userId, action, resourceType, resourceId?, metadata? })
+```
+`metadata` casté en `Json` (type Supabase) pour compatibilité TypeScript.
+
+### 14 cas instrumentés
+
+| Fichier | Action loggée | resourceType |
+|---|---|---|
+| `rh/employes/page.tsx` | `employe_created` | `rh_employes` |
+| `rh/employes/page.tsx` | `employe_updated` | `rh_employes` |
+| `rh/paie/page.tsx` | `bulletin_uploaded` | `rh_bulletins_paie` |
+| `rh/paie/page.tsx` | `bulletin_replaced` | `rh_bulletins_paie` |
+| `rh/paie/page.tsx` | `bulletin_deleted` | `rh_bulletins_paie` |
+| `rh/presences/page.tsx` | `conge_approved` | `rh_conges` |
+| `rh/presences/page.tsx` | `conge_refused` | `rh_conges` |
+| `utilisateurs/page.tsx` | `user_permission_modified` | `user_module_permissions` |
+| `utilisateurs/page.tsx` | `group_member_added` | `user_group_members` |
+| `utilisateurs/page.tsx` | `group_permission_modified` | `user_group_permissions` |
+| `workflow/assignees/page.tsx` | `workflow_request_approved` | `workflow_requests` |
+| `workflow/assignees/page.tsx` | `workflow_request_refused` | `workflow_requests` |
+| `workflow/processes/page.tsx` | `process_launched` | `workflow_instances` |
+| `workflow/processes/[instance_id]/page.tsx` | `process_cancelled` | `workflow_instances` |
+
+Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journal d'activité" (accessible aux `tenant_admin`).
 
 ---
 
@@ -526,7 +591,7 @@ Gestionnaire refuse          → refuse
 - [ ] **Modules métier** : pages Vente, Achat, Stock, CRM, Comptabilité (le partage effectif des données sera implémenté module par module lors du dev de chaque page)
 
 #### Module Rapports `/[societe_id]/rapports`
-- **Layout** (`rapports/layout.tsx`) — navbar sticky, 1 onglet pour l'instant : Tableau de bord
+- **Layout** (`rapports/layout.tsx`) — navbar sticky, onglets dynamiques : Tableau de bord + RH
 - **Dashboard** (`rapports/page.tsx`) :
   - Accès : `lecteur+` sur le module `rapports` (ou tenant_admin) — sinon redirect dashboard
   - Affiche uniquement les modules actifs sur la société (`societe_modules WHERE is_active = true`)
@@ -535,7 +600,19 @@ Gestionnaire refuse          → refuse
   - Stats Workflow : requêtes en cours / en attente
   - Badge "Bientôt disponible" sur tous les modules sans rapport implémenté
   - Architecture extensible : ajouter `href` dans `MODULE_CONFIGS` quand un rapport est prêt
-- **i18n** : namespace `rapports` (fr + en)
+  - Carte RH : `href = '/rh'` → cliquable vers `/rapports/rh`
+- **i18n** : namespaces `rapports` + `rapports_rh` (fr + en)
+
+**Rapport RH** (`rapports/rh/page.tsx`) — accès gestionnaire+ / tenant_admin :
+- 4 onglets : **Employés** / **Présences** / **Congés** / **Paie**
+- Filtres communs : période (mois + année), département, poste (listes identiques au formulaire employé)
+- **Onglet Employés** : liste filtrée `rh_employes` (statut, contrat, département, poste)
+- **Onglet Présences** : agrégation par employé — nb jours présents / ouvrables, taux, statuts détaillés
+- **Onglet Congés** : liste des congés avec statut (approuvé / refusé / en attente), type, durée
+- **Onglet Paie** : sélecteur mois uniquement — calcul `salaire_payé = salaire_base - ((salaire_base / jours_ouvrables) × jours_absents)`. Jours ouvrables = Lun–Ven du mois (calcul auto)
+- **Export CSV** : tous onglets → `blob` téléchargeable
+- **Export PDF** : via `@react-pdf/renderer` — en-tête société (`raison_sociale`) + période + tableau
+- Constantes `POSTES` et `DEPARTEMENTS` partagées avec `rh/employes/page.tsx`
 - [x] **Module RH — Phase 1** : table `rh_employes` + layout navbar + dashboard + page Employés (2 sections avec/sans compte) ✅ (migration ⚠️ à exécuter)
 - [x] **Module RH — Présences** : table `rh_presences` ✅ + page Présences (3 onglets : Pointage / Récapitulatif / Congés)
   - Contributeur : self-pointage (entrée/sortie) + demande congé + mes récapitulatifs + mes congés

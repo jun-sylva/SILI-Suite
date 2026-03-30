@@ -1,0 +1,42 @@
+{
+  "page_title": "Rapport Workflow",
+  "page_desc": "Analyse des requêtes, processus et activités workflow",
+
+  "tab_requetes":    "Requêtes",
+  "tab_par_assigne": "Par assigné",
+  "tab_processus":   "Processus",
+  "tab_activite":    "Activité",
+
+  "filter_year":     "Année",
+  "filter_month":    "Mois",
+  "filter_type":     "Type de demande",
+  "filter_statut":   "Statut",
+  "filter_priorite": "Priorité",
+  "filter_action":   "Type d'action",
+  "filter_all":      "Tous",
+
+  "btn_generate": "Générer le rapport",
+
+  "results_count": "{count} résultat(s)",
+  "no_results":    "Aucun résultat pour cette période",
+
+  "col_titre":      "Titre",
+  "col_type":       "Type",
+  "col_priorite":   "Priorité",
+  "col_statut":     "Statut",
+  "col_assigne_a":  "Assigné à",
+  "col_date":       "Date",
+  "col_assigne":    "Assigné",
+  "col_total":      "Total",
+  "col_en_attente": "En attente",
+  "col_approuvees": "Approuvées",
+  "col_refusees":   "Refusées",
+  "col_taux":       "Taux approbation",
+  "col_modele":     "Modèle",
+  "col_progression":"Progression",
+  "col_initiateur": "Initiateur",
+  "col_requete":    "Requête",
+  "col_auteur":     "Auteur",
+  "col_action":     "Action",
+  "col_commentaire":"Commentaire"
+}

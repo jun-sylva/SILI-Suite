@@ -35,6 +35,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'validation',
     'rapports',
     'rapports_rh',
+    'rapports_workflow',
     'workflow',
     'workflow_builder',
   ];

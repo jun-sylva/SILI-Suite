@@ -3,6 +3,7 @@
   "subtitle": "Reporting for your active modules",
   "nav_dashboard": "Dashboard",
   "nav_rh": "Human Resources",
+  "nav_workflow": "Workflow",
   "acces_refuse": "You do not have access to the Reports module.",
 
   "modules_section": "Active modules",

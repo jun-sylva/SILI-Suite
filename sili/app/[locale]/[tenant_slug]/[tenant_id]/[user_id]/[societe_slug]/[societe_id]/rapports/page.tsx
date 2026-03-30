@@ -40,7 +40,7 @@ const MODULE_CONFIGS: ModuleConfig[] = [
     icon:     GitBranch,
     color:    'border-indigo-200 hover:border-indigo-400',
     iconBg:   'bg-indigo-50 text-indigo-600',
-    href:     null,
+    href:     '/workflow',
   },
   {
     key: 'vente',
