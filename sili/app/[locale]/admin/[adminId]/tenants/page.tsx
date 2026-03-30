@@ -204,7 +204,7 @@ export default function TenantsManagementPage() {
     const { error } = await supabase
       .from('tenant_modules')
       .upsert(
-        { tenant_id: settingsModal.id, module: moduleKey, is_active: newStatus, activated_at: new Date().toISOString() },
+        { tenant_id: settingsModal.id, module: moduleKey, module_key: moduleKey, is_active: newStatus, activated_at: new Date().toISOString() },
         { onConflict: 'tenant_id,module' }
       )
     if (error) {

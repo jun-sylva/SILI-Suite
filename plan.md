@@ -781,7 +781,9 @@ Désactiver un module (au niveau tenant via Master, ou au niveau société via `
 À chaque fois qu'un nouveau module est créé, appliquer les étapes suivantes dans l'ordre :
 
 ### 1. Base de données
-- [ ] **Migration SQL** : `INSERT INTO sys_modules (key, name, description, icon, is_active) VALUES ('...', ..., false)` — **`is_active = false` par défaut**, le Master l'active manuellement
+- [ ] **Migration SQL** : `INSERT INTO sys_modules (key, name, description, icon, is_active) VALUES ('...', ..., true)` — **`is_active = true` obligatoire**
+  - ⚠️ **Ne jamais mettre `false`** : il n'existe pas de page Master pour l'activer ensuite (`/admin/[adminId]/modules` non implémentée). Avec `false`, le toggle dans Tenants → Paramètres affiche "GLOBAL OFF" et le bouton est `disabled` — le module ne peut être activé sur aucun tenant.
+- [ ] **Aucune ligne à pré-insérer dans `tenant_modules`** — le toggle Master s'en charge. Ne pas pré-insérer manuellement : ce serait redondant et pourrait créer des conflits.
 - [ ] Exécuter la migration dans Supabase Dashboard
 
 ### 2. Typage (1 fichier)
@@ -815,8 +817,12 @@ Désactiver un module (au niveau tenant via Master, ou au niveau société via `
 ### 8. Documentation
 - [ ] Documenter le module dans ce fichier `plan.md` (tables SQL, pages, règles métier)
 
-### Règle : désactivation par défaut
-Tout nouveau module est inséré dans `sys_modules` avec **`is_active = false`**. Il n'est activé pour aucun tenant ni société. Le Master l'active via la page `/admin/[adminId]/modules`, puis le tenant_admin l'active pour ses sociétés.
+### Règle : activation globale obligatoire
+Tout nouveau module doit être inséré dans `sys_modules` avec **`is_active = true`**. Sans cela, le toggle dans Tenants → Paramètres → Permissions Modulaires est `disabled` (label "GLOBAL OFF") et le module ne peut être activé sur aucun tenant.
+
+La granularité de contrôle se fait aux niveaux inférieurs :
+- **Tenant** : `tenant_modules.is_active` — activé/désactivé par le Master depuis Tenants → Paramètres
+- **Société** : `societe_modules.is_active` — activé/désactivé par le tenant_admin depuis Paramètres Société
 
 ---
 
@@ -825,10 +831,11 @@ Tout nouveau module est inséré dans `sys_modules` avec **`is_active = false`**
 1. **UUID tronqué dans URL** : `params.tenant_id` = 8 chars. Toujours utiliser `profiles.tenant_id`.
 2. **`user_societes` n'a pas de colonne `role`** — les rôles sont dans `user_module_permissions`.
 3. **Écriture dans `user_societes`** : service role uniquement.
-4. **`tenant_modules` — colonne `module`** (pas `module_key`) + conflit upsert sur `(tenant_id, module)`.
+4. **`tenant_modules` — double colonne `module` ET `module_key`** : la table a une PRIMARY KEY sur `(tenant_id, module_key)` (NOT NULL implicite) ET une colonne `module` avec contrainte unique `(tenant_id, module)`. L'upsert doit **toujours inclure les deux** : `{ module: moduleKey, module_key: moduleKey, ... }`. Sans `module_key`, l'INSERT d'un nouveau module échoue silencieusement (PK violation) → rollback optimiste dans l'UI (le toggle s'active puis se désactive immédiatement). Les anciens modules ne déclenchaient pas ce bug car leurs lignes existaient déjà → UPDATE uniquement.
 5. **Compte Master** : `role = 'user'` + `is_super_admin = true` + `tenant_id = NULL`. Ne pas confondre avec `role = 'super_admin'` (enum non utilisé).
 6. **`toSlug(str)`** : conversion `raison_sociale` → slug URL, utilisée partout pour la navigation société.
 7. **`dayjs/locale/fr`** : ne pas importer — incompatible Turbopack (CJS). Utiliser `dayjs` seul avec format `DD/MM/YY HH:mm`.
 8. **Module `securite`** : supprimé de `navGroup2`, `ModuleKey`, `sys_modules`. La page "Sécurité & Backup" est dans l'espace tenant à `/securite-backup`, non soumise aux permissions modules.
 9. **Hiérarchie modules** : Master active dans `sys_modules` → tenant_admin active dans `tenant_modules` → tenant_admin active dans `societe_modules` → `user_module_permissions` donne accès par utilisateur. Ne jamais sauter un niveau.
+11. **`sys_modules.is_active` doit toujours être `true` à l'insertion** : il n'existe pas de page Master pour l'activer après coup. Avec `false`, le toggle Tenants → Paramètres est `disabled` (label "GLOBAL OFF") et le module est inutilisable. Si l'erreur est commise, corriger via `UPDATE sys_modules SET is_active = true WHERE key = '<module>'`.
 10. **Partage de données** (`societe_data_sharing`) : directionnel par module. Source partage vers target, pas l'inverse. L'effet réel sur les requêtes SQL est à implémenter module par module lors du dev des pages métier — la table ne fait que stocker la configuration.
