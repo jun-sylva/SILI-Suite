@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   UserCog, Loader2, ShoppingCart, PackageSearch, Package, Users,
-  CircleDollarSign, MessageSquare, FileText, PhoneCall, Layers, XCircle, GitBranch,
+  CircleDollarSign, MessageSquare, FileText, PhoneCall, Layers, XCircle, GitBranch, CalendarDays,
   UsersRound, Plus, Pencil, Trash2, X, ChevronRight, ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -76,6 +76,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   teams:        MessageSquare,
   rapports:     FileText,
   workflow:     GitBranch,
+  planning:     CalendarDays,
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────

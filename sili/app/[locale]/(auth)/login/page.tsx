@@ -7,7 +7,7 @@ import { Link } from '@/i18n/routing'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
-import { Loader2, CheckCircle2, ShoppingCart, PackageSearch, Users, HardHat, CircleDollarSign, Shield, ArrowRight, Check, X, Eye, EyeOff, GitBranch } from 'lucide-react'
+import { Loader2, CheckCircle2, ShoppingCart, PackageSearch, Users, HardHat, CircleDollarSign, Shield, ArrowRight, Check, X, Eye, EyeOff, GitBranch, CalendarDays } from 'lucide-react'
 import { SuperAdminModal } from '@/components/auth/SuperAdminModal'
 
 export default function UnifiedAuthPage() {
@@ -60,6 +60,7 @@ export default function UnifiedAuthPage() {
     { name: tAuth('module_crm'), desc: tAuth('module_crm_desc'), icon: HardHat },
     { name: tAuth('module_compta'), desc: tAuth('module_compta_desc'), icon: CircleDollarSign },
     { name: tAuth('module_workflow'), desc: tAuth('module_workflow_desc'), icon: GitBranch },
+    { name: tAuth('module_planning'), desc: tAuth('module_planning_desc'), icon: CalendarDays },
   ]
 
   async function handleLogin(e: React.FormEvent) {

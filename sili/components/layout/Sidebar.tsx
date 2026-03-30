@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   UserCog,
   GitBranch,
+  CalendarDays,
 } from 'lucide-react'
 import { usePermission, ModuleKey } from '@/hooks/usePermission'
 
@@ -53,7 +54,8 @@ const navGroup2: NavItem[] = [
   { name: 'comptabilite', href: '/comptabilite', icon: CircleDollarSign, moduleKey: 'comptabilite' },
   { name: 'teams', href: '/teams', icon: MessageSquare, moduleKey: 'teams' },
   { name: 'rapports',  href: '/rapports',  icon: FileText,    moduleKey: 'rapports' },
-  { name: 'workflow',  href: '/workflow',  icon: GitBranch,   moduleKey: 'workflow' },
+  { name: 'workflow',  href: '/workflow',  icon: GitBranch,    moduleKey: 'workflow'  },
+  { name: 'planning',  href: '/planning',  icon: CalendarDays, moduleKey: 'planning'  },
 ]
 
 interface ProtectedSidebarItemProps {

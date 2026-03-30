@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 import { getEffectivePermission } from '@/lib/permissions'
 
 export type PermissionLevel = 'aucun' | 'lecteur' | 'contributeur' | 'gestionnaire' | 'admin'
-export type ModuleKey = 'comptabilite' | 'vente' | 'achat' | 'stock' | 'rh' | 'crm' | 'teams' | 'workflow' | 'rapports' | 'sauvegarde' | 'presence'
+export type ModuleKey = 'comptabilite' | 'vente' | 'achat' | 'stock' | 'rh' | 'crm' | 'teams' | 'workflow' | 'rapports' | 'sauvegarde' | 'presence' | 'planning'
 
 const PERMISSION_HIERARCHY: Record<PermissionLevel, number> = {
   aucun:        0,

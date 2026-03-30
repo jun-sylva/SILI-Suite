@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import {
   Settings, Loader2, ShoppingCart, PackageSearch, Package, Users,
   CircleDollarSign, MessageSquare, FileText, PhoneCall, Share2,
-  AlertCircle, CheckCircle2, Layers, GitBranch,
+  AlertCircle, CheckCircle2, Layers, GitBranch, CalendarDays,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { writeLog } from '@/lib/audit'
@@ -24,6 +24,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   teams:        MessageSquare,
   rapports:     FileText,
   workflow:     GitBranch,
+  planning:     CalendarDays,
 }
 
 interface OtherSociete {

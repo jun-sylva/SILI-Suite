@@ -1,0 +1,154 @@
+{
+  "module_title": "Planning",
+
+  "nav_dashboard":  "Dashboard",
+  "nav_projets":    "Projects",
+  "nav_calendrier": "Calendar",
+  "nav_ressources": "Resources",
+
+  "acces_refuse": "Access denied",
+
+  "dashboard_title":    "Planning Dashboard",
+  "dashboard_subtitle": "Overview of your projects and tasks.",
+
+  "kpi_projets_actifs":  "Active projects",
+  "kpi_taches_semaine":  "Tasks this week",
+  "kpi_taches_retard":   "Overdue tasks",
+  "kpi_taux_avancement": "Global progress",
+
+  "alertes_title":     "Smart alerts",
+  "alerte_retard":     "overdue task(s)",
+  "alerte_jalon":      "milestone(s) in the next 7 days",
+  "alerte_surcharge":  "overloaded member(s) (≥5 active tasks)",
+  "alerte_aucune":     "No alerts — everything is under control.",
+
+  "mes_taches_title":    "My tasks",
+  "mes_taches_empty":    "No tasks assigned.",
+  "marquer_fait":        "Mark as done",
+
+  "raccourcis_title":   "Shortcuts",
+  "raccourci_projets":  "Manage projects",
+  "raccourci_cal":      "Open calendar",
+  "raccourci_res":      "View resources",
+
+  "projets_title":    "Projects",
+  "projets_subtitle": "Manage your projects and track progress.",
+  "nouveau_projet":   "New project",
+  "vue_kanban":       "Kanban",
+  "vue_liste":        "List",
+
+  "col_statut":     "Status",
+  "col_priorite":   "Priority",
+  "col_avancement": "Progress",
+  "col_echeance":   "Due date",
+  "col_responsable":"Owner",
+
+  "statut_brouillon": "Draft",
+  "statut_actif":     "Active",
+  "statut_en_pause":  "On hold",
+  "statut_termine":   "Completed",
+
+  "priorite_basse":    "Low",
+  "priorite_normale":  "Normal",
+  "priorite_haute":    "High",
+  "priorite_critique": "Critical",
+
+  "detail_taches":       "Tasks",
+  "detail_jalons":       "Milestones",
+  "detail_empty_taches": "No tasks.",
+  "detail_empty_jalons": "No milestones.",
+
+  "modal_projet_title_new":  "New project",
+  "modal_projet_title_edit": "Edit project",
+  "modal_tache_title_new":   "New task",
+  "modal_jalon_title_new":   "New milestone",
+
+  "champ_titre":        "Title",
+  "champ_description":  "Description",
+  "champ_statut":       "Status",
+  "champ_priorite":     "Priority",
+  "champ_couleur":      "Color",
+  "champ_date_debut":   "Start date",
+  "champ_date_fin":     "End date",
+  "champ_responsable":  "Owner",
+  "champ_assignee":     "Assigned to",
+  "champ_date_jalon":   "Milestone date",
+  "champ_atteint":      "Milestone reached",
+
+  "btn_enregistrer":   "Save",
+  "btn_annuler":       "Cancel",
+  "btn_supprimer":     "Delete",
+  "btn_modifier":      "Edit",
+  "btn_ajouter_tache": "Add task",
+  "btn_ajouter_jalon": "Add milestone",
+
+  "toast_projet_cree":  "Project created successfully.",
+  "toast_projet_maj":   "Project updated.",
+  "toast_tache_creee":  "Task created.",
+  "toast_tache_maj":    "Task updated.",
+  "toast_jalon_cree":   "Milestone created.",
+  "toast_erreur":       "An error occurred.",
+
+  "calendrier_title":    "Calendar",
+  "calendrier_subtitle": "Team events, milestones and leaves.",
+  "nouvel_evenement":    "New event",
+
+  "vue_mois":    "Month",
+  "vue_semaine": "Week",
+  "vue_jour":    "Day",
+
+  "type_reunion":      "Meeting",
+  "type_formation":    "Training",
+  "type_deadline":     "Deadline",
+  "type_rappel":       "Reminder",
+  "type_conge_equipe": "Team leave",
+
+  "legende_events":   "Events",
+  "legende_jalons":   "Milestones",
+  "legende_conges":   "Approved leaves (HR)",
+  "legende_reunion":  "Meeting",
+  "legende_deadline": "Deadline",
+  "legende_rappel":   "Reminder",
+  "legende_formation":"Training",
+
+  "champ_type":      "Type",
+  "champ_lien_meet": "Meeting link",
+  "champ_all_day":   "All day",
+
+  "toast_event_cree": "Event created.",
+  "toast_event_maj":  "Event updated.",
+  "toast_event_sup":  "Event deleted.",
+
+  "ressources_title":    "Resources",
+  "ressources_subtitle": "Workload by team member.",
+  "ressources_search":   "Search a member…",
+  "ressources_empty":    "No members assigned in this period.",
+
+  "periode_semaine":   "Week",
+  "periode_mois":      "Month",
+  "periode_trimestre": "Quarter",
+
+  "vue_charge":   "Workload",
+  "vue_timeline": "Timeline",
+
+  "kpi_membres":    "Members",
+  "kpi_charge_moy": "Avg workload",
+  "kpi_surcharges": "Overloaded",
+  "kpi_retard":     "Overdue tasks",
+
+  "col_membre":    "Member",
+  "col_charge":    "Workload",
+  "col_actives":   "Active",
+  "col_retard":    "Overdue",
+  "col_terminees": "Completed",
+
+  "taches_assignees":   "Assigned tasks",
+  "aucune_tache_active":"No active tasks in this period.",
+
+  "legende":           "Legend",
+  "charge_legere":     "Light (< 40%)",
+  "charge_normale":    "Normal (40–70%)",
+  "charge_elevee":     "High (70–90%)",
+  "charge_critique":   "Critical (≥ 90%)",
+  "legende_aujourdhui":"Today"
+}

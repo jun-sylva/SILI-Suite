@@ -1,0 +1,644 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { supabase } from '@/lib/supabase/client'
+import { fetchEffectiveModulePerm } from '@/lib/permissions'
+import { toast } from 'sonner'
+import {
+  FolderKanban, Plus, Loader2, X, Pencil, Trash2,
+  ChevronRight, Flag, Users, CalendarDays, LayoutList, Kanban,
+  CheckCircle2, Clock, AlertTriangle,
+} from 'lucide-react'
+import { writeLog } from '@/lib/audit'
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type ProjetStatut  = 'brouillon' | 'actif' | 'en_pause' | 'termine' | 'annule'
+type TacheStatut   = 'todo' | 'en_cours' | 'revue' | 'fait'
+type Priorite      = 'basse' | 'normale' | 'haute' | 'critique'
+
+interface Projet {
+  id:             string
+  titre:          string
+  description:    string | null
+  statut:         ProjetStatut
+  priorite:       Priorite
+  couleur:        string
+  date_debut:     string | null
+  date_fin:       string | null
+  responsable:    { full_name: string } | null
+  taches_total:   number
+  taches_faites:  number
+}
+
+interface Tache {
+  id:            string
+  titre:         string
+  statut:        TacheStatut
+  priorite:      Priorite
+  date_echeance: string | null
+  assigne:       { full_name: string } | null
+}
+
+interface Jalon {
+  id:         string
+  titre:      string
+  date_cible: string
+  statut:     'en_attente' | 'atteint' | 'manque'
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const STATUT_PROJET_LABELS: Record<ProjetStatut, string> = {
+  brouillon: 'Brouillon', actif: 'Actif', en_pause: 'En pause', termine: 'Terminé', annule: 'Annulé',
+}
+const STATUT_PROJET_COLOR: Record<ProjetStatut, string> = {
+  brouillon: 'bg-slate-100 text-slate-500',
+  actif:     'bg-emerald-100 text-emerald-700',
+  en_pause:  'bg-amber-100 text-amber-700',
+  termine:   'bg-blue-100 text-blue-700',
+  annule:    'bg-red-100 text-red-500',
+}
+const TACHE_COLS: { id: TacheStatut; label: string; color: string }[] = [
+  { id: 'todo',     label: 'À faire',   color: 'bg-slate-50 border-slate-200'  },
+  { id: 'en_cours', label: 'En cours',  color: 'bg-blue-50 border-blue-200'    },
+  { id: 'revue',    label: 'En revue',  color: 'bg-amber-50 border-amber-200'  },
+  { id: 'fait',     label: 'Terminé',   color: 'bg-emerald-50 border-emerald-200' },
+]
+const PRIORITE_COLOR: Record<Priorite, string> = {
+  basse:    'bg-slate-100 text-slate-500',
+  normale:  'bg-blue-100 text-blue-600',
+  haute:    'bg-orange-100 text-orange-600',
+  critique: 'bg-red-100 text-red-600',
+}
+const COULEURS = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6']
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function ProjetsPage() {
+  const t         = useTranslations('planning')
+  const params    = useParams()
+  const societeId = params.societe_id as string
+
+  const [loading,       setLoading]       = useState(true)
+  const [projets,       setProjets]       = useState<Projet[]>([])
+  const [vue,           setVue]           = useState<'kanban' | 'liste'>('kanban')
+  const [canManage,     setCanManage]     = useState(false)
+  const [canDelete,     setCanDelete]     = useState(false)
+  const [fullTenantId,  setFullTenantId]  = useState('')
+  const [currentUserId, setCurrentUserId] = useState('')
+
+  // Modal projet
+  const [showProjetModal, setShowProjetModal] = useState(false)
+  const [editingProjet,   setEditingProjet]   = useState<Projet | null>(null)
+  const [savingProjet,    setSavingProjet]     = useState(false)
+  const [pTitre,     setPTitre]     = useState('')
+  const [pDesc,      setPDesc]      = useState('')
+  const [pStatut,    setPStatut]    = useState<ProjetStatut>('actif')
+  const [pPriorite,  setPPriorite]  = useState<Priorite>('normale')
+  const [pCouleur,   setPCouleur]   = useState('#6366f1')
+  const [pDateDebut, setPDateDebut] = useState('')
+  const [pDateFin,   setPDateFin]   = useState('')
+
+  // Panneau détail
+  const [detailProjet, setDetailProjet]   = useState<Projet | null>(null)
+  const [taches,       setTaches]         = useState<Tache[]>([])
+  const [jalons,       setJalons]         = useState<Jalon[]>([])
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  // Modal tâche rapide
+  const [showTacheModal,  setShowTacheModal]  = useState(false)
+  const [tacheStatutCible, setTacheStatutCible] = useState<TacheStatut>('todo')
+  const [tTitre,    setTTitre]    = useState('')
+  const [tPriorite, setTPriorite] = useState<Priorite>('normale')
+  const [tEcheance, setTEcheance] = useState('')
+  const [savingTache, setSavingTache] = useState(false)
+
+  // Modal jalon
+  const [showJalonModal, setShowJalonModal] = useState(false)
+  const [jTitre,   setJTitre]   = useState('')
+  const [jDate,    setJDate]    = useState('')
+  const [savingJalon, setSavingJalon] = useState(false)
+
+  useEffect(() => {
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      setCurrentUserId(session.user.id)
+
+      const { data: profile } = await supabase.from('profiles').select('role, tenant_id').eq('id', session.user.id).single()
+      setFullTenantId(profile?.tenant_id ?? '')
+      const isAdmin = profile?.role === 'tenant_admin'
+
+      if (!isAdmin) {
+        const perm = await fetchEffectiveModulePerm(session.user.id, societeId, 'planning')
+        setCanManage(['gestionnaire', 'admin'].includes(perm))
+        setCanDelete(perm === 'admin')
+      } else {
+        setCanManage(true)
+        setCanDelete(true)
+      }
+
+      await loadProjets()
+      setLoading(false)
+    }
+    init()
+  }, [societeId])
+
+  const loadProjets = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from('plan_projets')
+      .select(`id, titre, description, statut, priorite, couleur, date_debut, date_fin,
+        responsable:profiles!responsable_id(full_name)`)
+      .eq('societe_id', societeId)
+      .order('created_at', { ascending: false })
+
+    const ids = (data ?? []).map((p: any) => p.id)
+    let tacheMap: Record<string, { total: number; faites: number }> = {}
+    if (ids.length > 0) {
+      const { data: tachesData } = await (supabase as any)
+        .from('plan_taches').select('projet_id, statut').in('projet_id', ids)
+      for (const t of (tachesData ?? [])) {
+        if (!tacheMap[t.projet_id]) tacheMap[t.projet_id] = { total: 0, faites: 0 }
+        tacheMap[t.projet_id].total++
+        if (t.statut === 'fait') tacheMap[t.projet_id].faites++
+      }
+    }
+
+    setProjets((data ?? []).map((p: any) => ({
+      ...p,
+      taches_total:  tacheMap[p.id]?.total  ?? 0,
+      taches_faites: tacheMap[p.id]?.faites ?? 0,
+    })))
+  }, [societeId])
+
+  async function loadDetail(projet: Projet) {
+    setDetailProjet(projet)
+    setLoadingDetail(true)
+    const [tRes, jRes] = await Promise.all([
+      (supabase as any).from('plan_taches').select('id, titre, statut, priorite, date_echeance, assigne:profiles!assigne_a(full_name)').eq('projet_id', projet.id).order('ordre'),
+      (supabase as any).from('plan_jalons').select('id, titre, date_cible, statut').eq('projet_id', projet.id).order('date_cible'),
+    ])
+    setTaches(tRes.data ?? [])
+    setJalons(jRes.data ?? [])
+    setLoadingDetail(false)
+  }
+
+  function openNewProjet() {
+    setEditingProjet(null)
+    setPTitre(''); setPDesc(''); setPStatut('actif'); setPPriorite('normale')
+    setPCouleur('#6366f1'); setPDateDebut(''); setPDateFin('')
+    setShowProjetModal(true)
+  }
+
+  function openEditProjet(p: Projet) {
+    setEditingProjet(p)
+    setPTitre(p.titre); setPDesc(p.description ?? ''); setPStatut(p.statut)
+    setPPriorite(p.priorite); setPCouleur(p.couleur)
+    setPDateDebut(p.date_debut ?? ''); setPDateFin(p.date_fin ?? '')
+    setShowProjetModal(true)
+  }
+
+  async function saveProjet() {
+    if (!pTitre.trim()) return
+    setSavingProjet(true)
+    const payload = {
+      titre: pTitre.trim(), description: pDesc.trim() || null,
+      statut: pStatut, priorite: pPriorite, couleur: pCouleur,
+      date_debut: pDateDebut || null, date_fin: pDateFin || null,
+      societe_id: societeId, tenant_id: fullTenantId, created_by: currentUserId,
+    }
+
+    if (editingProjet) {
+      const { error } = await (supabase as any).from('plan_projets').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingProjet.id)
+      if (error) { toast.error(t('toast_error')); setSavingProjet(false); return }
+      toast.success(t('toast_projet_updated'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'projet_updated', resourceType: 'plan_projets', resourceId: editingProjet.id, metadata: { titre: pTitre.trim() } })
+    } else {
+      const { data, error } = await (supabase as any).from('plan_projets').insert(payload).select('id').single()
+      if (error) { toast.error(t('toast_error')); setSavingProjet(false); return }
+      toast.success(t('toast_projet_created'))
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'projet_created', resourceType: 'plan_projets', resourceId: data?.id, metadata: { titre: pTitre.trim() } })
+    }
+
+    setShowProjetModal(false)
+    setSavingProjet(false)
+    await loadProjets()
+  }
+
+  async function deleteProjet(p: Projet) {
+    if (!confirm(t('confirm_delete_projet'))) return
+    const { error } = await (supabase as any).from('plan_projets').delete().eq('id', p.id)
+    if (error) { toast.error(t('toast_error')); return }
+    toast.success(t('toast_projet_deleted'))
+    if (detailProjet?.id === p.id) setDetailProjet(null)
+    await loadProjets()
+  }
+
+  async function saveTache() {
+    if (!tTitre.trim() || !detailProjet) return
+    setSavingTache(true)
+    const { error } = await (supabase as any).from('plan_taches').insert({
+      titre: tTitre.trim(), statut: tacheStatutCible, priorite: tPriorite,
+      date_echeance: tEcheance || null, projet_id: detailProjet.id,
+      societe_id: societeId, tenant_id: fullTenantId, created_by: currentUserId,
+    })
+    if (error) { toast.error(t('toast_error')); setSavingTache(false); return }
+    toast.success(t('toast_tache_created'))
+    setShowTacheModal(false); setTTitre(''); setTPriorite('normale'); setTEcheance('')
+    setSavingTache(false)
+    await loadDetail(detailProjet)
+  }
+
+  async function updateTacheStatut(tacheId: string, newStatut: TacheStatut) {
+    await (supabase as any).from('plan_taches').update({ statut: newStatut, updated_at: new Date().toISOString(), ...(newStatut === 'fait' ? { date_completee: new Date().toISOString() } : {}) }).eq('id', tacheId)
+    setTaches(prev => prev.map(t => t.id === tacheId ? { ...t, statut: newStatut } : t))
+  }
+
+  async function deleteJalon(jalonId: string) {
+    await (supabase as any).from('plan_jalons').delete().eq('id', jalonId)
+    setJalons(prev => prev.filter(j => j.id !== jalonId))
+  }
+
+  async function saveJalon() {
+    if (!jTitre.trim() || !jDate || !detailProjet) return
+    setSavingJalon(true)
+    const { error } = await (supabase as any).from('plan_jalons').insert({ titre: jTitre.trim(), date_cible: jDate, projet_id: detailProjet.id })
+    if (error) { toast.error(t('toast_error')); setSavingJalon(false); return }
+    toast.success(t('toast_jalon_created'))
+    setShowJalonModal(false); setJTitre(''); setJDate('')
+    setSavingJalon(false)
+    await loadDetail(detailProjet)
+  }
+
+  const selectCls = 'block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
+  const inputCls  = 'block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
+
+  if (loading) return <div className="flex h-60 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>
+
+  // ── Kanban columns by statut projet ──
+  const KANBAN_COLS: ProjetStatut[] = ['brouillon', 'actif', 'en_pause', 'termine']
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+
+      {/* Header */}
+      <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+            <FolderKanban className="h-5 w-5 text-indigo-600" />
+          </div>
+          <h1 className="font-bold text-slate-900">{t('projets_title')}</h1>
+          <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold">{projets.length}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Vue toggle */}
+          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+            <button onClick={() => setVue('kanban')} className={`p-2 ${vue === 'kanban' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}><Kanban className="h-4 w-4" /></button>
+            <button onClick={() => setVue('liste')}  className={`p-2 ${vue === 'liste'  ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutList className="h-4 w-4" /></button>
+          </div>
+          {canManage && (
+            <button onClick={openNewProjet} className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors">
+              <Plus className="h-4 w-4" /> {t('btn_new_projet')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Kanban view */}
+      {vue === 'kanban' && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {KANBAN_COLS.map(col => {
+            const colProjets = projets.filter(p => p.statut === col)
+            return (
+              <div key={col} className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${STATUT_PROJET_COLOR[col]}`}>{STATUT_PROJET_LABELS[col]}</span>
+                  <span className="text-xs text-slate-400">{colProjets.length}</span>
+                </div>
+                {colProjets.map(p => {
+                  const pct = p.taches_total > 0 ? Math.round((p.taches_faites / p.taches_total) * 100) : 0
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => loadDetail(p)}
+                      className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:shadow-md hover:border-indigo-200 transition-all space-y-3 group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: p.couleur }} />
+                          <p className="font-semibold text-slate-900 text-sm truncate">{p.titre}</p>
+                        </div>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${PRIORITE_COLOR[p.priorite]}`}>{p.priorite}</span>
+                      </div>
+                      {p.description && <p className="text-xs text-slate-400 line-clamp-2">{p.description}</p>}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-slate-400">
+                          <span>{p.taches_faites}/{p.taches_total} tâches</span>
+                          <span>{pct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.couleur }} />
+                        </div>
+                      </div>
+                      {p.date_fin && (
+                        <div className="flex items-center gap-1 text-xs text-slate-400">
+                          <CalendarDays className="h-3 w-3" />
+                          {new Date(p.date_fin).toLocaleDateString('fr-FR')}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        {p.responsable && <span className="text-xs text-slate-500 truncate">{p.responsable.full_name}</span>}
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-indigo-400 ml-auto transition-colors" />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Liste view */}
+      {vue === 'liste' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">{t('col_titre')}</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">{t('col_statut')}</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">{t('col_priorite')}</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">{t('col_progression')}</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-slate-500 uppercase">{t('col_echeance')}</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {projets.map(p => {
+                const pct = p.taches_total > 0 ? Math.round((p.taches_faites / p.taches_total) * 100) : 0
+                return (
+                  <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => loadDetail(p)}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.couleur }} />
+                        <span className="font-medium text-slate-900">{p.titre}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${STATUT_PROJET_COLOR[p.statut]}`}>{STATUT_PROJET_LABELS[p.statut]}</span></td>
+                    <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${PRIORITE_COLOR[p.priorite]}`}>{p.priorite}</span></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: p.couleur }} />
+                        </div>
+                        <span className="text-xs text-slate-500">{pct}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{p.date_fin ? new Date(p.date_fin).toLocaleDateString('fr-FR') : '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                        {canManage && <button onClick={() => openEditProjet(p)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"><Pencil className="h-3.5 w-3.5" /></button>}
+                        {canDelete  && <button onClick={() => deleteProjet(p)}  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Panneau détail projet */}
+      {detailProjet && (
+        <div className="fixed inset-0 z-40 flex justify-end" onClick={() => setDetailProjet(null)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative bg-white w-full max-w-2xl h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: detailProjet.couleur }} />
+                <h2 className="font-bold text-slate-900">{detailProjet.titre}</h2>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${STATUT_PROJET_COLOR[detailProjet.statut]}`}>{STATUT_PROJET_LABELS[detailProjet.statut]}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {canManage && <button onClick={() => openEditProjet(detailProjet)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"><Pencil className="h-4 w-4" /></button>}
+                {canDelete  && <button onClick={() => deleteProjet(detailProjet)}  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>}
+                <button onClick={() => setDetailProjet(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+              </div>
+            </div>
+
+            {loadingDetail ? (
+              <div className="flex h-40 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-indigo-600" /></div>
+            ) : (
+              <div className="p-6 space-y-6">
+
+                {/* Mini-kanban tâches */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-slate-800">{t('section_taches')}</h3>
+                    {canManage && (
+                      <button onClick={() => { setTacheStatutCible('todo'); setShowTacheModal(true) }} className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                        <Plus className="h-3.5 w-3.5" /> {t('btn_add_tache')}
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {TACHE_COLS.map(col => {
+                      const colTaches = taches.filter(t => t.statut === col.id)
+                      return (
+                        <div key={col.id} className={`rounded-xl border p-3 space-y-2 ${col.color}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-600">{col.label}</span>
+                            <span className="text-xs text-slate-400">{colTaches.length}</span>
+                          </div>
+                          {colTaches.map(tache => (
+                            <div key={tache.id} className="bg-white rounded-lg p-2.5 shadow-sm space-y-1.5">
+                              <p className="text-xs font-medium text-slate-900 leading-tight">{tache.titre}</p>
+                              <div className="flex items-center justify-between">
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${PRIORITE_COLOR[tache.priorite]}`}>{tache.priorite}</span>
+                                {canManage && col.id !== 'fait' && (
+                                  <button
+                                    onClick={() => updateTacheStatut(tache.id, col.id === 'todo' ? 'en_cours' : col.id === 'en_cours' ? 'revue' : 'fait')}
+                                    className="text-[10px] text-indigo-500 hover:text-indigo-700 font-semibold"
+                                  >
+                                    →
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {canManage && (
+                            <button onClick={() => { setTacheStatutCible(col.id); setShowTacheModal(true) }} className="w-full text-center text-xs text-slate-400 hover:text-indigo-500 py-1">
+                              + Ajouter
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Jalons */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-slate-800">{t('section_jalons')}</h3>
+                    {canManage && (
+                      <button onClick={() => setShowJalonModal(true)} className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                        <Plus className="h-3.5 w-3.5" /> {t('btn_add_jalon')}
+                      </button>
+                    )}
+                  </div>
+                  {jalons.length === 0 ? (
+                    <p className="text-xs text-slate-400">{t('jalons_empty')}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {jalons.map(j => {
+                        const isPast = new Date(j.date_cible) < new Date()
+                        return (
+                          <div key={j.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <Flag className={`h-4 w-4 ${j.statut === 'atteint' ? 'text-emerald-500' : isPast ? 'text-red-400' : 'text-amber-400'}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900">{j.titre}</p>
+                              <p className="text-xs text-slate-400">{new Date(j.date_cible).toLocaleDateString('fr-FR')}</p>
+                            </div>
+                            {canManage && (
+                              <button onClick={() => deleteJalon(j.id)} className="p-1 text-slate-300 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal projet */}
+      {showProjetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowProjetModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-slate-900">{editingProjet ? t('modal_edit_projet') : t('modal_new_projet')}</h2>
+              <button onClick={() => setShowProjetModal(false)}><X className="h-5 w-5 text-slate-400" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_titre')} *</label>
+                <input value={pTitre} onChange={e => setPTitre(e.target.value)} className={inputCls} placeholder={t('placeholder_titre')} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_description')}</label>
+                <textarea value={pDesc} onChange={e => setPDesc(e.target.value)} className={inputCls} rows={2} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_statut')}</label>
+                  <select value={pStatut} onChange={e => setPStatut(e.target.value as ProjetStatut)} className={selectCls}>
+                    {(Object.keys(STATUT_PROJET_LABELS) as ProjetStatut[]).map(s => <option key={s} value={s}>{STATUT_PROJET_LABELS[s]}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_priorite')}</label>
+                  <select value={pPriorite} onChange={e => setPPriorite(e.target.value as Priorite)} className={selectCls}>
+                    {(['basse','normale','haute','critique'] as Priorite[]).map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_date_debut')}</label>
+                  <input type="date" value={pDateDebut} onChange={e => setPDateDebut(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_date_fin')}</label>
+                  <input type="date" value={pDateFin} onChange={e => setPDateFin(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_couleur')}</label>
+                <div className="flex gap-2 flex-wrap">
+                  {COULEURS.map(c => (
+                    <button key={c} onClick={() => setPCouleur(c)} className={`h-7 w-7 rounded-full border-2 transition-all ${pCouleur === c ? 'border-slate-900 scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowProjetModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">{t('btn_cancel')}</button>
+              <button onClick={saveProjet} disabled={!pTitre.trim() || savingProjet} className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
+                {savingProjet && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t('btn_save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal tâche */}
+      {showTacheModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowTacheModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-slate-900">{t('modal_new_tache')}</h2>
+              <button onClick={() => setShowTacheModal(false)}><X className="h-5 w-5 text-slate-400" /></button>
+            </div>
+            <div className="space-y-3">
+              <input value={tTitre} onChange={e => setTTitre(e.target.value)} className={inputCls} placeholder={t('placeholder_tache_titre')} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_priorite')}</label>
+                  <select value={tPriorite} onChange={e => setTPriorite(e.target.value as Priorite)} className={selectCls}>
+                    {(['basse','normale','haute','critique'] as Priorite[]).map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">{t('field_echeance')}</label>
+                  <input type="date" value={tEcheance} onChange={e => setTEcheance(e.target.value)} className={inputCls} />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowTacheModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">{t('btn_cancel')}</button>
+              <button onClick={saveTache} disabled={!tTitre.trim() || savingTache} className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
+                {savingTache && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t('btn_add')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal jalon */}
+      {showJalonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowJalonModal(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-slate-900">{t('modal_new_jalon')}</h2>
+              <button onClick={() => setShowJalonModal(false)}><X className="h-5 w-5 text-slate-400" /></button>
+            </div>
+            <div className="space-y-3">
+              <input value={jTitre} onChange={e => setJTitre(e.target.value)} className={inputCls} placeholder={t('placeholder_jalon_titre')} />
+              <input type="date" value={jDate} onChange={e => setJDate(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowJalonModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">{t('btn_cancel')}</button>
+              <button onClick={saveJalon} disabled={!jTitre.trim() || !jDate || savingJalon} className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-60">
+                {savingJalon && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t('btn_add')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

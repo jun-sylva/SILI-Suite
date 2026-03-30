@@ -306,11 +306,12 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260328_rh_conges_rls.sql` | Fix RLS `rh_conges` — SELECT/INSERT/UPDATE par `tenant_id` (congés portail invisibles aux managers) + FK `employe_id → rh_employes` pour le join PostgREST | ✅ |
 | `20260329_rh_employes_situation_familiale.sql` | `ALTER TABLE rh_employes ADD COLUMN etat_civil text CHECK (5 valeurs)` + `nb_enfants int NOT NULL DEFAULT 0` — pour le calcul des allocations familiales CNPS | ✅ |
 | *(pas de migration)* | `lib/audit.ts` — helper `writeLog()` créé, 14 actions instrumentées dans 7 fichiers | ✅ |
+| `20260330_planning_module.sql` | 4 tables : `plan_projets`, `plan_taches`, `plan_jalons`, `plan_evenements` + RLS (tenant_id) + `INSERT INTO sys_modules` pour `planning` (désactivé par défaut) | ✅ exécutée |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `rapports`, `rapports_rh`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -379,6 +380,69 @@ writeLog({ tenantId, userId, action, resourceType, resourceId?, metadata? })
 | `workflow/processes/[instance_id]/page.tsx` | `process_cancelled` | `workflow_instances` |
 
 Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journal d'activité" (accessible aux `tenant_admin`).
+
+---
+
+#### Module Planning `/[societe_id]/planning`
+
+**Tables SQL** (`20260330_planning_module.sql`) ✅ exécutée :
+- `plan_projets` : id, tenant_id, societe_id, titre, description, statut (brouillon/actif/en_pause/termine/annule), priorite (basse/normale/haute/critique), couleur (hex, défaut #6366f1), date_debut date, date_fin date, responsable_id (FK → profiles SET NULL), created_by (FK → profiles SET NULL), created_at, updated_at
+- `plan_taches` : id, tenant_id, societe_id, projet_id (FK → plan_projets CASCADE), titre, description, statut (todo/en_cours/revue/fait), priorite (basse/normale/haute/critique), assigne_a (FK → profiles SET NULL), assigne_groupe (FK → user_groups SET NULL), date_debut date, date_echeance date, date_completee timestamptz, ordre int DEFAULT 0, tags text[] DEFAULT '{}', workflow_instance_id nullable (FK → workflow_instances SET NULL — intégration conditionnelle), created_by (FK → profiles SET NULL), created_at, updated_at
+- `plan_jalons` : id, projet_id (FK → plan_projets CASCADE), titre, date_cible date NOT NULL, statut (en_attente/atteint/manque, défaut en_attente), created_at
+- `plan_evenements` : id, tenant_id, societe_id, titre, description, type (reunion/formation/deadline/rappel/conge_equipe, défaut reunion), date_debut timestamptz NOT NULL, date_fin timestamptz NOT NULL, all_day bool DEFAULT false, couleur hex DEFAULT #6366f1, organisateur_id (FK → profiles SET NULL), participants uuid[] DEFAULT '{}', lien_meet text, created_at, updated_at
+- RLS sur les 4 tables : `tenant_id IN (SELECT tenant_id FROM profiles WHERE id = auth.uid())` (jalons via sous-requête sur plan_projets)
+- `plan_taches.workflow_instance_id` : FK nullable → `workflow_instances` — **chargée uniquement si le module workflow est actif sur la société**
+- `INSERT INTO sys_modules ... ('planning', 'Planification', ..., false)` ON CONFLICT DO NOTHING — désactivé globalement par défaut
+
+**Layout** (`planning/layout.tsx`) :
+- Accès : `fetchEffectiveModulePerm` pour module `planning`, lecteur+ OU tenant_admin
+- 4 onglets nav sticky : Tableau de bord, Projets, Calendrier, Ressources
+- Loader pendant vérification, ShieldOff si accès refusé
+
+**Dashboard** (`planning/page.tsx`) :
+- 4 KPIs : projets actifs, tâches cette semaine (créées entre lundi et dimanche), tâches en retard (date_fin < aujourd'hui, statut ≠ terminé), taux d'avancement global (% tâches terminées)
+- **Alertes intelligentes** : retards, jalons dans 7j, membres surchargés (≥5 tâches actives)
+- **Mes tâches** : assignées au user connecté, non terminées, bouton "Marquer comme fait"
+- **Raccourcis** (gestionnaire+) : liens vers Projets, Calendrier, Ressources
+
+**Projets** (`planning/projets/page.tsx`) :
+- Toggle vue : **Kanban** (colonnes : brouillon / actif / en_pause / terminé) / **Liste** (tableau)
+- Carte projet : dot couleur, titre, badge priorité, barre progression, date_fin, avatar responsable
+- Panel détail (slide-in) : mini-kanban tâches (4 colonnes) + liste jalons
+- CRUD : Projet (titre, desc, statut, priorité, couleur picker, dates, responsable) · Tâche rapide · Jalon
+- `writeLog` pour `projet_created` + `projet_updated`
+- `(supabase as any)` pour `plan_projets`, `plan_taches`, `plan_jalons`
+
+**Calendrier** (`planning/calendrier/page.tsx`) :
+- 3 modes : **Mois** (grille), **Semaine** (7 colonnes), **Jour** (liste)
+- Sources d'événements : `plan_evenements` (CRUD complet) + jalons `plan_jalons` (lecture seule) + congés RH (conditionnel, voir ci-dessous)
+- **Intégration RH (conditionnelle)** : vérifie `societe_modules WHERE module = 'rh' AND is_active = true` → si actif, charge `rh_conges WHERE statut = 'approuve'` et les affiche en gris avec badge "Congés approuvés (RH)" dans la légende
+- Modal événement : titre, type, dates, description, lien_meet (si réunion), all_day checkbox
+- Types : reunion (#3b82f6), formation (#8b5cf6), deadline (#ef4444), rappel (#f59e0b), conge_equipe (#14b8a6)
+
+**Ressources** (`planning/ressources/page.tsx`) :
+- 2 vues : **Charge** (liste membre + barre de charge) / **Timeline** (Gantt horizontal)
+- Filtres : période (semaine / mois / trimestre), recherche membre
+- **Vue Charge** : liste cliquable (expand) par membre → taux charge, badge (Léger/Normal/Chargé/Surchargé), compteurs actives/terminées/retard, panel détail avec cards tâches
+- **Taux de charge** : `min(100%, (tâches_actives / 8) × 100)` — 8 tâches actives = 100%
+- **Vue Timeline** (Gantt) : barre par tâche, largeur proportionnelle à la durée dans la période, couleur = couleur projet, ligne "Aujourd'hui" verticale
+- Timeline navigation : chevrons gauche/droite pour changer de période
+- 4 KPIs : membres, charge moyenne, surchargés, tâches en retard
+- Légende couleur : gris < 40% · emerald 40–70% · amber 70–90% · rouge ≥ 90%
+
+**Intégrations intelligentes (toutes conditionnelles)** :
+- **RH** : `societe_modules WHERE module = 'rh' AND is_active = true` → congés approuvés dans le calendrier
+- **Workflow** : `societe_modules WHERE module = 'workflow' AND is_active = true` → liaison `plan_taches.workflow_instance_id` vers `workflow_instances`
+
+**Permissions** :
+| Action | Lecteur | Contributeur | Gestionnaire | Admin | tenant_admin |
+|---|---|---|---|---|---|
+| Voir le module | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Créer des tâches + événements | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Créer/modifier des projets | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Voir ressources + raccourcis | ❌ | ❌ | ✅ | ✅ | ✅ |
+
+**i18n** : namespace `planning` (fr + en), ~90 clés couvrant dashboard, projets, calendrier, ressources
 
 ---
 

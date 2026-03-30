@@ -1,0 +1,154 @@
+{
+  "module_title": "Planification",
+
+  "nav_dashboard":  "Tableau de bord",
+  "nav_projets":    "Projets",
+  "nav_calendrier": "Calendrier",
+  "nav_ressources": "Ressources",
+
+  "acces_refuse": "Accès refusé",
+
+  "dashboard_title":    "Tableau de bord Planning",
+  "dashboard_subtitle": "Vue d'ensemble de vos projets et tâches.",
+
+  "kpi_projets_actifs":  "Projets actifs",
+  "kpi_taches_semaine":  "Tâches cette semaine",
+  "kpi_taches_retard":   "Tâches en retard",
+  "kpi_taux_avancement": "Avancement global",
+
+  "alertes_title":     "Alertes intelligentes",
+  "alerte_retard":     "tâche(s) en retard",
+  "alerte_jalon":      "jalon(s) dans les 7 prochains jours",
+  "alerte_surcharge":  "membre(s) surchargé(s) (≥5 tâches actives)",
+  "alerte_aucune":     "Aucune alerte — tout est sous contrôle.",
+
+  "mes_taches_title":    "Mes tâches",
+  "mes_taches_empty":    "Aucune tâche assignée.",
+  "marquer_fait":        "Marquer comme fait",
+
+  "raccourcis_title":   "Raccourcis",
+  "raccourci_projets":  "Gérer les projets",
+  "raccourci_cal":      "Ouvrir le calendrier",
+  "raccourci_res":      "Voir les ressources",
+
+  "projets_title":    "Projets",
+  "projets_subtitle": "Gérez vos projets et suivez leur avancement.",
+  "nouveau_projet":   "Nouveau projet",
+  "vue_kanban":       "Kanban",
+  "vue_liste":        "Liste",
+
+  "col_statut":    "Statut",
+  "col_priorite":  "Priorité",
+  "col_avancement":"Avancement",
+  "col_echeance":  "Échéance",
+  "col_responsable":"Responsable",
+
+  "statut_brouillon": "Brouillon",
+  "statut_actif":     "Actif",
+  "statut_en_pause":  "En pause",
+  "statut_termine":   "Terminé",
+
+  "priorite_basse":    "Basse",
+  "priorite_normale":  "Normale",
+  "priorite_haute":    "Haute",
+  "priorite_critique": "Critique",
+
+  "detail_taches":       "Tâches",
+  "detail_jalons":       "Jalons",
+  "detail_empty_taches": "Aucune tâche.",
+  "detail_empty_jalons": "Aucun jalon.",
+
+  "modal_projet_title_new":  "Nouveau projet",
+  "modal_projet_title_edit": "Modifier le projet",
+  "modal_tache_title_new":   "Nouvelle tâche",
+  "modal_jalon_title_new":   "Nouveau jalon",
+
+  "champ_titre":        "Titre",
+  "champ_description":  "Description",
+  "champ_statut":       "Statut",
+  "champ_priorite":     "Priorité",
+  "champ_couleur":      "Couleur",
+  "champ_date_debut":   "Date de début",
+  "champ_date_fin":     "Date de fin",
+  "champ_responsable":  "Responsable",
+  "champ_assignee":     "Assigné à",
+  "champ_date_jalon":   "Date du jalon",
+  "champ_atteint":      "Jalon atteint",
+
+  "btn_enregistrer": "Enregistrer",
+  "btn_annuler":     "Annuler",
+  "btn_supprimer":   "Supprimer",
+  "btn_modifier":    "Modifier",
+  "btn_ajouter_tache": "Ajouter une tâche",
+  "btn_ajouter_jalon": "Ajouter un jalon",
+
+  "toast_projet_cree":     "Projet créé avec succès.",
+  "toast_projet_maj":      "Projet mis à jour.",
+  "toast_tache_creee":     "Tâche créée.",
+  "toast_tache_maj":       "Tâche mise à jour.",
+  "toast_jalon_cree":      "Jalon créé.",
+  "toast_erreur":          "Une erreur est survenue.",
+
+  "calendrier_title":    "Calendrier",
+  "calendrier_subtitle": "Événements, jalons et congés de l'équipe.",
+  "nouvel_evenement":    "Nouvel événement",
+
+  "vue_mois":    "Mois",
+  "vue_semaine": "Semaine",
+  "vue_jour":    "Jour",
+
+  "type_reunion":      "Réunion",
+  "type_formation":    "Formation",
+  "type_deadline":     "Deadline",
+  "type_rappel":       "Rappel",
+  "type_conge_equipe": "Congé équipe",
+
+  "legende_events":  "Événements",
+  "legende_jalons":  "Jalons",
+  "legende_conges":  "Congés approuvés (RH)",
+  "legende_reunion": "Réunion",
+  "legende_deadline":"Deadline",
+  "legende_rappel":  "Rappel",
+  "legende_formation":"Formation",
+
+  "champ_type":      "Type",
+  "champ_lien_meet": "Lien de réunion",
+  "champ_all_day":   "Toute la journée",
+
+  "toast_event_cree": "Événement créé.",
+  "toast_event_maj":  "Événement mis à jour.",
+  "toast_event_sup":  "Événement supprimé.",
+
+  "ressources_title":    "Ressources",
+  "ressources_subtitle": "Charge de travail par membre de l'équipe.",
+  "ressources_search":   "Rechercher un membre…",
+  "ressources_empty":    "Aucun membre assigné sur cette période.",
+
+  "periode_semaine":   "Semaine",
+  "periode_mois":      "Mois",
+  "periode_trimestre": "Trimestre",
+
+  "vue_charge":   "Charge",
+  "vue_timeline": "Timeline",
+
+  "kpi_membres":    "Membres",
+  "kpi_charge_moy": "Charge moyenne",
+  "kpi_surcharges": "Surchargés",
+  "kpi_retard":     "Tâches en retard",
+
+  "col_membre":   "Membre",
+  "col_charge":   "Charge",
+  "col_actives":  "Actives",
+  "col_retard":   "Retard",
+  "col_terminees":"Terminées",
+
+  "taches_assignees":  "Tâches assignées",
+  "aucune_tache_active":"Aucune tâche active sur cette période.",
+
+  "legende":           "Légende",
+  "charge_legere":     "Légère (< 40%)",
+  "charge_normale":    "Normale (40–70%)",
+  "charge_elevee":     "Élevée (70–90%)",
+  "charge_critique":   "Critique (≥ 90%)",
+  "legende_aujourdhui":"Aujourd'hui"
+}
