@@ -55,8 +55,11 @@ export default function DevisDetailPage() {
   const [fullTenantId,  setFullTenantId]  = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
 
+  const [crmUsers,       setCrmUsers]       = useState<{id:string;full_name:string}[]>([])
+
   const [objet,          setObjet]          = useState('')
   const [clientNom,      setClientNom]      = useState('')
+  const [assigneA,       setAssigneA]       = useState('')
   const [dateEmission,   setDateEmission]   = useState(new Date().toISOString().slice(0, 10))
   const [dateExpiration, setDateExpiration] = useState('')
   const [remiseGlobale,  setRemiseGlobale]  = useState(0)
@@ -81,10 +84,19 @@ export default function DevisDetailPage() {
         setCanManage(['contributeur', 'gestionnaire', 'admin'].includes(perm))
       } else { setCanManage(true) }
 
+      // Charger les membres CRM pour le sélecteur
+      const { data: perms } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').neq('permission', 'none')
+      const uids = (perms ?? []).map((p: any) => p.user_id)
+      if (uids.length > 0) {
+        const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', uids)
+        setCrmUsers(profs ?? [])
+      }
+
       if (!isNew) {
         const { data: d } = await supabase.from('crm_devis').select('*').eq('id', devisId).single()
         if (d) {
           setObjet(d.objet); setClientNom(d.client_nom ?? '')
+          setAssigneA(d.assigne_a ?? '')
           setDateEmission(d.date_emission); setDateExpiration(d.date_expiration ?? '')
           setRemiseGlobale(d.remise_globale); setTvaPct(d.tva_pct)
           setNotes(d.notes ?? ''); setStatut(d.statut); setNumero(d.numero)
@@ -123,6 +135,7 @@ export default function DevisDetailPage() {
     setSaving(true)
     const payload = {
       objet: objet.trim(), client_nom: clientNom.trim() || null,
+      assigne_a: assigneA || null,
       date_emission: dateEmission, date_expiration: dateExpiration || null,
       remise_globale: remiseGlobale, tva_pct: tvaPct,
       montant_ht: Math.round(totalHt * 100) / 100,
@@ -166,6 +179,16 @@ export default function DevisDetailPage() {
     setStatut(newStatut)
     toast.success(t(toastKey as any))
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: logAction, resourceType: 'crm_devis', resourceId: devisId, metadata: { objet } })
+    // Notifier le responsable du devis
+    if (assigneA && assigneA !== currentUserId) {
+      const message = newStatut === 'accepte'
+        ? `Le devis "${numero ?? objet}" a été accepté.`
+        : `Le devis "${numero ?? objet}" a été refusé.`
+      const titre = newStatut === 'accepte' ? 'Devis accepté' : 'Devis refusé'
+      await supabase.from('notifications').insert({
+        tenant_id: fullTenantId, user_id: assigneA, type: 'info', titre, message,
+      })
+    }
   }
 
   async function creerFacture() {
@@ -267,6 +290,13 @@ export default function DevisDetailPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_client_nom')}</label>
                 <input className={inputCls} value={clientNom} onChange={e => setClientNom(e.target.value)} disabled={!editable} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_assigne_a')}</label>
+                <select className={inputCls} value={assigneA} onChange={e => setAssigneA(e.target.value)} disabled={!editable}>
+                  <option value="">— Non assigné —</option>
+                  {crmUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}{u.id === currentUserId ? ' (moi)' : ''}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_date_emission')}</label>

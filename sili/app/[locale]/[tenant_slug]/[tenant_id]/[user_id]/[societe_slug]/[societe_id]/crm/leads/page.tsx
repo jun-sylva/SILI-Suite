@@ -139,13 +139,19 @@ export default function LeadsPage() {
     await (supabase as any).from('crm_leads').update({ statut: 'converti', updated_at: new Date().toISOString() }).eq('id', l.id)
     toast.success(t('toast_lead_converti'))
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'lead_converti', resourceType: 'crm_leads', resourceId: l.id, metadata: { nom: l.nom, opportunite_id: newOpp?.id } })
-    // Notification aux gestionnaires
-    const { data: gestionnaires } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').in('permission', ['gestionnaire', 'admin'])
-    const targets = (gestionnaires ?? []).map((g: any) => g.user_id).filter((id: string) => id !== currentUserId)
+    // Notification aux gestionnaires CRM + tenant_admins
+    const [{ data: perms }, { data: admins }] = await Promise.all([
+      supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').in('permission', ['gestionnaire', 'admin']),
+      supabase.from('profiles').select('id').eq('tenant_id', fullTenantId).eq('role', 'tenant_admin'),
+    ])
+    const targets = [
+      ...(perms ?? []).map((g: any) => g.user_id),
+      ...(admins ?? []).map((a: any) => a.id),
+    ].filter((id, i, arr) => arr.indexOf(id) === i && id !== currentUserId)
     if (targets.length > 0) {
       await supabase.from('notifications').insert(targets.map((uid: string) => ({
         tenant_id: fullTenantId, user_id: uid, type: 'info',
-        titre: 'Lead converti', message: `Le lead "${l.nom}" a été converti en opportunité.`,
+        titre: 'Nouveau lead converti', message: `Le lead "${l.nom}" a été converti en opportunité.`,
       })))
     }
     await loadLeads()

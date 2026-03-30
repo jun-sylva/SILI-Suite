@@ -15,11 +15,13 @@ type StatutActivite = 'a_faire' | 'fait' | 'annule'
 
 interface Activite {
   id: string; type: TypeActivite; titre: string; description: string | null
-  date_prevue: string | null; statut: StatutActivite
+  date_prevue: string | null; statut: StatutActivite; assigne_a: string | null
   assigne: { full_name: string } | null
   lead: { nom: string } | null
   opportunite: { titre: string } | null
 }
+
+interface CrmUser { id: string; full_name: string }
 
 const TYPE_CONFIG: Record<TypeActivite, { label: string; color: string; bg: string }> = {
   appel:   { label: 'Appel',    color: 'text-blue-600',   bg: 'bg-blue-50'   },
@@ -51,14 +53,17 @@ export default function ActivitesPage() {
   const [fullTenantId,  setFullTenantId]  = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
 
-  const [showModal, setShowModal] = useState(false)
-  const [editing,   setEditing]   = useState<Activite | null>(null)
-  const [saving,    setSaving]    = useState(false)
-  const [aTitre,    setATitre]    = useState('')
-  const [aType,     setAType]     = useState<TypeActivite>('appel')
-  const [aDesc,     setADesc]     = useState('')
-  const [aDate,     setADate]     = useState('')
-  const [aStatut,   setAStatut]   = useState<StatutActivite>('a_faire')
+  const [crmUsers,  setCrmUsers]  = useState<CrmUser[]>([])
+
+  const [showModal,  setShowModal]  = useState(false)
+  const [editing,    setEditing]    = useState<Activite | null>(null)
+  const [saving,     setSaving]     = useState(false)
+  const [aTitre,     setATitre]     = useState('')
+  const [aType,      setAType]      = useState<TypeActivite>('appel')
+  const [aDesc,      setADesc]      = useState('')
+  const [aDate,      setADate]      = useState('')
+  const [aStatut,    setAStatut]    = useState<StatutActivite>('a_faire')
+  const [aAssigneA,  setAAssigneA]  = useState('')
 
   useEffect(() => {
     async function init() {
@@ -73,6 +78,13 @@ export default function ActivitesPage() {
         setCanManage(['contributeur', 'gestionnaire', 'admin'].includes(perm))
         setCanDelete(['gestionnaire', 'admin'].includes(perm))
       } else { setCanManage(true); setCanDelete(true) }
+      // Charger les membres CRM pour le sélecteur d'assignation
+      const { data: perms } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').neq('permission', 'none')
+      const uids = (perms ?? []).map((p: any) => p.user_id)
+      if (uids.length > 0) {
+        const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', uids)
+        setCrmUsers((profs ?? []) as CrmUser[])
+      }
       await loadActivites(); setLoading(false)
     }
     init()
@@ -81,26 +93,27 @@ export default function ActivitesPage() {
   const loadActivites = useCallback(async () => {
     const { data } = await (supabase as any)
       .from('crm_activites')
-      .select('id, type, titre, description, date_prevue, statut, assigne:profiles!assigne_a(full_name), lead:crm_leads!lead_id(nom), opportunite:crm_opportunites!opportunite_id(titre)')
+      .select('id, type, titre, description, date_prevue, statut, assigne_a, assigne:profiles!assigne_a(full_name), lead:crm_leads!lead_id(nom), opportunite:crm_opportunites!opportunite_id(titre)')
       .eq('societe_id', societeId)
       .order('date_prevue', { ascending: true, nullsFirst: false })
     setActivites(data ?? [])
   }, [societeId])
 
   function openNew() {
-    setEditing(null); setATitre(''); setAType('appel'); setADesc(''); setADate(''); setAStatut('a_faire'); setShowModal(true)
+    setEditing(null); setATitre(''); setAType('appel'); setADesc(''); setADate(''); setAStatut('a_faire'); setAAssigneA(currentUserId); setShowModal(true)
   }
   function openEdit(a: Activite) {
-    setEditing(a); setATitre(a.titre); setAType(a.type); setADesc(a.description ?? ''); setADate(a.date_prevue ? dayjs(a.date_prevue).format('YYYY-MM-DDTHH:mm') : ''); setAStatut(a.statut); setShowModal(true)
+    setEditing(a); setATitre(a.titre); setAType(a.type); setADesc(a.description ?? ''); setADate(a.date_prevue ? dayjs(a.date_prevue).format('YYYY-MM-DDTHH:mm') : ''); setAStatut(a.statut); setAAssigneA(a.assigne_a ?? currentUserId); setShowModal(true)
   }
 
   async function save() {
     if (!aTitre.trim()) return
     setSaving(true)
+    const assigneId = aAssigneA || currentUserId
     const payload = {
       titre: aTitre.trim(), type: aType, description: aDesc.trim() || null,
       date_prevue: aDate || null, statut: aStatut,
-      assigne_a: currentUserId,
+      assigne_a: assigneId,
       societe_id: societeId, tenant_id: fullTenantId, created_by: currentUserId,
     }
     if (editing) {
@@ -113,6 +126,14 @@ export default function ActivitesPage() {
       if (error) { toast.error(t('toast_error')); setSaving(false); return }
       toast.success(t('toast_activite_created'))
       await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'activite_created', resourceType: 'crm_activites', resourceId: newA?.id, metadata: { titre: aTitre.trim(), type: aType } })
+      // Notifier l'assigné si différent du créateur
+      if (assigneId && assigneId !== currentUserId) {
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId, user_id: assigneId, type: 'info',
+          titre: 'Nouvelle activité assignée',
+          message: `L'activité "${aTitre.trim()}" vous a été assignée.`,
+        })
+      }
     }
     setShowModal(false); setSaving(false); await loadActivites()
   }
@@ -246,6 +267,14 @@ export default function ActivitesPage() {
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_date_prevue')}</label>
                 <input type="datetime-local" className={inputCls} value={aDate} onChange={e => setADate(e.target.value)} />
               </div>
+              {crmUsers.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_assigne_a')}</label>
+                  <select className={selectCls} value={aAssigneA} onChange={e => setAAssigneA(e.target.value)}>
+                    {crmUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}{u.id === currentUserId ? ' (moi)' : ''}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_notes')}</label>
                 <textarea rows={3} className={inputCls} value={aDesc} onChange={e => setADesc(e.target.value)} />

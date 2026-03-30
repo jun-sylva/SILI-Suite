@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, Users, GitBranch } from 'lucide-react'
+import { LayoutDashboard, Users, GitBranch, CalendarDays } from 'lucide-react'
 
 type NavItem = {
   id: string
@@ -47,6 +47,7 @@ export default function RapportsLayout({ children }: { children: React.ReactNode
     { id: 'dashboard', label: t('nav_dashboard'), href: base,                icon: LayoutDashboard, exact: true  },
     { id: 'rh',        label: t('nav_rh'),        href: `${base}/rh`,        icon: Users,           exact: false },
     { id: 'workflow',  label: t('nav_workflow'),  href: `${base}/workflow`,  icon: GitBranch,       exact: false },
+    { id: 'planning',  label: t('nav_planning'),  href: `${base}/planning`,  icon: CalendarDays,    exact: false },
   ]
 
   return (

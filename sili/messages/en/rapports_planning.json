@@ -1,0 +1,67 @@
+{
+  "page_title": "Planning Report",
+  "page_desc":  "Analysis of projects, tasks, milestones and team workload",
+
+  "tab_projets":  "Projects",
+  "tab_taches":   "Tasks",
+  "tab_jalons":   "Milestones",
+  "tab_charge":   "Team workload",
+
+  "filter_year":        "Year",
+  "filter_month":       "Month",
+  "filter_statut":      "Status",
+  "filter_priorite":    "Priority",
+  "filter_projet":      "Project",
+  "filter_assigne":     "Assigned to",
+  "filter_all":         "All",
+
+  "btn_generate": "Generate report",
+
+  "results_count": "{count} result(s)",
+  "no_results":    "No results for the selected filters.",
+
+  "col_titre":       "Title",
+  "col_statut":      "Status",
+  "col_priorite":    "Priority",
+  "col_responsable": "Owner",
+  "col_assigne":     "Assigned to",
+  "col_date_debut":  "Start",
+  "col_date_fin":    "End",
+  "col_echeance":    "Due date",
+  "col_projet":      "Project",
+  "col_taches":      "Tasks",
+  "col_progression": "Progress",
+  "col_date_cible":  "Target date",
+  "col_retard":      "Delay",
+  "col_membre":      "Member",
+  "col_actives":     "Active",
+  "col_terminees":   "Done",
+  "col_en_retard":   "Late",
+  "col_charge":      "Workload",
+
+  "statut_brouillon":  "Draft",
+  "statut_actif":      "Active",
+  "statut_en_pause":   "On hold",
+  "statut_termine":    "Done",
+  "statut_annule":     "Cancelled",
+  "statut_todo":       "To do",
+  "statut_en_cours":   "In progress",
+  "statut_revue":      "In review",
+  "statut_fait":       "Done",
+  "statut_en_attente": "Pending",
+  "statut_atteint":    "Reached",
+  "statut_manque":     "Missed",
+
+  "priorite_basse":    "Low",
+  "priorite_normale":  "Normal",
+  "priorite_haute":    "High",
+  "priorite_critique": "Critical",
+
+  "badge_leger":      "Light",
+  "badge_normal":     "Normal",
+  "badge_charge":     "Busy",
+  "badge_surcharge":  "Overloaded",
+
+  "jours_retard": "{n} d late",
+  "aucun_retard": "—"
+}

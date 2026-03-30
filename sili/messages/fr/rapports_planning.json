@@ -1,0 +1,67 @@
+{
+  "page_title": "Rapport Planning",
+  "page_desc":  "Analyse des projets, tâches, jalons et charge d'équipe",
+
+  "tab_projets":  "Projets",
+  "tab_taches":   "Tâches",
+  "tab_jalons":   "Jalons",
+  "tab_charge":   "Charge d'équipe",
+
+  "filter_year":        "Année",
+  "filter_month":       "Mois",
+  "filter_statut":      "Statut",
+  "filter_priorite":    "Priorité",
+  "filter_projet":      "Projet",
+  "filter_assigne":     "Assigné",
+  "filter_all":         "Tous",
+
+  "btn_generate": "Générer le rapport",
+
+  "results_count": "{count} résultat(s)",
+  "no_results":    "Aucun résultat pour les filtres sélectionnés.",
+
+  "col_titre":       "Titre",
+  "col_statut":      "Statut",
+  "col_priorite":    "Priorité",
+  "col_responsable": "Responsable",
+  "col_assigne":     "Assigné",
+  "col_date_debut":  "Début",
+  "col_date_fin":    "Fin",
+  "col_echeance":    "Échéance",
+  "col_projet":      "Projet",
+  "col_taches":      "Tâches",
+  "col_progression": "Progression",
+  "col_date_cible":  "Date cible",
+  "col_retard":      "Retard",
+  "col_membre":      "Membre",
+  "col_actives":     "Actives",
+  "col_terminees":   "Terminées",
+  "col_en_retard":   "En retard",
+  "col_charge":      "Charge",
+
+  "statut_brouillon":  "Brouillon",
+  "statut_actif":      "Actif",
+  "statut_en_pause":   "En pause",
+  "statut_termine":    "Terminé",
+  "statut_annule":     "Annulé",
+  "statut_todo":       "À faire",
+  "statut_en_cours":   "En cours",
+  "statut_revue":      "En revue",
+  "statut_fait":       "Fait",
+  "statut_en_attente": "En attente",
+  "statut_atteint":    "Atteint",
+  "statut_manque":     "Manqué",
+
+  "priorite_basse":    "Basse",
+  "priorite_normale":  "Normale",
+  "priorite_haute":    "Haute",
+  "priorite_critique": "Critique",
+
+  "badge_leger":      "Léger",
+  "badge_normal":     "Normal",
+  "badge_charge":     "Chargé",
+  "badge_surcharge":  "Surchargé",
+
+  "jours_retard": "{n} j de retard",
+  "aucun_retard": "—"
+}

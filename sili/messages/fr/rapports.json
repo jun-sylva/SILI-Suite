@@ -4,6 +4,7 @@
   "nav_dashboard": "Tableau de bord",
   "nav_rh": "Ressources Humaines",
   "nav_workflow": "Workflow",
+  "nav_planning": "Planning",
   "acces_refuse": "Vous n'avez pas accès au module Rapports.",
 
   "modules_section": "Modules actifs",
@@ -12,6 +13,9 @@
   "stat_conges_pending": "Congés en attente",
   "stat_workflow_en_cours": "Requêtes en cours",
   "stat_workflow_pending": "En attente de traitement",
+  "stat_planning_projets": "Projets actifs",
+  "stat_planning_taches":  "Tâches en cours",
+  "stat_planning_retard":  "Tâches en retard",
 
   "card_rh_title": "Ressources Humaines",
   "card_rh_desc": "Présences, congés et paie",
@@ -23,6 +27,8 @@
   "card_achat_desc": "Commandes fournisseurs",
   "card_stock_title": "Stock",
   "card_stock_desc": "Niveaux et mouvements",
+  "card_planning_title": "Planning",
+  "card_planning_desc":  "Projets, tâches et jalons",
   "card_crm_title": "CRM",
   "card_crm_desc": "Contacts et opportunités",
   "card_comptabilite_title": "Comptabilité",

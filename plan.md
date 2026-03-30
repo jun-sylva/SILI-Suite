@@ -309,7 +309,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260330_planning_module.sql` | 4 tables : `plan_projets`, `plan_taches`, `plan_jalons`, `plan_evenements` + RLS (tenant_id) + `INSERT INTO sys_modules` pour `planning` (désactivé par défaut) | ✅ exécutée |
 | `20260330_planning_enable_sys_module.sql` | `UPDATE sys_modules SET is_active = true WHERE key = 'planning'` — active le module planning globalement | ✅ |
 | `20260330_planning_add_to_module_key_enum.sql` | `ALTER TYPE module_key ADD VALUE IF NOT EXISTS 'planning'` — ajoute `planning` à l'enum Postgres utilisé par `tenant_modules.module` | ✅ |
-| `20260330_crm_tables.sql` | 8 tables CRM : `crm_contacts`, `crm_activites`, `crm_sequences`, `crm_devis`, `crm_devis_lignes`, `crm_factures`, `crm_factures_lignes`, `crm_paiements` + triggers numérotation auto + trigger recalcul paiements factures + RLS + indexes | ⏳ à exécuter |
+| `20260330_crm_tables.sql` | 8 tables CRM : `crm_contacts`, `crm_activites`, `crm_sequences`, `crm_devis`, `crm_devis_lignes`, `crm_factures`, `crm_factures_lignes`, `crm_paiements` + triggers numérotation auto + trigger recalcul paiements factures + RLS + indexes | ✅ |
 
 ---
 
@@ -564,6 +564,22 @@ Notification **"Tâche complétée"** : insérée dans `public.notifications` (t
 | `facture_created_from_devis` | `crm_factures` | `devis/[devis_id]/page.tsx` |
 | `facture_created/updated/deleted/emise/annulee` | `crm_factures` | `factures/[facture_id]/page.tsx` |
 | `paiement_created/deleted` | `crm_paiements` | `factures/[facture_id]/page.tsx` + `paiements/page.tsx` |
+
+**Notifications CRM (2026-03-30)** :
+
+| Déclencheur | Destinataire | Titre | Condition | Fichier |
+|---|---|---|---|---|
+| Lead converti en opportunité | Gestionnaires/admins CRM + tenant_admins | `Nouveau lead converti` | Toujours, skip si acteur | `leads/page.tsx` |
+| Nouvelle activité assignée | Utilisateur `assigne_a` | `Nouvelle activité assignée` | Si `assigne_a ≠ currentUser` | `activites/page.tsx` |
+| Devis accepté | Utilisateur `assigne_a` du devis | `Devis accepté` | Si `assigne_a ≠ currentUser` | `devis/[devis_id]/page.tsx` |
+| Devis refusé | Utilisateur `assigne_a` du devis | `Devis refusé` | Si `assigne_a ≠ currentUser` | `devis/[devis_id]/page.tsx` |
+| Paiement enregistré sur facture | Utilisateur `assigne_a` de la facture | `Paiement reçu sur facture` | Si `assigne_a ≠ currentUser` | `factures/[facture_id]/page.tsx` + `paiements/page.tsx` |
+| Opportunité marquée gagnée | Gestionnaires/admins CRM + tenant_admins | `Opportunité gagnée` | Toujours, skip si acteur | `pipeline/page.tsx` |
+| Opportunité marquée perdue | Gestionnaires/admins CRM + tenant_admins | `Opportunité perdue` | Toujours, skip si acteur | `pipeline/page.tsx` |
+
+Helper `notifyGestionnairesCrm(titre, message)` dans `pipeline/page.tsx` — fusionne `user_module_permissions (gestionnaire/admin)` + `profiles (tenant_admin)`, déduplique, exclut `currentUserId`, bulk insert dans `notifications`.
+
+Champ `assigne_a` ajouté aux formulaires devis, factures et activités (sélecteur dynamique depuis `user_module_permissions` CRM de la société).
 
 **i18n** : namespace `crm` (fr + en), ~120 clés couvrant tous les modules, champs, statuts, modes de paiement, toasts.
 

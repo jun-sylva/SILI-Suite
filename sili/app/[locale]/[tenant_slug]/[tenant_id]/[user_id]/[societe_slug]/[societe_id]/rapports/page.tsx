@@ -8,7 +8,7 @@ import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import {
   BarChart3, Loader2, Users, Clock, CalendarOff, FileText,
   ShoppingCart, PackageSearch, Package, PhoneCall,
-  CircleDollarSign, MessageSquare, GitBranch, ArrowRight,
+  CircleDollarSign, MessageSquare, GitBranch, ArrowRight, CalendarDays,
 } from 'lucide-react'
 
 // ── Config des modules reportables ────────────────────────────────────────────
@@ -41,6 +41,15 @@ const MODULE_CONFIGS: ModuleConfig[] = [
     color:    'border-indigo-200 hover:border-indigo-400',
     iconBg:   'bg-indigo-50 text-indigo-600',
     href:     '/workflow',
+  },
+  {
+    key: 'planning',
+    titleKey: 'card_planning_title',
+    descKey:  'card_planning_desc',
+    icon:     CalendarDays,
+    color:    'border-violet-200 hover:border-violet-400',
+    iconBg:   'bg-violet-50 text-violet-600',
+    href:     '/planning',
   },
   {
     key: 'vente',
@@ -111,9 +120,16 @@ interface WorkflowStats {
   enAttente: number
 }
 
+interface PlanningStats {
+  projetsActifs: number
+  tachesEnRetard: number
+  tachesAFaire: number
+}
+
 type ModuleStats = {
   rh?:       RhStats
   workflow?: WorkflowStats
+  planning?: PlanningStats
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -190,6 +206,21 @@ export default function RapportsDashboard() {
         statsResult.workflow = {
           enCours:   enCours ?? 0,
           enAttente: enAttente ?? 0,
+        }
+      })(),
+
+      // Planning
+      mods.includes('planning') && (async () => {
+        const today = new Date().toISOString().split('T')[0]
+        const [{ count: projetsActifs }, { count: tachesEnRetard }, { count: tachesAFaire }] = await Promise.all([
+          (supabase as any).from('plan_projets').select('id', { count: 'exact', head: true }).eq('societe_id', societeId).eq('statut', 'actif'),
+          (supabase as any).from('plan_taches').select('id', { count: 'exact', head: true }).eq('societe_id', societeId).lt('date_echeance', today).neq('statut', 'fait'),
+          (supabase as any).from('plan_taches').select('id', { count: 'exact', head: true }).eq('societe_id', societeId).in('statut', ['todo', 'en_cours', 'revue']),
+        ])
+        statsResult.planning = {
+          projetsActifs:  projetsActifs  ?? 0,
+          tachesEnRetard: tachesEnRetard ?? 0,
+          tachesAFaire:   tachesAFaire   ?? 0,
         }
       })(),
     ])
@@ -286,6 +317,23 @@ export default function RapportsDashboard() {
                       <div className="bg-slate-50 rounded-xl p-2">
                         <p className="text-base font-bold text-slate-800">{stats.workflow.enAttente}</p>
                         <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_workflow_pending')}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {mod.key === 'planning' && stats.planning && (
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-slate-800">{stats.planning.projetsActifs}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_planning_projets')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-slate-800">{stats.planning.tachesAFaire}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_planning_taches')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className={`text-base font-bold ${stats.planning.tachesEnRetard > 0 ? 'text-red-600' : 'text-slate-800'}`}>{stats.planning.tachesEnRetard}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_planning_retard')}</p>
                       </div>
                     </div>
                   )}

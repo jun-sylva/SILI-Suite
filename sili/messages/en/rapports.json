@@ -4,6 +4,7 @@
   "nav_dashboard": "Dashboard",
   "nav_rh": "Human Resources",
   "nav_workflow": "Workflow",
+  "nav_planning": "Planning",
   "acces_refuse": "You do not have access to the Reports module.",
 
   "modules_section": "Active modules",
@@ -12,6 +13,9 @@
   "stat_conges_pending": "Pending leave requests",
   "stat_workflow_en_cours": "Requests in progress",
   "stat_workflow_pending": "Awaiting processing",
+  "stat_planning_projets": "Active projects",
+  "stat_planning_taches":  "Tasks in progress",
+  "stat_planning_retard":  "Overdue tasks",
 
   "card_rh_title": "Human Resources",
   "card_rh_desc": "Attendance, leave and payroll",
@@ -23,6 +27,8 @@
   "card_achat_desc": "Supplier orders",
   "card_stock_title": "Inventory",
   "card_stock_desc": "Levels and movements",
+  "card_planning_title": "Planning",
+  "card_planning_desc":  "Projects, tasks and milestones",
   "card_crm_title": "CRM",
   "card_crm_desc": "Contacts and opportunities",
   "card_comptabilite_title": "Accounting",

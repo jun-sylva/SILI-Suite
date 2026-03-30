@@ -144,6 +144,8 @@ export default function PipelinePage() {
     const { error } = await (supabase as any).from('crm_opportunites').update({ etape: newEtape, updated_at: new Date().toISOString() }).eq('id', opp.id)
     if (error) { setOpps(prev => prev.map(o => o.id === opp.id ? { ...o, etape: oldEtape } : o)); return }
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: newEtape === 'gagnee' ? 'opportunite_gagnee' : newEtape === 'perdue' ? 'opportunite_perdue' : 'opportunite_etape_changed', resourceType: 'crm_opportunites', resourceId: opp.id, metadata: { titre: opp.titre, ancien: oldEtape, nouveau: newEtape } })
+    if (newEtape === 'gagnee') await notifyGestionnairesCrm('Opportunité gagnée', `L'opportunité "${opp.titre}" a été gagnée.`)
+    else if (newEtape === 'perdue') await notifyGestionnairesCrm('Opportunité perdue', `L'opportunité "${opp.titre}" a été perdue.`)
     if (detail?.id === opp.id) setDetail(prev => prev ? { ...prev, etape: newEtape } : prev)
   }
 
@@ -155,6 +157,22 @@ export default function PipelinePage() {
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'opportunite_deleted', resourceType: 'crm_opportunites', resourceId: opp.id, metadata: { titre: opp.titre } })
     if (detail?.id === opp.id) setDetail(null)
     await loadOpps()
+  }
+
+  async function notifyGestionnairesCrm(titre: string, message: string) {
+    const [{ data: perms }, { data: admins }] = await Promise.all([
+      supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').in('permission', ['gestionnaire', 'admin']),
+      supabase.from('profiles').select('id').eq('tenant_id', fullTenantId).eq('role', 'tenant_admin'),
+    ])
+    const targets = [
+      ...(perms ?? []).map((p: any) => p.user_id),
+      ...(admins ?? []).map((a: any) => a.id),
+    ].filter((id, i, arr) => arr.indexOf(id) === i && id !== currentUserId)
+    if (targets.length > 0) {
+      await supabase.from('notifications').insert(targets.map((uid: string) => ({
+        tenant_id: fullTenantId, user_id: uid, type: 'info', titre, message,
+      })))
+    }
   }
 
   if (loading) return <div className="flex h-60 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>

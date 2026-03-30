@@ -135,6 +135,15 @@ export default function PaiementsPage() {
     if (error) { toast.error(t('toast_error')); setSaving(false); return }
     toast.success(t('toast_paiement_created'))
     await writeLog({ tenantId: fullTenantId, userId, action: 'paiement_created', resourceType: 'crm_paiements', resourceId: np?.id, metadata: { montant: Number(pMontant), facture_id: pFactureId } })
+    // Notifier le responsable de la facture
+    const { data: facture } = await supabase.from('crm_factures').select('assigne_a, numero, objet').eq('id', pFactureId).single()
+    if (facture?.assigne_a && facture.assigne_a !== userId) {
+      await supabase.from('notifications').insert({
+        tenant_id: fullTenantId, user_id: facture.assigne_a, type: 'info',
+        titre: 'Paiement reçu sur facture',
+        message: `Un paiement de ${new Intl.NumberFormat('fr-FR').format(Number(pMontant))} FCFA a été enregistré sur la facture ${facture.numero ?? facture.objet}.`,
+      })
+    }
     setShowModal(false); setSaving(false)
     await Promise.all([loadPaiements(), loadKpis()])
   }

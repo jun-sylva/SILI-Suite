@@ -62,10 +62,12 @@ export default function FactureDetailPage() {
   const [canManage,     setCanManage]     = useState(false)
   const [fullTenantId,  setFullTenantId]  = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
+  const [crmUsers,      setCrmUsers]      = useState<{id:string;full_name:string}[]>([])
 
   // Facture fields
   const [objet,              setObjet]              = useState('')
   const [clientNom,          setClientNom]          = useState('')
+  const [assigneA,           setAssigneA]           = useState('')
   const [dateEmission,       setDateEmission]       = useState(new Date().toISOString().slice(0, 10))
   const [dateEcheance,       setDateEcheance]       = useState('')
   const [remiseGlobale,      setRemiseGlobale]      = useState(0)
@@ -104,10 +106,19 @@ export default function FactureDetailPage() {
         setCanManage(['contributeur', 'gestionnaire', 'admin'].includes(perm))
       } else { setCanManage(true) }
 
+      // Charger les membres CRM pour le sélecteur
+      const { data: perms } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').neq('permission', 'none')
+      const uids = (perms ?? []).map((p: any) => p.user_id)
+      if (uids.length > 0) {
+        const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', uids)
+        setCrmUsers(profs ?? [])
+      }
+
       if (!isNew) {
         const { data: f } = await supabase.from('crm_factures').select('*').eq('id', factureId).single()
         if (f) {
           setObjet(f.objet); setClientNom(f.client_nom ?? '')
+          setAssigneA(f.assigne_a ?? '')
           setDateEmission(f.date_emission); setDateEcheance(f.date_echeance ?? '')
           setRemiseGlobale(f.remise_globale); setTvaPct(f.tva_pct)
           setNotes(f.notes ?? ''); setConditions(f.conditions_paiement ?? '')
@@ -148,6 +159,7 @@ export default function FactureDetailPage() {
     setSaving(true)
     const payload = {
       objet: objet.trim(), client_nom: clientNom.trim() || null,
+      assigne_a: assigneA || null,
       date_emission: dateEmission, date_echeance: dateEcheance || null,
       remise_globale: remiseGlobale, tva_pct: tvaPct,
       montant_ht: Math.round(totalHt * 100) / 100,
@@ -216,6 +228,14 @@ export default function FactureDetailPage() {
     if (error) { toast.error(t('toast_error')); setSavingPai(false); return }
     toast.success(t('toast_paiement_created'))
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'paiement_created', resourceType: 'crm_paiements', resourceId: np?.id, metadata: { montant: Number(pMontant), facture_id: factureId } })
+    // Notifier le responsable de la facture
+    if (assigneA && assigneA !== currentUserId) {
+      await supabase.from('notifications').insert({
+        tenant_id: fullTenantId, user_id: assigneA, type: 'info',
+        titre: 'Paiement reçu sur facture',
+        message: `Un paiement de ${new Intl.NumberFormat('fr-FR').format(Number(pMontant))} FCFA a été enregistré sur la facture ${numero ?? objet}.`,
+      })
+    }
     setShowPaiModal(false); setSavingPai(false)
 
     // Reload facture (trigger recalculated statut/montants)
@@ -311,6 +331,13 @@ export default function FactureDetailPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_client_nom')}</label>
                 <input className={inputCls} value={clientNom} onChange={e => setClientNom(e.target.value)} disabled={!editable} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_assigne_a')}</label>
+                <select className={inputCls} value={assigneA} onChange={e => setAssigneA(e.target.value)} disabled={!editable}>
+                  <option value="">— Non assigné —</option>
+                  {crmUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}{u.id === currentUserId ? ' (moi)' : ''}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('field_date_emission')}</label>
