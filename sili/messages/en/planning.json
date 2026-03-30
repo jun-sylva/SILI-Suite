@@ -10,26 +10,35 @@
 
   "dashboard_title":    "Planning Dashboard",
   "dashboard_subtitle": "Overview of your projects and tasks.",
+  "dashboard_desc":     "Overview of your projects and tasks.",
 
   "kpi_projets_actifs":  "Active projects",
   "kpi_taches_semaine":  "Tasks this week",
   "kpi_taches_retard":   "Overdue tasks",
   "kpi_taux_avancement": "Global progress",
 
+  "section_alertes":   "Alerts",
+  "alertes_empty":     "No alerts — everything is under control.",
   "alertes_title":     "Smart alerts",
   "alerte_retard":     "overdue task(s)",
   "alerte_jalon":      "milestone(s) in the next 7 days",
   "alerte_surcharge":  "overloaded member(s) (≥5 active tasks)",
   "alerte_aucune":     "No alerts — everything is under control.",
 
+  "section_mes_taches":  "My tasks",
+  "voir_tout":           "See all",
   "mes_taches_title":    "My tasks",
   "mes_taches_empty":    "No tasks assigned.",
   "marquer_fait":        "Mark as done",
 
-  "raccourcis_title":   "Shortcuts",
-  "raccourci_projets":  "Manage projects",
-  "raccourci_cal":      "Open calendar",
-  "raccourci_res":      "View resources",
+  "raccourcis_title":     "Shortcuts",
+  "raccourci_projets":    "Manage projects",
+  "raccourci_cal":        "Open calendar",
+  "raccourci_res":        "View resources",
+  "shortcut_projets":     "Projects",
+  "shortcut_calendrier":  "Calendar",
+  "shortcut_ressources":  "Resources",
+  "btn_voir_projets":     "View projects",
 
   "projets_title":    "Projects",
   "projets_subtitle": "Manage your projects and track progress.",
@@ -150,5 +159,57 @@
   "charge_normale":    "Normal (40–70%)",
   "charge_elevee":     "High (70–90%)",
   "charge_critique":   "Critical (≥ 90%)",
-  "legende_aujourdhui":"Today"
+  "legende_aujourdhui":"Today",
+
+  "btn_new_projet":    "New project",
+  "btn_new_event":     "New event",
+  "btn_save":          "Save",
+  "btn_cancel":        "Cancel",
+  "btn_add":           "Add",
+  "btn_add_tache":     "Add task",
+  "btn_add_jalon":     "Add milestone",
+
+  "modal_new_projet":  "New project",
+  "modal_edit_projet": "Edit project",
+  "modal_new_tache":   "New task",
+  "modal_new_jalon":   "New milestone",
+  "modal_new_event":   "New event",
+  "modal_edit_event":  "Edit event",
+
+  "field_titre":       "Title",
+  "field_description": "Description",
+  "field_statut":      "Status",
+  "field_priorite":    "Priority",
+  "field_couleur":     "Color",
+  "field_date_debut":  "Start date",
+  "field_date_fin":    "End date",
+  "field_echeance":    "Due date",
+  "field_all_day":     "All day",
+  "field_lien_meet":   "Meeting link",
+  "field_type_event":  "Event type",
+
+  "placeholder_titre":       "Enter a title…",
+  "placeholder_tache_titre": "Task title…",
+  "placeholder_jalon_titre": "Milestone title…",
+  "placeholder_event_titre": "Event title…",
+
+  "col_titre":      "Title",
+  "col_progression":"Progress",
+
+  "section_taches":  "Tasks",
+  "section_jalons":  "Milestones",
+  "jalons_empty":    "No milestones.",
+  "jour_empty":      "No events today.",
+
+  "confirm_delete_projet": "Delete this project?",
+
+  "toast_error":           "An error occurred.",
+  "toast_projet_created":  "Project created successfully.",
+  "toast_projet_updated":  "Project updated.",
+  "toast_projet_deleted":  "Project deleted.",
+  "toast_tache_created":   "Task created.",
+  "toast_jalon_created":   "Milestone created.",
+  "toast_event_created":   "Event created.",
+  "toast_event_updated":   "Event updated.",
+  "toast_event_deleted":   "Event deleted."
 }

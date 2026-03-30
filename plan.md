@@ -307,6 +307,8 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260329_rh_employes_situation_familiale.sql` | `ALTER TABLE rh_employes ADD COLUMN etat_civil text CHECK (5 valeurs)` + `nb_enfants int NOT NULL DEFAULT 0` — pour le calcul des allocations familiales CNPS | ✅ |
 | *(pas de migration)* | `lib/audit.ts` — helper `writeLog()` créé, 14 actions instrumentées dans 7 fichiers | ✅ |
 | `20260330_planning_module.sql` | 4 tables : `plan_projets`, `plan_taches`, `plan_jalons`, `plan_evenements` + RLS (tenant_id) + `INSERT INTO sys_modules` pour `planning` (désactivé par défaut) | ✅ exécutée |
+| `20260330_planning_enable_sys_module.sql` | `UPDATE sys_modules SET is_active = true WHERE key = 'planning'` — active le module planning globalement | ✅ |
+| `20260330_planning_add_to_module_key_enum.sql` | `ALTER TYPE module_key ADD VALUE IF NOT EXISTS 'planning'` — ajoute `planning` à l'enum Postgres utilisé par `tenant_modules.module` | ✅ |
 
 ---
 
@@ -442,7 +444,15 @@ Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journ
 | Créer/modifier des projets | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Voir ressources + raccourcis | ❌ | ❌ | ✅ | ✅ | ✅ |
 
-**i18n** : namespace `planning` (fr + en), ~90 clés couvrant dashboard, projets, calendrier, ressources
+**i18n** : namespace `planning` (fr + en), ~130 clés couvrant dashboard, projets, calendrier, ressources. Corrections appliquées (2026-03-30) :
+- Ajout des alias manquants : `dashboard_desc`, `btn_voir_projets`, `section_alertes`, `alertes_empty`, `section_mes_taches`, `voir_tout`, `shortcut_*`
+- Ajout bloc complet : boutons (`btn_new_projet`, `btn_save`, `btn_cancel`, `btn_add`, …), modals (`modal_new_projet`, `modal_edit_projet`, …), champs (`field_*`), placeholders, colonnes, sections, toasts
+
+**Bug corrigé (2026-03-30) — toggle module planning dans Master** :
+- Upsert `tenant_modules` envoyait `module_key` (colonne inexistante) → erreur PostgREST → rollback du toggle
+- Fix : suppression de `module_key` du payload, cast `as any` pour `module: moduleKey`
+- Types TS : `planning` ajouté à l'enum `module_key` dans `lib/supabase/types.ts`
+- Migration `20260330_planning_add_to_module_key_enum.sql` ✅ exécutée
 
 ---
 

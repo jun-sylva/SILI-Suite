@@ -12,10 +12,10 @@ import { toast } from 'sonner'
 import dayjs from 'dayjs'
 
 interface Tenant {
-  id: string; name: string; slug: string; status: string
-  max_societes: number; max_licences: number; max_storage_gb: number; created_at: string
+  id: string; name: string; slug: string; status: string | null
+  max_societes: number; max_licences: number; max_storage_gb: number; created_at: string | null
 }
-interface SysModule { id: string; key: string; name: string; description: string; is_active: boolean }
+interface SysModule { id: string; key: string; name: string; description: string | null; is_active: boolean | null }
 
 export default function TenantsManagementPage() {
   const t = useTranslations('tenants')
@@ -161,7 +161,7 @@ export default function TenantsManagementPage() {
     const { data: tModules } = await supabase
       .from('tenant_modules').select('module, is_active').eq('tenant_id', tenant.id)
     const map: Record<string, boolean> = {}
-    tModules?.forEach(r => { map[r.module] = r.is_active })
+    tModules?.forEach(r => { map[r.module] = r.is_active ?? false })
     setTenantModules(map)
     setDropdownOpen(null)
   }
@@ -204,7 +204,8 @@ export default function TenantsManagementPage() {
     const { error } = await supabase
       .from('tenant_modules')
       .upsert(
-        { tenant_id: settingsModal.id, module: moduleKey, module_key: moduleKey, is_active: newStatus, activated_at: new Date().toISOString() },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { tenant_id: settingsModal.id, module: moduleKey as any, is_active: newStatus, activated_at: new Date().toISOString() },
         { onConflict: 'tenant_id,module' }
       )
     if (error) {

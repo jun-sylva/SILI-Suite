@@ -2820,6 +2820,7 @@ export type Database = {
         | "securite"
         | "sauvegarde"
         | "presence"
+        | "planning"
       permission_level:
         | "aucun"
         | "lecteur"
@@ -2973,6 +2974,7 @@ export const Constants = {
         "securite",
         "sauvegarde",
         "presence",
+        "planning",
       ],
       permission_level: [
         "aucun",

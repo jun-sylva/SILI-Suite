@@ -10,26 +10,34 @@
 
   "dashboard_title":    "Tableau de bord Planning",
   "dashboard_subtitle": "Vue d'ensemble de vos projets et tâches.",
+  "dashboard_desc":     "Vue d'ensemble de vos projets et tâches.",
 
   "kpi_projets_actifs":  "Projets actifs",
   "kpi_taches_semaine":  "Tâches cette semaine",
   "kpi_taches_retard":   "Tâches en retard",
   "kpi_taux_avancement": "Avancement global",
 
+  "section_alertes":   "Alertes",
+  "alertes_empty":     "Aucune alerte — tout est sous contrôle.",
   "alertes_title":     "Alertes intelligentes",
   "alerte_retard":     "tâche(s) en retard",
   "alerte_jalon":      "jalon(s) dans les 7 prochains jours",
   "alerte_surcharge":  "membre(s) surchargé(s) (≥5 tâches actives)",
   "alerte_aucune":     "Aucune alerte — tout est sous contrôle.",
 
+  "section_mes_taches":  "Mes tâches",
+  "voir_tout":           "Voir tout",
   "mes_taches_title":    "Mes tâches",
   "mes_taches_empty":    "Aucune tâche assignée.",
   "marquer_fait":        "Marquer comme fait",
 
-  "raccourcis_title":   "Raccourcis",
-  "raccourci_projets":  "Gérer les projets",
-  "raccourci_cal":      "Ouvrir le calendrier",
-  "raccourci_res":      "Voir les ressources",
+  "raccourcis_title":     "Raccourcis",
+  "raccourci_projets":    "Gérer les projets",
+  "raccourci_cal":        "Ouvrir le calendrier",
+  "raccourci_res":        "Voir les ressources",
+  "shortcut_projets":     "Projets",
+  "shortcut_calendrier":  "Calendrier",
+  "shortcut_ressources":  "Ressources",
 
   "projets_title":    "Projets",
   "projets_subtitle": "Gérez vos projets et suivez leur avancement.",
@@ -75,6 +83,7 @@
   "champ_date_jalon":   "Date du jalon",
   "champ_atteint":      "Jalon atteint",
 
+  "btn_voir_projets": "Voir les projets",
   "btn_enregistrer": "Enregistrer",
   "btn_annuler":     "Annuler",
   "btn_supprimer":   "Supprimer",
@@ -150,5 +159,57 @@
   "charge_normale":    "Normale (40–70%)",
   "charge_elevee":     "Élevée (70–90%)",
   "charge_critique":   "Critique (≥ 90%)",
-  "legende_aujourdhui":"Aujourd'hui"
+  "legende_aujourdhui":"Aujourd'hui",
+
+  "btn_new_projet":    "Nouveau projet",
+  "btn_new_event":     "Nouvel événement",
+  "btn_save":          "Enregistrer",
+  "btn_cancel":        "Annuler",
+  "btn_add":           "Ajouter",
+  "btn_add_tache":     "Ajouter une tâche",
+  "btn_add_jalon":     "Ajouter un jalon",
+
+  "modal_new_projet":  "Nouveau projet",
+  "modal_edit_projet": "Modifier le projet",
+  "modal_new_tache":   "Nouvelle tâche",
+  "modal_new_jalon":   "Nouveau jalon",
+  "modal_new_event":   "Nouvel événement",
+  "modal_edit_event":  "Modifier l'événement",
+
+  "field_titre":       "Titre",
+  "field_description": "Description",
+  "field_statut":      "Statut",
+  "field_priorite":    "Priorité",
+  "field_couleur":     "Couleur",
+  "field_date_debut":  "Date de début",
+  "field_date_fin":    "Date de fin",
+  "field_echeance":    "Échéance",
+  "field_all_day":     "Toute la journée",
+  "field_lien_meet":   "Lien de réunion",
+  "field_type_event":  "Type d'événement",
+
+  "placeholder_titre":       "Saisir un titre…",
+  "placeholder_tache_titre": "Titre de la tâche…",
+  "placeholder_jalon_titre": "Titre du jalon…",
+  "placeholder_event_titre": "Titre de l'événement…",
+
+  "col_titre":      "Titre",
+  "col_progression":"Progression",
+
+  "section_taches":  "Tâches",
+  "section_jalons":  "Jalons",
+  "jalons_empty":    "Aucun jalon.",
+  "jour_empty":      "Aucun événement ce jour.",
+
+  "confirm_delete_projet": "Supprimer ce projet ?",
+
+  "toast_error":           "Une erreur est survenue.",
+  "toast_projet_created":  "Projet créé avec succès.",
+  "toast_projet_updated":  "Projet mis à jour.",
+  "toast_projet_deleted":  "Projet supprimé.",
+  "toast_tache_created":   "Tâche créée.",
+  "toast_jalon_created":   "Jalon créé.",
+  "toast_event_created":   "Événement créé.",
+  "toast_event_updated":   "Événement mis à jour.",
+  "toast_event_deleted":   "Événement supprimé."
 }

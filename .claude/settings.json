@@ -18,7 +18,13 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.hostinger.com)",
-      "WebFetch(domain:dev.to)"
+      "WebFetch(domain:dev.to)",
+      "Bash(grep -l \"module\\\\|upsert\" /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/202603*.sql)",
+      "Bash(grep -roh \"t\\([''''\"\"][^''''\"\"]*[''''\"\"]\\)\" /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning --include=\"*.tsx\")",
+      "Bash(grep -v \"^T$\")",
+      "Bash(grep -v \"^id$\")",
+      "Bash(grep -v \"^role$\")",
+      "Bash(grep -v \"^from$\")"
     ],
     "additionalDirectories": [
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",
