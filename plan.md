@@ -315,7 +315,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `crm`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_crm`, `rapports_planning`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `stock`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `crm`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_crm`, `rapports_planning`, `rapports_rh`, `rapports_stock`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `stock`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -596,8 +596,9 @@ Champ `assigne_a` ajouté aux formulaires devis, factures et activités (sélect
 - `stock_inventaire_lignes` : id, inventaire_id (FK CASCADE), article_id (FK), stock_theorique, stock_compte (nullable), ecart (`GENERATED ALWAYS AS (COALESCE(stock_compte, stock_theorique) - stock_theorique) STORED`), adjusted bool (défaut false), UNIQUE (inventaire_id, article_id) — RLS via sous-requête sur stock_inventaires
 
 **Layout** (`stock/layout.tsx`) :
-- 5 onglets nav sticky : Tableau de bord, Articles, Mouvements, Inventaire, Alertes
+- 6 onglets nav sticky : Tableau de bord, Articles, Mouvements, Inventaire, Alertes, **Rapport**
 - **Badge rouge** sur l'onglet Alertes : `COUNT(stock_articles WHERE stock_actuel < stock_minimum)`
+- Onglet **Rapport** → lien vers `rapports/stock` (hors du module, dans l'espace rapports)
 - Guard : `fetchEffectiveModulePerm` module `stock`, lecteur+ ou tenant_admin
 - Loader pendant vérification, ShieldOff si accès refusé
 - Couleur thème : amber
@@ -609,7 +610,10 @@ Champ `assigne_a` ajouté aux formulaires devis, factures et activités (sélect
 
 **Articles** (`stock/articles/page.tsx`) :
 - Liste complète avec barre de stock visuelle (vert/orange/rouge selon seuil), filtre catégorie + niveau stock + recherche
-- **Modale CRUD article** : référence (verrouillée en édition), désignation, description, catégorie (datalist autocomplétion), unité, prix achat/vente, stock min/max, emplacement
+- **Modale CRUD article** : référence (verrouillée en édition), désignation, description, catégorie, unité, prix achat/vente, stock min/max, emplacement
+  - **InfoTooltip** (composant inline) sur chaque champ : bulle sombre avec flèche, apparaît au survol de l'icône `Info` (lucide)
+  - **Catégorie** : `<select>` avec 15 catégories prédéfinies (constante `CATEGORIES_BASE` avec clé traduction) + catégories existantes en BDD (celles non présentes dans la liste prédéfinie) + option `+ Nouvelle catégorie…` → champ texte inline. Valeur stockée = canonique français.
+  - **Unité** : `<select>` groupé (Quantité / Poids / Volume / Longueur) avec 25 unités + option `+ Autre…` → champ texte inline. À l'édition, si unité hors liste → bascule automatiquement en mode "Autre".
 - **Entrée/Sortie rapide** inline depuis la liste → modale légère (quantité, prix, motif)
 - Désactivation douce : `is_active = false` (toggle, article reste dans les historiques)
 - Bouton détail → `stock/articles/[article_id]`
@@ -679,9 +683,56 @@ Champ `assigne_a` ajouté aux formulaires devis, factures et activités (sélect
 
 Helper `notifyGestionnairesStock(titre, message, type)` dupliqué dans chaque fichier concerné (même pattern que CRM) — fusionne `user_module_permissions (gestionnaire/admin)` + `profiles (tenant_admin)`, déduplique, exclut `currentUserId`, bulk insert dans `notifications`.
 
-**i18n** : namespace `stock` (fr + en), ~90 clés couvrant dashboard, articles, mouvements, inventaire, alertes, badges, types, toasts.
+**i18n** : namespace `stock` (fr + en), ~110 clés couvrant dashboard, articles, mouvements, inventaire, alertes, badges, types, toasts + sélecteurs catégorie/unité (19 clés `cat_*` + `unite_groupe_*` + 5 clés UI select).
 
 **Note** : `stock` existait déjà dans `sys_modules` et dans l'enum `module_key` — aucune migration enum nécessaire.
+
+**Rapport Stock** (`rapports/stock/page.tsx`) :
+- Accès depuis le layout stock (onglet "Rapport") ET depuis le dashboard rapports (carte Stock)
+- Génération à la demande (bouton "Générer le rapport")
+- **Filtres** : Année, Mois, Catégorie, Niveau stock
+- **4 KPIs** : Valeur totale du stock (`Σ stock_actuel × prix_achat`), Articles actifs, En rupture, Sous minimum
+- **4 onglets** :
+  - **Catalogue** : tous les articles actifs filtrés — colonnes référence, désignation, catégorie, unité, prix achat, prix vente, stock actuel, minimum, valeur stock, statut + lien "Voir la carte"
+  - **Mouvements** : mouvements sur la période (année/mois) — colonnes date, article, type (icône colorée), quantité, prix unitaire, avant, après, motif, par
+  - **Valorisation** : regroupement par catégorie (calculé côté client) — nb articles, stock total, valeur achat, valeur vente, marge potentielle + ligne **Total** en bas
+  - **Alertes** : articles avec `stock_actuel < stock_minimum` — manquant, qté suggérée, statut + lien "Voir la carte"
+- **Export** CSV + PDF (react-pdf, orientation landscape, thème amber) par onglet
+- Namespace i18n : `rapports_stock` (fr + en)
+
+**Carte Stock** (`rapports/stock/carte/[article_id]/page.tsx`) :
+- Accessible via bouton "Voir la carte" dans les onglets Catalogue et Alertes du rapport stock
+- **Bloc identité** : référence, désignation, catégorie, unité, emplacement, description, statut
+- **Bloc niveaux** : barre visuelle CSS (rouge=rupture / orange=alerte / vert=normal), stock actuel/min/max, valeur en stock
+- **Bloc prix** : prix achat, prix vente, marge unitaire (en 3 cards horizontales)
+- **Historique** : 30 derniers mouvements de cet article (date, type, qté, prix unitaire, avant, après, motif, par)
+- **Export PDF** : fiche complète via react-pdf (portrait A4)
+- Bouton "Retour au rapport" → `rapports/stock`
+
+---
+
+#### Module Rapports `/[societe_id]/rapports`
+
+**Dashboard** (`rapports/page.tsx`) :
+- Grille des modules actifs (`societe_modules WHERE is_active = true`) filtrés via `MODULE_CONFIGS`
+- Carte par module : icône, titre, description, mini-stats, lien "Voir le rapport" si disponible, badge "Bientôt disponible" sinon
+- Stats chargées en parallèle (`Promise.all`) : RH, Workflow, Planning, CRM, **Stock**
+- **Stats Stock** : Valeur du stock (`Σ stock_actuel × prix_achat`), En rupture, Sous minimum — affichées sur la carte Stock avec couleurs conditionnelles (rouge si > 0)
+- Modules avec rapport actif : RH (`/rh`), Workflow (`/workflow`), Planning (`/planning`), CRM (`/crm`), **Stock (`/stock`)** ← activé
+- Modules "bientôt disponible" : Vente, Achat, Comptabilité, Teams
+
+**Layout** (`rapports/layout.tsx`) :
+- Nav sticky : Tableau de bord, RH, Workflow, Planning, CRM, **Stock** (conditionnel par `societe_modules`)
+- Couleur thème : indigo
+- Stock nav item : icône `Package`, lien `${base}/stock`
+
+**Rapport RH** (`rapports/rh/page.tsx`) : 4 onglets (Employés, Présences, Congés, Paie), filtres année/mois/département, 4 KPIs, export CSV + PDF
+
+**Rapport Workflow** (`rapports/workflow/page.tsx`) : 4 onglets, filtres période/statut, KPIs
+
+**Rapport Planning** (`rapports/planning/page.tsx`) : 4 onglets (Projets, Tâches, Jalons, Charge), filtres période, KPIs
+
+**Rapport CRM** (`rapports/crm/page.tsx`) : 4 onglets (Leads, Opportunités, Devis, Factures), filtres période/statut/source, 4 KPIs CA, export CSV + PDF
 
 ---
 
