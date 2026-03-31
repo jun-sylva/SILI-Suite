@@ -85,7 +85,7 @@ const MODULE_CONFIGS: ModuleConfig[] = [
     icon:     PhoneCall,
     color:    'border-pink-200 hover:border-pink-400',
     iconBg:   'bg-pink-50 text-pink-600',
-    href:     null,
+    href:     '/crm',
   },
   {
     key: 'comptabilite',
@@ -126,10 +126,17 @@ interface PlanningStats {
   tachesAFaire: number
 }
 
+interface CrmStats {
+  leadsActifs: number
+  oppsEnCours: number
+  caEncaisse:  number
+}
+
 type ModuleStats = {
   rh?:       RhStats
   workflow?: WorkflowStats
   planning?: PlanningStats
+  crm?:      CrmStats
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -206,6 +213,23 @@ export default function RapportsDashboard() {
         statsResult.workflow = {
           enCours:   enCours ?? 0,
           enAttente: enAttente ?? 0,
+        }
+      })(),
+
+      // CRM
+      mods.includes('crm') && (async () => {
+        const now   = new Date()
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+        const [{ data: leads }, { data: opps }, { data: factures }] = await Promise.all([
+          (supabase as any).from('crm_leads').select('id').eq('societe_id', societeId).in('statut', ['nouveau', 'contacte', 'qualifie']),
+          (supabase as any).from('crm_opportunites').select('id').eq('societe_id', societeId).in('etape', ['prospection', 'qualification', 'proposition', 'negociation']),
+          (supabase as any).from('crm_factures').select('montant_paye').eq('societe_id', societeId).gte('created_at', `${month}-01`).lt('created_at', `${month}-32`).in('statut', ['partiellement_payee', 'payee']),
+        ])
+        const caEncaisse = (factures ?? []).reduce((sum: number, f: any) => sum + (f.montant_paye ?? 0), 0)
+        statsResult.crm = {
+          leadsActifs: (leads ?? []).length,
+          oppsEnCours: (opps ?? []).length,
+          caEncaisse,
         }
       })(),
 
@@ -317,6 +341,23 @@ export default function RapportsDashboard() {
                       <div className="bg-slate-50 rounded-xl p-2">
                         <p className="text-base font-bold text-slate-800">{stats.workflow.enAttente}</p>
                         <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_workflow_pending')}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {mod.key === 'crm' && stats.crm && (
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-slate-800">{stats.crm.leadsActifs}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_crm_leads')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-slate-800">{stats.crm.oppsEnCours}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_crm_opps')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-pink-700">{stats.crm.caEncaisse.toLocaleString('fr-FR')}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_crm_ca')}</p>
                       </div>
                     </div>
                   )}

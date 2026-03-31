@@ -5,6 +5,7 @@
   "nav_rh": "Human Resources",
   "nav_workflow": "Workflow",
   "nav_planning": "Planning",
+  "nav_crm": "CRM",
   "acces_refuse": "You do not have access to the Reports module.",
 
   "modules_section": "Active modules",
@@ -16,6 +17,9 @@
   "stat_planning_projets": "Active projects",
   "stat_planning_taches":  "Tasks in progress",
   "stat_planning_retard":  "Overdue tasks",
+  "stat_crm_leads":        "Active leads",
+  "stat_crm_opps":         "Ongoing opportunities",
+  "stat_crm_ca":           "Collected revenue (month)",
 
   "card_rh_title": "Human Resources",
   "card_rh_desc": "Attendance, leave and payroll",

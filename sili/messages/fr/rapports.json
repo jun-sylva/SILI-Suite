@@ -5,6 +5,7 @@
   "nav_rh": "Ressources Humaines",
   "nav_workflow": "Workflow",
   "nav_planning": "Planning",
+  "nav_crm": "CRM",
   "acces_refuse": "Vous n'avez pas accès au module Rapports.",
 
   "modules_section": "Modules actifs",
@@ -16,6 +17,9 @@
   "stat_planning_projets": "Projets actifs",
   "stat_planning_taches":  "Tâches en cours",
   "stat_planning_retard":  "Tâches en retard",
+  "stat_crm_leads":        "Leads actifs",
+  "stat_crm_opps":         "Opportunités en cours",
+  "stat_crm_ca":           "CA encaissé (mois)",
 
   "card_rh_title": "Ressources Humaines",
   "card_rh_desc": "Présences, congés et paie",
