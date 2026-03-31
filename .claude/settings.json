@@ -35,7 +35,12 @@
       "Bash(xargs cat:*)",
       "Bash(cat /Users/junior/Documents/project/github/SILI-Suite/sili/supabase/migrations/*.sql)",
       "Bash(ls -la /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/crm/)",
-      "Bash(cat /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning/page.tsx)"
+      "Bash(cat /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning/page.tsx)",
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite -type f -path *stock* -name *[Aa]rticle*)",
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/components -type f -name *.tsx)",
+      "Bash(ls -la /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rapports/)",
+      "Bash(tree -L 3 /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/stock)",
+      "Bash(find /Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/stock -type f -o -type d)"
     ],
     "additionalDirectories": [
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",

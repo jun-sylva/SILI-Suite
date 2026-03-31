@@ -1,0 +1,81 @@
+{
+  "page_title": "Rapport Stock",
+  "page_desc":  "Analyse du catalogue, des mouvements et de la valorisation du stock",
+
+  "tab_catalogue":    "Catalogue",
+  "tab_mouvements":   "Mouvements",
+  "tab_valorisation": "Valorisation",
+  "tab_alertes":      "Alertes",
+
+  "filter_year":      "Année",
+  "filter_month":     "Mois",
+  "filter_categorie": "Catégorie",
+  "filter_niveau":    "Niveau stock",
+  "filter_all":       "Tous",
+  "filter_normal":    "Normal",
+  "filter_alerte":    "En alerte",
+  "filter_rupture":   "En rupture",
+
+  "btn_generate": "Générer le rapport",
+  "btn_csv":      "CSV",
+  "btn_pdf":      "PDF",
+  "btn_carte":    "Voir la carte",
+
+  "results_count": "{count} résultat(s)",
+  "no_results":    "Aucun résultat pour les filtres sélectionnés.",
+
+  "kpi_valeur_stock":    "Valeur du stock",
+  "kpi_articles_actifs": "Articles actifs",
+  "kpi_rupture":         "En rupture",
+  "kpi_sous_minimum":    "Sous minimum",
+
+  "col_reference":    "Référence",
+  "col_designation":  "Désignation",
+  "col_categorie":    "Catégorie",
+  "col_unite":        "Unité",
+  "col_prix_achat":   "Prix achat",
+  "col_prix_vente":   "Prix vente",
+  "col_stock_actuel": "Stock actuel",
+  "col_stock_min":    "Minimum",
+  "col_valeur":       "Valeur stock",
+  "col_statut":       "Statut",
+
+  "col_date":        "Date",
+  "col_article":     "Article",
+  "col_type":        "Type",
+  "col_quantite":    "Quantité",
+  "col_prix_u":      "Prix unitaire",
+  "col_stock_avant": "Avant",
+  "col_stock_apres": "Après",
+  "col_motif":       "Motif",
+  "col_par":         "Par",
+
+  "col_nb_articles":  "Nb articles",
+  "col_stock_total":  "Stock total",
+  "col_valeur_achat": "Valeur achat",
+  "col_valeur_vente": "Valeur vente",
+  "col_marge":        "Marge potentielle",
+
+  "col_manquant": "Manquant",
+  "col_suggere":  "Qté suggérée",
+
+  "type_entree":     "Entrée",
+  "type_sortie":     "Sortie",
+  "type_ajustement": "Ajustement",
+  "type_inventaire": "Inventaire",
+
+  "badge_normal":  "Normal",
+  "badge_alerte":  "Alerte",
+  "badge_rupture": "Rupture",
+
+  "carte_title":      "Carte Stock",
+  "carte_identity":   "Identité de l'article",
+  "carte_niveaux":    "Niveaux de stock",
+  "carte_prix":       "Prix",
+  "carte_historique": "Historique des mouvements (30 derniers)",
+  "carte_valeur":     "Valeur en stock",
+  "carte_marge":      "Marge unitaire",
+
+  "btn_imprimer": "Imprimer / PDF",
+  "btn_retour":   "Retour au rapport"
+}

@@ -76,7 +76,7 @@ const MODULE_CONFIGS: ModuleConfig[] = [
     icon:     Package,
     color:    'border-amber-200 hover:border-amber-400',
     iconBg:   'bg-amber-50 text-amber-600',
-    href:     null,
+    href:     '/stock',
   },
   {
     key: 'crm',
@@ -132,11 +132,18 @@ interface CrmStats {
   caEncaisse:  number
 }
 
+interface StockStats {
+  valeurStock:  number
+  rupture:      number
+  sousMinimum:  number
+}
+
 type ModuleStats = {
   rh?:       RhStats
   workflow?: WorkflowStats
   planning?: PlanningStats
   crm?:      CrmStats
+  stock?:    StockStats
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -230,6 +237,21 @@ export default function RapportsDashboard() {
           leadsActifs: (leads ?? []).length,
           oppsEnCours: (opps ?? []).length,
           caEncaisse,
+        }
+      })(),
+
+      // Stock
+      mods.includes('stock') && (async () => {
+        const { data: articles } = await (supabase as any)
+          .from('stock_articles')
+          .select('stock_actuel, stock_minimum, prix_achat')
+          .eq('societe_id', societeId)
+          .eq('is_active', true)
+        const arts = articles ?? []
+        statsResult.stock = {
+          valeurStock: arts.reduce((s: number, a: any) => s + (a.stock_actuel ?? 0) * (a.prix_achat ?? 0), 0),
+          rupture:     arts.filter((a: any) => (a.stock_actuel ?? 0) <= 0).length,
+          sousMinimum: arts.filter((a: any) => (a.stock_actuel ?? 0) > 0 && (a.stock_actuel ?? 0) < (a.stock_minimum ?? 0)).length,
         }
       })(),
 
@@ -375,6 +397,23 @@ export default function RapportsDashboard() {
                       <div className="bg-slate-50 rounded-xl p-2">
                         <p className={`text-base font-bold ${stats.planning.tachesEnRetard > 0 ? 'text-red-600' : 'text-slate-800'}`}>{stats.planning.tachesEnRetard}</p>
                         <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_planning_retard')}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {mod.key === 'stock' && stats.stock && (
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className="text-base font-bold text-amber-700">{Math.round(stats.stock.valeurStock).toLocaleString('fr-FR')}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_stock_valeur')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className={`text-base font-bold ${stats.stock.rupture > 0 ? 'text-red-600' : 'text-slate-800'}`}>{stats.stock.rupture}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_stock_rupture')}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-2">
+                        <p className={`text-base font-bold ${stats.stock.sousMinimum > 0 ? 'text-orange-600' : 'text-slate-800'}`}>{stats.stock.sousMinimum}</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{t('stat_stock_sous_minimum')}</p>
                       </div>
                     </div>
                   )}

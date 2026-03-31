@@ -5,7 +5,8 @@
   "nav_rh": "Human Resources",
   "nav_workflow": "Workflow",
   "nav_planning": "Planning",
-  "nav_crm": "CRM",
+  "nav_crm":   "CRM",
+  "nav_stock": "Stock",
   "acces_refuse": "You do not have access to the Reports module.",
 
   "modules_section": "Active modules",
@@ -19,7 +20,10 @@
   "stat_planning_retard":  "Overdue tasks",
   "stat_crm_leads":        "Active leads",
   "stat_crm_opps":         "Ongoing opportunities",
-  "stat_crm_ca":           "Collected revenue (month)",
+  "stat_crm_ca":             "Collected revenue (month)",
+  "stat_stock_valeur":       "Stock value",
+  "stat_stock_rupture":      "Out of stock",
+  "stat_stock_sous_minimum": "Below minimum",
 
   "card_rh_title": "Human Resources",
   "card_rh_desc": "Attendance, leave and payroll",

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, Users, GitBranch, CalendarDays, PhoneCall, Loader2 } from 'lucide-react'
+import { LayoutDashboard, Users, GitBranch, CalendarDays, PhoneCall, Package, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 
 type NavItem = {
@@ -68,6 +68,7 @@ export default function RapportsLayout({ children }: { children: React.ReactNode
     { id: 'workflow',  label: t('nav_workflow'),  href: `${base}/workflow`,  icon: GitBranch,       exact: false },
     { id: 'planning',  label: t('nav_planning'),  href: `${base}/planning`,  icon: CalendarDays,    exact: false },
     { id: 'crm',       label: t('nav_crm'),       href: `${base}/crm`,       icon: PhoneCall,       exact: false },
+    { id: 'stock',     label: t('nav_stock'),     href: `${base}/stock`,     icon: Package,         exact: false },
   ]
 
   return (
@@ -106,6 +107,12 @@ export default function RapportsLayout({ children }: { children: React.ReactNode
                 <RapportsNavItem
                   item={allNavItems[4]}
                   isActive={pathname.startsWith(allNavItems[4].href)}
+                />
+              )}
+              {activeModules.includes('stock') && (
+                <RapportsNavItem
+                  item={allNavItems[5]}
+                  isActive={pathname.startsWith(allNavItems[5].href)}
                 />
               )}
             </>

@@ -5,7 +5,8 @@
   "nav_rh": "Ressources Humaines",
   "nav_workflow": "Workflow",
   "nav_planning": "Planning",
-  "nav_crm": "CRM",
+  "nav_crm":   "CRM",
+  "nav_stock": "Stock",
   "acces_refuse": "Vous n'avez pas accès au module Rapports.",
 
   "modules_section": "Modules actifs",
@@ -19,7 +20,10 @@
   "stat_planning_retard":  "Tâches en retard",
   "stat_crm_leads":        "Leads actifs",
   "stat_crm_opps":         "Opportunités en cours",
-  "stat_crm_ca":           "CA encaissé (mois)",
+  "stat_crm_ca":              "CA encaissé (mois)",
+  "stat_stock_valeur":        "Valeur du stock",
+  "stat_stock_rupture":       "En rupture",
+  "stat_stock_sous_minimum":  "Sous minimum",
 
   "card_rh_title": "Ressources Humaines",
   "card_rh_desc": "Présences, congés et paie",

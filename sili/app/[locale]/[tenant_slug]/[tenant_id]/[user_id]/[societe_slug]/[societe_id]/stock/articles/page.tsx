@@ -9,14 +9,52 @@ import { writeLog } from '@/lib/audit'
 import { toast } from 'sonner'
 import {
   Package, Plus, Search, Pencil, ChevronRight,
-  Loader2, X, ArrowDownCircle, ArrowUpCircle, ToggleLeft,
+  Loader2, X, ArrowDownCircle, ArrowUpCircle, ToggleLeft, Info,
 } from 'lucide-react'
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group inline-flex items-center ml-1">
+      <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-56 rounded-lg bg-slate-800 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 leading-relaxed">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+      </span>
+    </span>
+  )
+}
 
 const fmtQte = (n: number) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 3 }).format(n)
 const fmt    = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n))
 
 const inputCls  = 'block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400'
 const selectCls = 'block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400'
+
+const CATEGORIES_BASE: { value: string; labelKey: string }[] = [
+  { value: 'Alimentation & Boissons',          labelKey: 'cat_alimentation' },
+  { value: 'BTP & Matériaux de construction',   labelKey: 'cat_btp'          },
+  { value: 'Consommables',                      labelKey: 'cat_consommables'  },
+  { value: 'Électronique & Informatique',       labelKey: 'cat_electronique'  },
+  { value: 'Emballages',                        labelKey: 'cat_emballages'    },
+  { value: 'Fournitures de bureau',             labelKey: 'cat_fournitures'   },
+  { value: 'Hygiène & Nettoyage',               labelKey: 'cat_hygiene'       },
+  { value: 'Matières premières',                labelKey: 'cat_matieres'      },
+  { value: 'Médicaments & Parapharmacie',       labelKey: 'cat_medicaments'   },
+  { value: 'Mobilier & Équipements',            labelKey: 'cat_mobilier'      },
+  { value: 'Outillage & Quincaillerie',         labelKey: 'cat_outillage'     },
+  { value: 'Pièces détachées',                  labelKey: 'cat_pieces'        },
+  { value: 'Produits chimiques',                labelKey: 'cat_chimiques'     },
+  { value: 'Produits finis',                    labelKey: 'cat_finis'         },
+  { value: 'Textile & Habillement',             labelKey: 'cat_textile'       },
+]
+
+const UNITES_GROUPES = [
+  { groupeKey: 'unite_groupe_quantite', items: ['unité', 'pièce', 'paire', 'dizaine', 'douzaine', 'lot', 'boîte', 'carton', 'palette', 'sac', 'paquet'] },
+  { groupeKey: 'unite_groupe_poids',    items: ['g', 'kg', 'tonne'] },
+  { groupeKey: 'unite_groupe_volume',   items: ['ml', 'cl', 'l', 'm³'] },
+  { groupeKey: 'unite_groupe_longueur', items: ['cm', 'm', 'km'] },
+]
+const UNITES_FLAT = UNITES_GROUPES.flatMap(g => g.items)
 
 interface Article {
   id: string; reference: string; designation: string; description: string | null
@@ -58,16 +96,20 @@ export default function ArticlesPage() {
   const [editing,      setEditing]      = useState<Article | null>(null)
   const [saving,       setSaving]       = useState(false)
 
-  const [fRef,      setFRef]      = useState('')
-  const [fDes,      setFDes]      = useState('')
-  const [fDesc,     setFDesc]     = useState('')
-  const [fCat,      setFCat]      = useState('')
-  const [fUnite,    setFUnite]    = useState('unité')
-  const [fPrixA,    setFPrixA]    = useState('')
-  const [fPrixV,    setFPrixV]    = useState('')
-  const [fStockMin, setFStockMin] = useState('')
-  const [fStockMax, setFStockMax] = useState('')
-  const [fEmpl,     setFEmpl]     = useState('')
+  const [fRef,         setFRef]         = useState('')
+  const [fDes,         setFDes]         = useState('')
+  const [fDesc,        setFDesc]        = useState('')
+  const [fCat,         setFCat]         = useState('')
+  const [newCatMode,   setNewCatMode]   = useState(false)
+  const [newCatValue,  setNewCatValue]  = useState('')
+  const [fUnite,       setFUnite]       = useState('unité')
+  const [newUniteMode, setNewUniteMode] = useState(false)
+  const [newUniteValue,setNewUniteValue]= useState('')
+  const [fPrixA,       setFPrixA]       = useState('')
+  const [fPrixV,       setFPrixV]       = useState('')
+  const [fStockMin,    setFStockMin]    = useState('')
+  const [fStockMax,    setFStockMax]    = useState('')
+  const [fEmpl,        setFEmpl]        = useState('')
 
   // ── Modal mouvement rapide ──────────────────────────────────
   const [showMouv,  setShowMouv]  = useState(false)
@@ -140,15 +182,20 @@ export default function ArticlesPage() {
   // ── Ouvrir form ─────────────────────────────────────────────
   function openNew() {
     setEditing(null)
-    setFRef(''); setFDes(''); setFDesc(''); setFCat(''); setFUnite('unité')
+    setFRef(''); setFDes(''); setFDesc(''); setFCat(''); setNewCatMode(false); setNewCatValue('')
+    setFUnite('unité'); setNewUniteMode(false); setNewUniteValue('')
     setFPrixA(''); setFPrixV(''); setFStockMin('0'); setFStockMax(''); setFEmpl('')
     setShowForm(true)
   }
 
   function openEdit(a: Article) {
     setEditing(a)
-    setFRef(a.reference); setFDes(a.designation); setFDesc(a.description ?? ''); setFCat(a.categorie ?? '')
-    setFUnite(a.unite); setFPrixA(String(a.prix_achat)); setFPrixV(String(a.prix_vente))
+    setFRef(a.reference); setFDes(a.designation); setFDesc(a.description ?? '')
+    setFCat(a.categorie ?? ''); setNewCatMode(false); setNewCatValue('')
+    const uniteKnown = UNITES_FLAT.includes(a.unite)
+    setFUnite(uniteKnown ? a.unite : '__autre__')
+    setNewUniteMode(!uniteKnown); setNewUniteValue(uniteKnown ? '' : a.unite)
+    setFPrixA(String(a.prix_achat)); setFPrixV(String(a.prix_vente))
     setFStockMin(String(a.stock_minimum)); setFStockMax(a.stock_maximum != null ? String(a.stock_maximum) : ''); setFEmpl(a.emplacement ?? '')
     setShowForm(true)
   }
@@ -158,7 +205,8 @@ export default function ArticlesPage() {
     setSaving(true)
     const payload = {
       reference: fRef.trim(), designation: fDes.trim(), description: fDesc || null,
-      categorie: fCat || null, unite: fUnite || 'unité',
+      categorie: (newCatMode ? newCatValue.trim() : fCat) || null,
+      unite: (newUniteMode ? newUniteValue.trim() : fUnite) || 'unité',
       prix_achat: parseFloat(fPrixA) || 0, prix_vente: parseFloat(fPrixV) || 0,
       stock_minimum: parseFloat(fStockMin) || 0,
       stock_maximum: fStockMax ? parseFloat(fStockMax) : null,
@@ -373,44 +421,121 @@ export default function ArticlesPage() {
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_reference')} *</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_reference')} *
+                  <InfoTooltip text="Code unique identifiant l'article (ex : ART-001). Non modifiable après la création." />
+                </label>
                 <input value={fRef} onChange={e => setFRef(e.target.value)} className={inputCls} disabled={!!editing} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_designation')} *</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_designation')} *
+                  <InfoTooltip text="Nom commercial de l'article tel qu'il apparaît sur les documents (factures, bons de livraison…)." />
+                </label>
                 <input value={fDes} onChange={e => setFDes(e.target.value)} className={inputCls} />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_description')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_description')}
+                  <InfoTooltip text="Informations complémentaires sur l'article : composition, caractéristiques techniques, remarques…" />
+                </label>
                 <textarea value={fDesc} onChange={e => setFDesc(e.target.value)} rows={2} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_categorie')}</label>
-                <input value={fCat} onChange={e => setFCat(e.target.value)} className={inputCls} list="cats" />
-                <datalist id="cats">{categories.map(c => <option key={c} value={c} />)}</datalist>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_categorie')}
+                  <InfoTooltip text="Famille ou groupe de l'article pour faciliter les recherches et les rapports." />
+                </label>
+                <select
+                  value={newCatMode ? '__new__' : fCat}
+                  onChange={e => {
+                    if (e.target.value === '__new__') { setNewCatMode(true); setNewCatValue('') }
+                    else { setNewCatMode(false); setFCat(e.target.value) }
+                  }}
+                  className={selectCls}
+                >
+                  <option value="">{t('select_placeholder')}</option>
+                  {CATEGORIES_BASE.map(c => (
+                    <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
+                  ))}
+                  {categories.filter(c => !CATEGORIES_BASE.some(p => p.value === c)).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="__new__">{t('cat_nouvelle')}</option>
+                </select>
+                {newCatMode && (
+                  <input
+                    autoFocus
+                    placeholder={t('cat_nouvelle_placeholder')}
+                    value={newCatValue}
+                    onChange={e => setNewCatValue(e.target.value)}
+                    className={`${inputCls} mt-2`}
+                  />
+                )}
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_unite')}</label>
-                <input value={fUnite} onChange={e => setFUnite(e.target.value)} className={inputCls} />
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_unite')}
+                  <InfoTooltip text="Unité de mesure utilisée pour le stock (ex : pcs, kg, litre, boîte). Par défaut : « unité »." />
+                </label>
+                <select
+                  value={newUniteMode ? '__autre__' : fUnite}
+                  onChange={e => {
+                    if (e.target.value === '__autre__') { setNewUniteMode(true); setNewUniteValue('') }
+                    else { setNewUniteMode(false); setFUnite(e.target.value) }
+                  }}
+                  className={selectCls}
+                >
+                  {UNITES_GROUPES.map(g => (
+                    <optgroup key={g.groupeKey} label={t(g.groupeKey)}>
+                      {g.items.map(u => <option key={u} value={u}>{u}</option>)}
+                    </optgroup>
+                  ))}
+                  <option value="__autre__">{t('unite_autre')}</option>
+                </select>
+                {newUniteMode && (
+                  <input
+                    autoFocus
+                    placeholder={t('unite_autre_placeholder')}
+                    value={newUniteValue}
+                    onChange={e => setNewUniteValue(e.target.value)}
+                    className={`${inputCls} mt-2`}
+                  />
+                )}
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_prix_achat')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_prix_achat')}
+                  <InfoTooltip text="Coût d'acquisition de l'article (hors taxes). Utilisé pour calculer la marge et valoriser le stock." />
+                </label>
                 <input type="number" min="0" value={fPrixA} onChange={e => setFPrixA(e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_prix_vente')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_prix_vente')}
+                  <InfoTooltip text="Prix facturé au client (hors taxes). Sert de tarif par défaut lors de la création de devis ou factures." />
+                </label>
                 <input type="number" min="0" value={fPrixV} onChange={e => setFPrixV(e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_stock_min')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_stock_min')}
+                  <InfoTooltip text="Seuil minimal en dessous duquel une alerte de réapprovisionnement est déclenchée. Mettre 0 pour désactiver l'alerte." />
+                </label>
                 <input type="number" min="0" value={fStockMin} onChange={e => setFStockMin(e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_stock_max')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_stock_max')}
+                  <InfoTooltip text="Capacité maximale de stockage souhaitée. Permet d'éviter les surcommandes. Laisser vide si illimité." />
+                </label>
                 <input type="number" min="0" value={fStockMax} onChange={e => setFStockMax(e.target.value)} className={inputCls} />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t('field_emplacement')}</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 flex items-center">
+                  {t('field_emplacement')}
+                  <InfoTooltip text="Localisation physique de l'article dans l'entrepôt ou le magasin (ex : Rayon A, Étagère 3, Cellule F2)." />
+                </label>
                 <input value={fEmpl} onChange={e => setFEmpl(e.target.value)} className={inputCls} />
               </div>
             </div>

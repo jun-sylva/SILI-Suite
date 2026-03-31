@@ -1,0 +1,81 @@
+{
+  "page_title": "Stock Report",
+  "page_desc":  "Analysis of the catalogue, movements and stock valuation",
+
+  "tab_catalogue":    "Catalogue",
+  "tab_mouvements":   "Movements",
+  "tab_valorisation": "Valuation",
+  "tab_alertes":      "Alerts",
+
+  "filter_year":      "Year",
+  "filter_month":     "Month",
+  "filter_categorie": "Category",
+  "filter_niveau":    "Stock level",
+  "filter_all":       "All",
+  "filter_normal":    "Normal",
+  "filter_alerte":    "Alert",
+  "filter_rupture":   "Out of stock",
+
+  "btn_generate": "Generate report",
+  "btn_csv":      "CSV",
+  "btn_pdf":      "PDF",
+  "btn_carte":    "View card",
+
+  "results_count": "{count} result(s)",
+  "no_results":    "No results for the selected filters.",
+
+  "kpi_valeur_stock":    "Stock value",
+  "kpi_articles_actifs": "Active items",
+  "kpi_rupture":         "Out of stock",
+  "kpi_sous_minimum":    "Below minimum",
+
+  "col_reference":    "Reference",
+  "col_designation":  "Name",
+  "col_categorie":    "Category",
+  "col_unite":        "Unit",
+  "col_prix_achat":   "Purchase price",
+  "col_prix_vente":   "Sale price",
+  "col_stock_actuel": "Current stock",
+  "col_stock_min":    "Minimum",
+  "col_valeur":       "Stock value",
+  "col_statut":       "Status",
+
+  "col_date":        "Date",
+  "col_article":     "Item",
+  "col_type":        "Type",
+  "col_quantite":    "Quantity",
+  "col_prix_u":      "Unit price",
+  "col_stock_avant": "Before",
+  "col_stock_apres": "After",
+  "col_motif":       "Reason",
+  "col_par":         "By",
+
+  "col_nb_articles":  "Items",
+  "col_stock_total":  "Total stock",
+  "col_valeur_achat": "Purchase value",
+  "col_valeur_vente": "Sale value",
+  "col_marge":        "Potential margin",
+
+  "col_manquant": "Missing",
+  "col_suggere":  "Suggested qty",
+
+  "type_entree":     "Receipt",
+  "type_sortie":     "Issue",
+  "type_ajustement": "Adjustment",
+  "type_inventaire": "Inventory",
+
+  "badge_normal":  "Normal",
+  "badge_alerte":  "Alert",
+  "badge_rupture": "Out of stock",
+
+  "carte_title":      "Stock Card",
+  "carte_identity":   "Item identity",
+  "carte_niveaux":    "Stock levels",
+  "carte_prix":       "Pricing",
+  "carte_historique": "Movement history (last 30)",
+  "carte_valeur":     "Stock value",
+  "carte_marge":      "Unit margin",
+
+  "btn_imprimer": "Print / PDF",
+  "btn_retour":   "Back to report"
+}

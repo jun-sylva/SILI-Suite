@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase/client'
 import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import {
   LayoutDashboard, Package, ArrowLeftRight,
-  ClipboardList, AlertTriangle, Loader2, ShieldOff,
+  ClipboardList, AlertTriangle, BarChart3, Loader2, ShieldOff,
 } from 'lucide-react'
 
 type NavItem = {
@@ -90,12 +90,15 @@ export default function StockLayout({ children }: { children: React.ReactNode })
     check()
   }, [societeId, router])
 
+  const rapportHref = `/${tenantSlug}/${tenantId}/${userId}/${societeSlug}/${societeId}/rapports/stock`
+
   const navItems: NavItem[] = [
     { id: 'dashboard',  label: t('nav_dashboard'),  href: base,                    icon: LayoutDashboard, exact: true  },
     { id: 'articles',   label: t('nav_articles'),   href: `${base}/articles`,      icon: Package,         exact: false },
     { id: 'mouvements', label: t('nav_mouvements'), href: `${base}/mouvements`,    icon: ArrowLeftRight,  exact: false },
     { id: 'inventaire', label: t('nav_inventaire'), href: `${base}/inventaire`,    icon: ClipboardList,   exact: false },
     { id: 'alertes',    label: t('nav_alertes'),    href: `${base}/alertes`,       icon: AlertTriangle,   exact: false, badge: alertBadge },
+    { id: 'rapport',    label: t('nav_rapport'),    href: rapportHref,             icon: BarChart3,       exact: false },
   ]
 
   if (checking) {
