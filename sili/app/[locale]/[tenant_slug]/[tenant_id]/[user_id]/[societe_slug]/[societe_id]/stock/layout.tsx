@@ -76,13 +76,14 @@ export default function StockLayout({ children }: { children: React.ReactNode })
       }
 
       // Comptage alertes
-      const { count } = await (supabase as any)
+      const { data } = await supabase
         .from('stock_articles')
-        .select('id', { count: 'exact', head: true })
+        .select('stock_actuel, stock_minimum')
         .eq('societe_id', societeId)
         .eq('is_active', true)
-        .lt('stock_actuel', (supabase as any).raw('stock_minimum'))
-      setAlertBadge(count ?? 0)
+      
+      const alertsCount = (data ?? []).filter((a: any) => a.stock_actuel < a.stock_minimum).length
+      setAlertBadge(alertsCount)
 
       setChecking(false)
     }

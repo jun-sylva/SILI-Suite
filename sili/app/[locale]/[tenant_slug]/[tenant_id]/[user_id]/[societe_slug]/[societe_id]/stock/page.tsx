@@ -93,10 +93,11 @@ export default function StockDashboard() {
       .select('id, reference, designation, stock_actuel, stock_minimum, unite')
       .eq('societe_id', societeId)
       .eq('is_active', true)
-      .lt('stock_actuel', (supabase as any).raw('stock_minimum'))
-      .order('stock_actuel', { ascending: true })
-      .limit(5)
-    setAlertes(data ?? [])
+      
+    const underMin = (data ?? []).filter((a: any) => a.stock_actuel < a.stock_minimum)
+    underMin.sort((a: any, b: any) => a.stock_actuel - b.stock_actuel)
+    
+    setAlertes(underMin.slice(0, 5))
   }
 
   async function loadMouvements() {
