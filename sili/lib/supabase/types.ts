@@ -412,6 +412,501 @@ export type Database = {
           },
         ]
       }
+      crm_activites: {
+        Row: {
+          assigne_a: string | null
+          created_at: string | null
+          created_by: string | null
+          date_prevue: string | null
+          description: string | null
+          id: string
+          lead_id: string | null
+          opportunite_id: string | null
+          societe_id: string
+          statut: string
+          tenant_id: string
+          titre: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigne_a?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_prevue?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          opportunite_id?: string | null
+          societe_id: string
+          statut?: string
+          tenant_id: string
+          titre: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigne_a?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_prevue?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          opportunite_id?: string | null
+          societe_id?: string
+          statut?: string
+          tenant_id?: string
+          titre?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activites_assigne_a_fkey"
+            columns: ["assigne_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activites_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activites_opportunite_id_fkey"
+            columns: ["opportunite_id"]
+            isOneToOne: false
+            referencedRelation: "crm_opportunites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activites_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_contacts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          entreprise: string | null
+          id: string
+          nom: string
+          notes: string | null
+          poste: string | null
+          prenom: string | null
+          societe_id: string
+          telephone: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          entreprise?: string | null
+          id?: string
+          nom: string
+          notes?: string | null
+          poste?: string | null
+          prenom?: string | null
+          societe_id: string
+          telephone?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          entreprise?: string | null
+          id?: string
+          nom?: string
+          notes?: string | null
+          poste?: string | null
+          prenom?: string | null
+          societe_id?: string
+          telephone?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_devis: {
+        Row: {
+          assigne_a: string | null
+          client_nom: string | null
+          contact_id: string | null
+          created_at: string | null
+          created_by: string | null
+          date_emission: string
+          date_expiration: string | null
+          id: string
+          montant_ht: number
+          montant_ttc: number
+          notes: string | null
+          numero: string | null
+          objet: string
+          opportunite_id: string | null
+          remise_globale: number
+          societe_id: string
+          statut: string
+          tenant_id: string
+          tva_pct: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigne_a?: string | null
+          client_nom?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_emission?: string
+          date_expiration?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          notes?: string | null
+          numero?: string | null
+          objet: string
+          opportunite_id?: string | null
+          remise_globale?: number
+          societe_id: string
+          statut?: string
+          tenant_id: string
+          tva_pct?: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigne_a?: string | null
+          client_nom?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_emission?: string
+          date_expiration?: string | null
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          notes?: string | null
+          numero?: string | null
+          objet?: string
+          opportunite_id?: string | null
+          remise_globale?: number
+          societe_id?: string
+          statut?: string
+          tenant_id?: string
+          tva_pct?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_devis_assigne_a_fkey"
+            columns: ["assigne_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_devis_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_devis_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_devis_opportunite_id_fkey"
+            columns: ["opportunite_id"]
+            isOneToOne: false
+            referencedRelation: "crm_opportunites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_devis_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_devis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_devis_lignes: {
+        Row: {
+          description: string | null
+          designation: string
+          devis_id: string
+          id: string
+          montant_ht: number
+          ordre: number
+          prix_unitaire: number
+          quantite: number
+          remise_pct: number
+        }
+        Insert: {
+          description?: string | null
+          designation: string
+          devis_id: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Update: {
+          description?: string | null
+          designation?: string
+          devis_id?: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_devis_lignes_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "crm_devis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_factures: {
+        Row: {
+          assigne_a: string | null
+          client_nom: string | null
+          conditions_paiement: string | null
+          contact_id: string | null
+          created_at: string | null
+          created_by: string | null
+          date_echeance: string | null
+          date_emission: string
+          devis_id: string | null
+          id: string
+          montant_ht: number
+          montant_paye: number
+          montant_restant: number
+          montant_ttc: number
+          notes: string | null
+          numero: string | null
+          objet: string
+          opportunite_id: string | null
+          remise_globale: number
+          societe_id: string
+          statut: string
+          tenant_id: string
+          tva_pct: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigne_a?: string | null
+          client_nom?: string | null
+          conditions_paiement?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_echeance?: string | null
+          date_emission?: string
+          devis_id?: string | null
+          id?: string
+          montant_ht?: number
+          montant_paye?: number
+          montant_restant?: number
+          montant_ttc?: number
+          notes?: string | null
+          numero?: string | null
+          objet: string
+          opportunite_id?: string | null
+          remise_globale?: number
+          societe_id: string
+          statut?: string
+          tenant_id: string
+          tva_pct?: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigne_a?: string | null
+          client_nom?: string | null
+          conditions_paiement?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_echeance?: string | null
+          date_emission?: string
+          devis_id?: string | null
+          id?: string
+          montant_ht?: number
+          montant_paye?: number
+          montant_restant?: number
+          montant_ttc?: number
+          notes?: string | null
+          numero?: string | null
+          objet?: string
+          opportunite_id?: string | null
+          remise_globale?: number
+          societe_id?: string
+          statut?: string
+          tenant_id?: string
+          tva_pct?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_factures_assigne_a_fkey"
+            columns: ["assigne_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "crm_devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_opportunite_id_fkey"
+            columns: ["opportunite_id"]
+            isOneToOne: false
+            referencedRelation: "crm_opportunites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_factures_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_factures_lignes: {
+        Row: {
+          description: string | null
+          designation: string
+          facture_id: string
+          id: string
+          montant_ht: number
+          ordre: number
+          prix_unitaire: number
+          quantite: number
+          remise_pct: number
+        }
+        Insert: {
+          description?: string | null
+          designation: string
+          facture_id: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Update: {
+          description?: string | null
+          designation?: string
+          facture_id?: string
+          id?: string
+          montant_ht?: number
+          ordre?: number
+          prix_unitaire?: number
+          quantite?: number
+          remise_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_factures_lignes_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "crm_factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_leads: {
         Row: {
           assigne_a: string | null
@@ -595,187 +1090,98 @@ export type Database = {
           },
         ]
       }
-      crm_activites: {
-        Row: {
-          id: string; tenant_id: string; societe_id: string
-          type: 'appel' | 'email' | 'reunion' | 'autre'
-          titre: string; description: string | null
-          date_prevue: string | null
-          statut: 'a_faire' | 'fait' | 'annule'
-          assigne_a: string | null; lead_id: string | null; opportunite_id: string | null
-          created_by: string | null; created_at: string | null; updated_at: string | null
-        }
-        Insert: {
-          id?: string; tenant_id: string; societe_id: string
-          type?: 'appel' | 'email' | 'reunion' | 'autre'
-          titre: string; description?: string | null
-          date_prevue?: string | null
-          statut?: 'a_faire' | 'fait' | 'annule'
-          assigne_a?: string | null; lead_id?: string | null; opportunite_id?: string | null
-          created_by?: string | null; created_at?: string | null; updated_at?: string | null
-        }
-        Update: {
-          id?: string; tenant_id?: string; societe_id?: string
-          type?: 'appel' | 'email' | 'reunion' | 'autre'
-          titre?: string; description?: string | null
-          date_prevue?: string | null
-          statut?: 'a_faire' | 'fait' | 'annule'
-          assigne_a?: string | null; lead_id?: string | null; opportunite_id?: string | null
-          created_by?: string | null; updated_at?: string | null
-        }
-        Relationships: []
-      }
-      crm_contacts: {
-        Row: {
-          id: string; tenant_id: string; societe_id: string
-          nom: string; prenom: string | null; email: string | null
-          telephone: string | null; entreprise: string | null; poste: string | null
-          notes: string | null
-          created_by: string | null; created_at: string | null; updated_at: string | null
-        }
-        Insert: {
-          id?: string; tenant_id: string; societe_id: string
-          nom: string; prenom?: string | null; email?: string | null
-          telephone?: string | null; entreprise?: string | null; poste?: string | null
-          notes?: string | null
-          created_by?: string | null; created_at?: string | null; updated_at?: string | null
-        }
-        Update: {
-          id?: string; tenant_id?: string; societe_id?: string
-          nom?: string; prenom?: string | null; email?: string | null
-          telephone?: string | null; entreprise?: string | null; poste?: string | null
-          notes?: string | null; updated_at?: string | null
-        }
-        Relationships: []
-      }
-      crm_devis: {
-        Row: {
-          id: string; tenant_id: string; societe_id: string
-          numero: string | null; objet: string
-          statut: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
-          client_nom: string | null; contact_id: string | null; opportunite_id: string | null
-          date_emission: string; date_expiration: string | null
-          remise_globale: number; tva_pct: number
-          montant_ht: number; montant_ttc: number
-          notes: string | null
-          assigne_a: string | null; created_by: string | null
-          created_at: string | null; updated_at: string | null
-        }
-        Insert: {
-          id?: string; tenant_id: string; societe_id: string
-          numero?: string | null; objet: string
-          statut?: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
-          client_nom?: string | null; contact_id?: string | null; opportunite_id?: string | null
-          date_emission?: string; date_expiration?: string | null
-          remise_globale?: number; tva_pct?: number
-          montant_ht?: number; montant_ttc?: number
-          notes?: string | null
-          assigne_a?: string | null; created_by?: string | null
-        }
-        Update: {
-          objet?: string; statut?: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire'
-          client_nom?: string | null; contact_id?: string | null; opportunite_id?: string | null
-          date_emission?: string; date_expiration?: string | null
-          remise_globale?: number; tva_pct?: number
-          montant_ht?: number; montant_ttc?: number
-          notes?: string | null; assigne_a?: string | null; updated_at?: string | null
-        }
-        Relationships: []
-      }
-      crm_devis_lignes: {
-        Row: {
-          id: string; devis_id: string; ordre: number
-          designation: string; description: string | null
-          quantite: number; prix_unitaire: number; remise_pct: number; montant_ht: number
-        }
-        Insert: {
-          id?: string; devis_id: string; ordre?: number
-          designation: string; description?: string | null
-          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
-        }
-        Update: {
-          ordre?: number; designation?: string; description?: string | null
-          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
-        }
-        Relationships: []
-      }
-      crm_factures: {
-        Row: {
-          id: string; tenant_id: string; societe_id: string
-          numero: string | null; devis_id: string | null; opportunite_id: string | null
-          objet: string
-          statut: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
-          client_nom: string | null; contact_id: string | null
-          date_emission: string; date_echeance: string | null
-          remise_globale: number; tva_pct: number
-          montant_ht: number; montant_ttc: number
-          montant_paye: number; montant_restant: number
-          notes: string | null; conditions_paiement: string | null
-          assigne_a: string | null; created_by: string | null
-          created_at: string | null; updated_at: string | null
-        }
-        Insert: {
-          id?: string; tenant_id: string; societe_id: string
-          numero?: string | null; devis_id?: string | null; opportunite_id?: string | null
-          objet: string
-          statut?: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
-          client_nom?: string | null; contact_id?: string | null
-          date_emission?: string; date_echeance?: string | null
-          remise_globale?: number; tva_pct?: number
-          montant_ht?: number; montant_ttc?: number
-          montant_paye?: number; montant_restant?: number
-          notes?: string | null; conditions_paiement?: string | null
-          assigne_a?: string | null; created_by?: string | null
-        }
-        Update: {
-          devis_id?: string | null; opportunite_id?: string | null
-          objet?: string
-          statut?: 'brouillon' | 'emise' | 'partiellement_payee' | 'payee' | 'en_retard' | 'annulee'
-          client_nom?: string | null; contact_id?: string | null
-          date_emission?: string; date_echeance?: string | null
-          remise_globale?: number; tva_pct?: number
-          montant_ht?: number; montant_ttc?: number
-          montant_paye?: number; montant_restant?: number
-          notes?: string | null; conditions_paiement?: string | null
-          assigne_a?: string | null; updated_at?: string | null
-        }
-        Relationships: []
-      }
-      crm_factures_lignes: {
-        Row: {
-          id: string; facture_id: string; ordre: number
-          designation: string; description: string | null
-          quantite: number; prix_unitaire: number; remise_pct: number; montant_ht: number
-        }
-        Insert: {
-          id?: string; facture_id: string; ordre?: number
-          designation: string; description?: string | null
-          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
-        }
-        Update: {
-          ordre?: number; designation?: string; description?: string | null
-          quantite?: number; prix_unitaire?: number; remise_pct?: number; montant_ht?: number
-        }
-        Relationships: []
-      }
       crm_paiements: {
         Row: {
-          id: string; tenant_id: string; societe_id: string; facture_id: string
-          reference: string | null; montant: number
-          mode_paiement: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
-          date_paiement: string; notes: string | null
-          enregistre_par: string | null; created_at: string | null
+          created_at: string | null
+          date_paiement: string
+          enregistre_par: string | null
+          facture_id: string
+          id: string
+          mode_paiement: string
+          montant: number
+          notes: string | null
+          reference: string | null
+          societe_id: string
+          tenant_id: string
         }
         Insert: {
-          id?: string; tenant_id: string; societe_id: string; facture_id: string
-          reference?: string | null; montant: number
-          mode_paiement?: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
-          date_paiement?: string; notes?: string | null; enregistre_par?: string | null
+          created_at?: string | null
+          date_paiement?: string
+          enregistre_par?: string | null
+          facture_id: string
+          id?: string
+          mode_paiement?: string
+          montant: number
+          notes?: string | null
+          reference?: string | null
+          societe_id: string
+          tenant_id: string
         }
         Update: {
-          reference?: string | null; montant?: number
-          mode_paiement?: 'virement' | 'especes' | 'cheque' | 'mobile_money' | 'carte'
-          date_paiement?: string; notes?: string | null
+          created_at?: string | null
+          date_paiement?: string
+          enregistre_par?: string | null
+          facture_id?: string
+          id?: string
+          mode_paiement?: string
+          montant?: number
+          notes?: string | null
+          reference?: string | null
+          societe_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_paiements_enregistre_par_fkey"
+            columns: ["enregistre_par"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "crm_factures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_paiements_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_paiements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sequences: {
+        Row: {
+          annee: number
+          dernier_numero: number
+          societe_id: string
+          tenant_id: string
+          type: string
+        }
+        Insert: {
+          annee: number
+          dernier_numero?: number
+          societe_id: string
+          tenant_id: string
+          type: string
+        }
+        Update: {
+          annee?: number
+          dernier_numero?: number
+          societe_id?: string
+          tenant_id?: string
+          type?: string
         }
         Relationships: []
       }
@@ -871,6 +1277,313 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_evenements: {
+        Row: {
+          all_day: boolean
+          couleur: string
+          created_at: string
+          date_debut: string
+          date_fin: string
+          description: string | null
+          id: string
+          lien_meet: string | null
+          organisateur_id: string | null
+          participants: string[] | null
+          societe_id: string
+          tenant_id: string
+          titre: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          couleur?: string
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          description?: string | null
+          id?: string
+          lien_meet?: string | null
+          organisateur_id?: string | null
+          participants?: string[] | null
+          societe_id: string
+          tenant_id: string
+          titre: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          couleur?: string
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          description?: string | null
+          id?: string
+          lien_meet?: string | null
+          organisateur_id?: string | null
+          participants?: string[] | null
+          societe_id?: string
+          tenant_id?: string
+          titre?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_evenements_organisateur_id_fkey"
+            columns: ["organisateur_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_evenements_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_evenements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_jalons: {
+        Row: {
+          created_at: string
+          date_cible: string
+          id: string
+          projet_id: string
+          statut: string
+          titre: string
+        }
+        Insert: {
+          created_at?: string
+          date_cible: string
+          id?: string
+          projet_id: string
+          statut?: string
+          titre: string
+        }
+        Update: {
+          created_at?: string
+          date_cible?: string
+          id?: string
+          projet_id?: string
+          statut?: string
+          titre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_jalons_projet_id_fkey"
+            columns: ["projet_id"]
+            isOneToOne: false
+            referencedRelation: "plan_projets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_projets: {
+        Row: {
+          couleur: string
+          created_at: string
+          created_by: string | null
+          date_debut: string | null
+          date_fin: string | null
+          description: string | null
+          id: string
+          priorite: string
+          responsable_id: string | null
+          societe_id: string
+          statut: string
+          tenant_id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          couleur?: string
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description?: string | null
+          id?: string
+          priorite?: string
+          responsable_id?: string | null
+          societe_id: string
+          statut?: string
+          tenant_id: string
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          couleur?: string
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          description?: string | null
+          id?: string
+          priorite?: string
+          responsable_id?: string | null
+          societe_id?: string
+          statut?: string
+          tenant_id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_projets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_projets_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_projets_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_projets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_taches: {
+        Row: {
+          assigne_a: string | null
+          assigne_groupe: string | null
+          created_at: string
+          created_by: string | null
+          date_completee: string | null
+          date_debut: string | null
+          date_echeance: string | null
+          description: string | null
+          id: string
+          ordre: number
+          priorite: string
+          projet_id: string
+          societe_id: string
+          statut: string
+          tags: string[] | null
+          tenant_id: string
+          titre: string
+          updated_at: string
+          workflow_instance_id: string | null
+        }
+        Insert: {
+          assigne_a?: string | null
+          assigne_groupe?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_completee?: string | null
+          date_debut?: string | null
+          date_echeance?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number
+          priorite?: string
+          projet_id: string
+          societe_id: string
+          statut?: string
+          tags?: string[] | null
+          tenant_id: string
+          titre: string
+          updated_at?: string
+          workflow_instance_id?: string | null
+        }
+        Update: {
+          assigne_a?: string | null
+          assigne_groupe?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_completee?: string | null
+          date_debut?: string | null
+          date_echeance?: string | null
+          description?: string | null
+          id?: string
+          ordre?: number
+          priorite?: string
+          projet_id?: string
+          societe_id?: string
+          statut?: string
+          tags?: string[] | null
+          tenant_id?: string
+          titre?: string
+          updated_at?: string
+          workflow_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_taches_assigne_a_fkey"
+            columns: ["assigne_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_assigne_groupe_fkey"
+            columns: ["assigne_groupe"]
+            isOneToOne: false
+            referencedRelation: "user_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_projet_id_fkey"
+            columns: ["projet_id"]
+            isOneToOne: false
+            referencedRelation: "plan_projets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_taches_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
             referencedColumns: ["id"]
           },
         ]
@@ -1111,10 +1824,12 @@ export type Database = {
           date_naissance: string | null
           departement: string | null
           email: string | null
+          etat_civil: string | null
           id: string
           lieu_naissance: string | null
           matricule: string
           nationalite: string | null
+          nb_enfants: number
           nom: string
           photo_url: string | null
           poste: string | null
@@ -1139,10 +1854,12 @@ export type Database = {
           date_naissance?: string | null
           departement?: string | null
           email?: string | null
+          etat_civil?: string | null
           id?: string
           lieu_naissance?: string | null
           matricule?: string
           nationalite?: string | null
+          nb_enfants?: number
           nom: string
           photo_url?: string | null
           poste?: string | null
@@ -1167,10 +1884,12 @@ export type Database = {
           date_naissance?: string | null
           departement?: string | null
           email?: string | null
+          etat_civil?: string | null
           id?: string
           lieu_naissance?: string | null
           matricule?: string
           nationalite?: string | null
+          nb_enfants?: number
           nom?: string
           photo_url?: string | null
           poste?: string | null
@@ -1493,6 +2212,128 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventaire_lignes: {
+        Row: {
+          adjusted: boolean
+          article_id: string
+          created_at: string | null
+          ecart: number | null
+          id: string
+          inventaire_id: string
+          stock_compte: number | null
+          stock_theorique: number
+        }
+        Insert: {
+          adjusted?: boolean
+          article_id: string
+          created_at?: string | null
+          ecart?: number | null
+          id?: string
+          inventaire_id: string
+          stock_compte?: number | null
+          stock_theorique?: number
+        }
+        Update: {
+          adjusted?: boolean
+          article_id?: string
+          created_at?: string | null
+          ecart?: number | null
+          id?: string
+          inventaire_id?: string
+          stock_compte?: number | null
+          stock_theorique?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventaire_lignes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "stock_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventaire_lignes_inventaire_id_fkey"
+            columns: ["inventaire_id"]
+            isOneToOne: false
+            referencedRelation: "stock_inventaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_inventaires: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date_inventaire: string
+          id: string
+          notes: string | null
+          societe_id: string
+          statut: string
+          tenant_id: string
+          titre: string
+          updated_at: string | null
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date_inventaire?: string
+          id?: string
+          notes?: string | null
+          societe_id: string
+          statut?: string
+          tenant_id: string
+          titre: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date_inventaire?: string
+          id?: string
+          notes?: string | null
+          societe_id?: string
+          statut?: string
+          tenant_id?: string
+          titre?: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_inventaires_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventaires_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventaires_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_inventaires_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2964,6 +3805,15 @@ export type Database = {
       }
     }
     Functions: {
+      crm_next_numero: {
+        Args: {
+          p_annee: number
+          p_societe_id: string
+          p_tenant_id: string
+          p_type: string
+        }
+        Returns: number
+      }
       register_new_tenant: {
         Args: {
           p_admin_name: string
