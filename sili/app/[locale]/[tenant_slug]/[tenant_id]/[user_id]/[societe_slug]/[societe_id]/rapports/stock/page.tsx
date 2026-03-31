@@ -65,10 +65,6 @@ interface ValRow {
   valeur_achat: number; valeur_vente: number; marge: number
 }
 
-interface KpiData {
-  valeurStock: number; articlesActifs: number; rupture: number; sousMinimum: number
-}
-
 // ── Statut badge ───────────────────────────────────────────────────────────────
 
 function statutBadge(a: ArticleRow): { label: string; cls: string } {
@@ -277,8 +273,7 @@ export default function RapportStockPage() {
   const [generated, setGenerated] = useState(false)
   const [articles,  setArticles]  = useState<ArticleRow[]>([])
   const [mouv,      setMouv]      = useState<MouvRow[]>([])
-  const [kpis,      setKpis]      = useState<KpiData>({ valeurStock: 0, articlesActifs: 0, rupture: 0, sousMinimum: 0 })
-  const [categories,setCategories]= useState<string[]>([])
+  const [categories,setCategories] = useState<string[]>([])
 
   // ── Période label ──────────────────────────────────────────────────────────
   function periodLabel() {
@@ -316,13 +311,6 @@ export default function RapportStockPage() {
 
     const cats = [...new Set(arts.map((a: any) => a.categorie).filter(Boolean))].sort() as string[]
     setCategories(cats)
-
-    setKpis({
-      valeurStock:   arts.reduce((s: number, a: any) => s + (a.stock_actuel ?? 0) * (a.prix_achat ?? 0), 0),
-      articlesActifs: arts.length,
-      rupture:       arts.filter((a: any) => (a.stock_actuel ?? 0) <= 0).length,
-      sousMinimum:   arts.filter((a: any) => (a.stock_actuel ?? 0) > 0 && (a.stock_actuel ?? 0) < (a.stock_minimum ?? 0)).length,
-    })
 
     setGenerated(true)
     setLoading(false)
@@ -418,106 +406,116 @@ export default function RapportStockPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
 
       {/* En-tête */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('page_title')}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('page_desc')}</p>
+      <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
+          <Package className="h-5 w-5 text-amber-600" />
         </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
-          <Package className="h-6 w-6 text-amber-600" />
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{t('page_title')}</h1>
+          <p className="text-sm text-slate-500">{t('page_desc')}</p>
         </div>
       </div>
 
-      {/* Filtres + bouton générer */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_year')}</label>
-            <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} className={inputCls} />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_month')}</label>
-            <select value={month} onChange={e => setMonth(Number(e.target.value))} className={selectCls}>
-              {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_categorie')}</label>
-            <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className={selectCls}>
-              <option value="">{t('filter_all')}</option>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_niveau')}</label>
-            <select value={filterNiveau} onChange={e => setFilterNiveau(e.target.value)} className={selectCls}>
-              <option value="">{t('filter_all')}</option>
-              <option value="normal">{t('filter_normal')}</option>
-              <option value="alerte">{t('filter_alerte')}</option>
-              <option value="rupture">{t('filter_rupture')}</option>
-            </select>
-          </div>
+      {/* Tabs type de rapport */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex border-b border-slate-200 overflow-x-auto scrollbar-hide">
+          {tabs.map(tb => {
+            const Icon = tb.icon
+            return (
+              <button
+                key={tb.id}
+                onClick={() => { setTab(tb.id); setGenerated(false); }}
+                className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  tab === tb.id
+                    ? 'text-amber-600 border-amber-600 bg-amber-50/30'
+                    : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tb.label}
+              </button>
+            )
+          })}
         </div>
-        <div className="mt-4 flex justify-end">
-          <button onClick={generate} disabled={loading} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
-            {t('btn_generate')}
-          </button>
+
+        {/* Filters panel */}
+        <div className="p-5 space-y-4">
+          <div className="flex flex-wrap gap-3 items-end">
+            {(tab === 'mouvements' || tab === 'valorisation') && (
+              <>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_year')}</label>
+                  <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_month')}</label>
+                  <select value={month} onChange={e => setMonth(Number(e.target.value))} className={selectCls}>
+                    {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_categorie')}</label>
+              <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className={selectCls}>
+                <option value="">{t('filter_all')}</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            {tab === 'catalogue' && (
+              <div>
+                <label className="text-xs font-medium text-slate-500 mb-1 block">{t('filter_niveau')}</label>
+                <select value={filterNiveau} onChange={e => setFilterNiveau(e.target.value)} className={selectCls}>
+                  <option value="">{t('filter_all')}</option>
+                  <option value="normal">{t('filter_normal')}</option>
+                  <option value="alerte">{t('filter_alerte')}</option>
+                  <option value="rupture">{t('filter_rupture')}</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-1">
+            <button
+              onClick={generate}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
+              {t('btn_generate')}
+            </button>
+          </div>
         </div>
       </div>
 
       {generated && (
-        <>
-          {/* KPIs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: t('kpi_valeur_stock'),    value: `${fmt(kpis.valeurStock)} FCFA`, cls: 'text-amber-700'   },
-              { label: t('kpi_articles_actifs'), value: String(kpis.articlesActifs),      cls: 'text-slate-800'   },
-              { label: t('kpi_rupture'),         value: String(kpis.rupture),             cls: kpis.rupture > 0 ? 'text-red-600' : 'text-slate-800' },
-              { label: t('kpi_sous_minimum'),    value: String(kpis.sousMinimum),         cls: kpis.sousMinimum > 0 ? 'text-orange-600' : 'text-slate-800' },
-            ].map((kpi, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
-                <p className={`mt-1 text-2xl font-bold ${kpi.cls}`}>{kpi.value}</p>
-              </div>
-            ))}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* toolbar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50">
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold text-slate-800">
+                {tab === 'catalogue' ? filteredArticles.length :
+                 tab === 'mouvements' ? filteredMouv.length :
+                 tab === 'valorisation' ? valorisation.length :
+                 alertArticles.length}
+              </span> résultats — <span className="italic">{tab === 'mouvements' || tab === 'valorisation' ? periodLabel() : 'Stock actuel'}</span>
+            </p>
+            <div className="flex gap-2">
+              <button onClick={exportCSV}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200">
+                <Download className="h-3.5 w-3.5" /> CSV
+              </button>
+              <button onClick={exportPDF}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors border border-rose-200">
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </button>
+            </div>
           </div>
 
-          {/* Tabs + export */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 pt-4 pb-0 gap-4">
-              <nav className="flex gap-1 overflow-x-auto scrollbar-hide">
-                {tabs.map(tb => {
-                  const Icon = tb.icon
-                  return (
-                    <button
-                      key={tb.id}
-                      onClick={() => setTab(tb.id)}
-                      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                        tab === tb.id
-                          ? 'text-amber-600 border-amber-600'
-                          : 'text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" /> {tb.label}
-                    </button>
-                  )
-                })}
-              </nav>
-              <div className="flex items-center gap-2 shrink-0 pb-1">
-                <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">
-                  <Download className="h-3.5 w-3.5" /> {t('btn_csv')}
-                </button>
-                <button onClick={exportPDF} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">
-                  <FileText className="h-3.5 w-3.5" /> {t('btn_pdf')}
-                </button>
-              </div>
-            </div>
-
-            <div className="p-5">
+          <div className="p-5">
               {/* ── Catalogue ── */}
               {tab === 'catalogue' && (
                 <>
@@ -712,7 +710,6 @@ export default function RapportStockPage() {
               )}
             </div>
           </div>
-        </>
       )}
     </div>
   )
