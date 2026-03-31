@@ -41,7 +41,8 @@
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow",
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/workflow/processes",
       "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/rapports",
-      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning"
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/planning",
+      "/Users/junior/Documents/project/github/SILI-Suite/sili/app/[locale]/[tenant_slug]/[tenant_id]/[user_id]/[societe_slug]/[societe_id]/stock/articles"
     ]
   }
 }

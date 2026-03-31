@@ -40,6 +40,7 @@ export default getRequestConfig(async ({requestLocale}) => {
     'rapports_workflow',
     'rapports_planning',
     'rapports_crm',
+    'stock',
     'workflow',
     'workflow_builder',
   ];

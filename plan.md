@@ -310,11 +310,12 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260330_planning_enable_sys_module.sql` | `UPDATE sys_modules SET is_active = true WHERE key = 'planning'` — active le module planning globalement | ✅ |
 | `20260330_planning_add_to_module_key_enum.sql` | `ALTER TYPE module_key ADD VALUE IF NOT EXISTS 'planning'` — ajoute `planning` à l'enum Postgres utilisé par `tenant_modules.module` | ✅ |
 | `20260330_crm_tables.sql` | 8 tables CRM : `crm_contacts`, `crm_activites`, `crm_sequences`, `crm_devis`, `crm_devis_lignes`, `crm_factures`, `crm_factures_lignes`, `crm_paiements` + triggers numérotation auto + trigger recalcul paiements factures + RLS + indexes | ✅ |
+| `20260331_stock_module.sql` | RLS activée sur `stock_articles` + `stock_mouvements` + trigger `trg_stock_recalc` (recalcule `stock_actuel` après INSERT mouvement) + CREATE `stock_inventaires` + `stock_inventaire_lignes` (colonne `ecart` calculée GENERATED STORED) + RLS toutes tables | ✅ |
 
 ---
 
 ## i18n — Namespaces chargés (`i18n/request.ts`)
-`auth`, `blocked`, `crm`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
+`auth`, `blocked`, `crm`, `dashboard`, `diagnostic`, `errors`, `login`, `logs`, `modules`, `navigation`, `planning`, `rapports`, `rapports_crm`, `rapports_planning`, `rapports_rh`, `rapports_workflow`, `recovery`, `register`, `remediation`, `reporting`, `rh`, `securite`, `societes`, `societe_settings`, `societe_users`, `stock`, `superadmin`, `tenant_settings`, `tenants`, `utilisateurs`, `validation`, `workflow`, `workflow_builder`
 
 ### Clés notables
 - `navigation.json` : `select_company`, `company_switcher_title`, `manage_companies`, `security_backup`, `notifications`, `notifications_empty`, `notifications_mark_all_read`, `notifications_mark_read`
@@ -582,6 +583,105 @@ Helper `notifyGestionnairesCrm(titre, message)` dans `pipeline/page.tsx` — fus
 Champ `assigne_a` ajouté aux formulaires devis, factures et activités (sélecteur dynamique depuis `user_module_permissions` CRM de la société).
 
 **i18n** : namespace `crm` (fr + en), ~120 clés couvrant tous les modules, champs, statuts, modes de paiement, toasts.
+
+---
+
+#### Module Stock `/[societe_id]/stock`
+
+**Tables SQL** (`20260331_stock_module.sql`) ✅ exécutée :
+- `stock_articles` : id, tenant_id, societe_id, reference (unique par societe), designation, description, categorie, unite (défaut 'unité'), prix_achat, prix_vente, stock_actuel, stock_minimum, stock_maximum (nullable), emplacement, is_active (défaut true), created_at, updated_at — RLS tenant
+- `stock_mouvements` : id, tenant_id, societe_id, article_id (FK → stock_articles), type_mouvement (entree/sortie/ajustement/inventaire), quantite, stock_avant, stock_apres, prix_unitaire, reference_source, source_type, motif, created_by (FK → profiles), created_at — RLS tenant
+- **Trigger `trg_stock_recalc`** : après INSERT sur `stock_mouvements` → `UPDATE stock_articles SET stock_actuel = NEW.stock_apres` automatiquement
+- `stock_inventaires` : id, tenant_id, societe_id, titre, date_inventaire, statut (brouillon/valide/annule), notes, created_by, validated_by, validated_at, created_at, updated_at — RLS tenant
+- `stock_inventaire_lignes` : id, inventaire_id (FK CASCADE), article_id (FK), stock_theorique, stock_compte (nullable), ecart (`GENERATED ALWAYS AS (COALESCE(stock_compte, stock_theorique) - stock_theorique) STORED`), adjusted bool (défaut false), UNIQUE (inventaire_id, article_id) — RLS via sous-requête sur stock_inventaires
+
+**Layout** (`stock/layout.tsx`) :
+- 5 onglets nav sticky : Tableau de bord, Articles, Mouvements, Inventaire, Alertes
+- **Badge rouge** sur l'onglet Alertes : `COUNT(stock_articles WHERE stock_actuel < stock_minimum)`
+- Guard : `fetchEffectiveModulePerm` module `stock`, lecteur+ ou tenant_admin
+- Loader pendant vérification, ShieldOff si accès refusé
+- Couleur thème : amber
+
+**Dashboard** (`stock/page.tsx`) :
+- 5 KPIs : Valeur du stock (`Σ stock_actuel × prix_achat`), Articles actifs, En rupture (`stock_actuel ≤ 0`), Sous minimum (`0 < stock_actuel < stock_minimum`), Mouvements aujourd'hui
+- Section **Articles en alerte** : top 5 sous minimum, barre de progression colorée (rouge=rupture, orange=alerte), badge
+- Section **Derniers mouvements** : 8 derniers avec icône type, variation (+/-), stock résultant
+
+**Articles** (`stock/articles/page.tsx`) :
+- Liste complète avec barre de stock visuelle (vert/orange/rouge selon seuil), filtre catégorie + niveau stock + recherche
+- **Modale CRUD article** : référence (verrouillée en édition), désignation, description, catégorie (datalist autocomplétion), unité, prix achat/vente, stock min/max, emplacement
+- **Entrée/Sortie rapide** inline depuis la liste → modale légère (quantité, prix, motif)
+- Désactivation douce : `is_active = false` (toggle, article reste dans les historiques)
+- Bouton détail → `stock/articles/[article_id]`
+- Permissions : lecture = tous, CRUD = gestionnaire+
+
+**Détail Article** (`stock/articles/[article_id]/page.tsx`) :
+- Fiche en 3 panneaux : Info (référence, catégorie, unité, emplacement, description) + Niveaux stock (barre visuelle, min/max) + Prix (achat, vente, valeur stock)
+- Mode édition inline (toggle) : tous champs sauf référence
+- Section **Historique des mouvements** : tableau complet filtré sur cet article (50 derniers), colonnes type/qté/avant/après/prix/motif/par/date
+- Bouton **Mouvement** (gestionnaire+) : modal avec type entree/sortie/ajustement
+
+**Mouvements** (`stock/mouvements/page.tsx`) :
+- Journal complet de tous les mouvements (200 derniers)
+- Filtres : type (entree/sortie/ajustement/inventaire) + article + date début/fin
+- Colonnes : type (icône + couleur), article, quantité (signée), avant, après, prix unitaire, réf. source, motif, par, date
+- Modale saisie manuelle : type, article (liste avec stock actuel), quantité (ou nouveau total si ajustement), prix, réf. source, motif
+- **Validation stock insuffisant** : bloque sortie si `qté > stock_actuel`
+- Export CSV (UTF-8 BOM, séparateur `;`)
+- Permissions : lecture = tous, création = contributeur+
+
+**Inventaire** (`stock/inventaire/page.tsx`) :
+- Liste des sessions (titre, date, statut, nb articles, nb écarts, validé par)
+- **Création** : titre + date → auto-peuple avec tous les articles actifs (`stock_theorique = stock_actuel` au moment de la session)
+- **Vue détail** : tableau de saisie avec `stock_compte` éditables (onBlur save), calcul `ecart` en temps réel
+- **Validation** (gestionnaire+) : modal confirmation irréversible → génère `stock_mouvements` type `inventaire` pour chaque ligne avec `ecart ≠ 0`, met `adjusted = true`, passe statut → `valide`
+- Statuts : brouillon (gris) / valide (vert) / annule (rouge)
+- `writeLog('stock_inventaire_create')` et `writeLog('stock_inventaire_validate')`
+
+**Alertes** (`stock/alertes/page.tsx`) :
+- Tous les articles actifs avec `stock_actuel < stock_minimum`, triés par stock croissant
+- Classement criticité : **Rupture** (`stock_actuel ≤ 0`) / **Critique** (`< 50% du minimum`) / **Alerte** (`< minimum`)
+- 3 compteurs par criticité en en-tête
+- Colonnes : criticité, référence, désignation, catégorie, stock actuel (rouge si rupture), minimum, manquant, quantité suggérée, emplacement
+- **Quantité suggérée** : `stock_maximum - stock_actuel` si `stock_maximum` défini, sinon `stock_minimum × 2 - stock_actuel`
+- Bouton **Réapprovisionner** → modal pré-remplie (qté suggérée, prix achat, réf. source BL/commande) → INSERT `stock_mouvements` type `entree`
+- Export CSV : bon de commande fournisseur (toutes colonnes)
+- `writeLog('stock_reapprovisionnement')`
+
+**Permissions Stock** :
+| Action | Lecteur | Contributeur | Gestionnaire | Admin | tenant_admin |
+|---|---|---|---|---|---|
+| Voir articles, mouvements, alertes | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Créer entrées/sorties manuelles | ❌ | ✅ | ✅ | ✅ | ✅ |
+| CRUD articles, valider inventaires | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Désactiver articles | ❌ | ❌ | ✅ | ✅ | ✅ |
+
+**Logs Stock** :
+| Action | resourceType | Fichier |
+|---|---|---|
+| `stock_article_create` | `stock_articles` | `articles/page.tsx` |
+| `stock_article_update` | `stock_articles` | `articles/page.tsx` + `articles/[id]/page.tsx` |
+| `stock_article_delete` | `stock_articles` | `articles/page.tsx` (toggle is_active → false) |
+| `stock_mouvement_entree` | `stock_mouvements` | `articles/page.tsx` + `articles/[id]/page.tsx` + `mouvements/page.tsx` |
+| `stock_mouvement_sortie` | `stock_mouvements` | `articles/page.tsx` + `articles/[id]/page.tsx` + `mouvements/page.tsx` |
+| `stock_mouvement_ajustement` | `stock_mouvements` | `articles/[id]/page.tsx` + `mouvements/page.tsx` |
+| `stock_inventaire_create` | `stock_inventaires` | `inventaire/page.tsx` |
+| `stock_inventaire_validate` | `stock_inventaires` | `inventaire/page.tsx` |
+| `stock_reapprovisionnement` | `stock_mouvements` | `alertes/page.tsx` |
+
+**Notifications Stock** :
+| Déclencheur | Destinataire | Type | Titre | Condition | Fichier |
+|---|---|---|---|---|---|
+| Sortie → `stock_apres ≤ 0` | Gestionnaires/admins Stock + tenant_admins | `warning` | `Rupture de stock` | Toujours, skip si acteur | `articles/page.tsx` + `articles/[id]/page.tsx` + `mouvements/page.tsx` |
+| Sortie → `stock_apres < stock_minimum` (premier passage) | Gestionnaires/admins Stock + tenant_admins | `warning` | `Stock sous le seuil minimum` | `stock_avant >= minimum && stock_apres < minimum` | `articles/page.tsx` + `articles/[id]/page.tsx` + `mouvements/page.tsx` |
+| Inventaire validé | Gestionnaires/admins Stock + tenant_admins | `info` | `Inventaire validé` | Toujours, skip si acteur | `inventaire/page.tsx` |
+| Réapprovisionnement enregistré | Gestionnaires/admins Stock + tenant_admins | `info` | `Réapprovisionnement enregistré` | Toujours, skip si acteur | `alertes/page.tsx` |
+
+Helper `notifyGestionnairesStock(titre, message, type)` dupliqué dans chaque fichier concerné (même pattern que CRM) — fusionne `user_module_permissions (gestionnaire/admin)` + `profiles (tenant_admin)`, déduplique, exclut `currentUserId`, bulk insert dans `notifications`.
+
+**i18n** : namespace `stock` (fr + en), ~90 clés couvrant dashboard, articles, mouvements, inventaire, alertes, badges, types, toasts.
+
+**Note** : `stock` existait déjà dans `sys_modules` et dans l'enum `module_key` — aucune migration enum nécessaire.
 
 ---
 
