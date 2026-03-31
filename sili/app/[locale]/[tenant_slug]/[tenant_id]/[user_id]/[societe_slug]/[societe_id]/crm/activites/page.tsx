@@ -79,7 +79,7 @@ export default function ActivitesPage() {
         setCanDelete(['gestionnaire', 'admin'].includes(perm))
       } else { setCanManage(true); setCanDelete(true) }
       // Charger les membres CRM pour le sélecteur d'assignation
-      const { data: perms } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').neq('permission', 'none')
+      const { data: perms } = await supabase.from('user_module_permissions').select('user_id').eq('societe_id', societeId).eq('module', 'crm').neq('permission', 'aucun')
       const uids = (perms ?? []).map((p: any) => p.user_id)
       if (uids.length > 0) {
         const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', uids)

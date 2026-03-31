@@ -118,15 +118,15 @@ export default function ProcessesPage() {
       if (!canAccess) { router.push(`${base}`); return }
 
       setCanDelete(isTenantAdmin || perm === 'admin')
-      setTenantId(profile.tenant_id)
-      await loadInstances(profile.tenant_id)
+      setTenantId(profile.tenant_id ?? '')
+      await loadInstances(profile.tenant_id ?? '')
       setLoading(false)
     }
     init()
   }, [])
 
   async function loadInstances(tid: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('workflow_instances')
       .select(`
         id, titre, statut, current_step_ordre, created_at, initiator_id,
@@ -139,7 +139,7 @@ export default function ProcessesPage() {
     if (error) { console.error('[loadInstances]', error.message); return }
 
     // Fetch initiator names from profiles
-    const initiatorIds = [...new Set((data ?? []).map((i: any) => i.initiator_id).filter(Boolean))]
+    const initiatorIds = [...new Set(((data as any[]) ?? []).map((i: any) => i.initiator_id).filter(Boolean))] as string[] as string[]
     let nameMap: Record<string, string> = {}
     if (initiatorIds.length > 0) {
       const { data: profiles } = await supabase
@@ -187,7 +187,7 @@ export default function ProcessesPage() {
       .or(`societe_id.is.null,societe_id.eq.${societeId}`)
       .order('nom')
 
-    setTemplates(data ?? [])
+    setTemplates((data as unknown as Template[]) ?? [])
     setLoadingTemplates(false)
   }
 

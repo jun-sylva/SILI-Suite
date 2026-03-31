@@ -178,7 +178,7 @@ export default function EmployesPage() {
       setCanEdit(hasAccess)
     }
 
-    await fetchAll(profile.tenant_id)
+    await fetchAll(profile.tenant_id ?? '')
     setLoading(false)
   }
 

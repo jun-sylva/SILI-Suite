@@ -100,7 +100,7 @@ export default function PaiePage() {
       .single()
     if (!profile) return
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
     const perm = isTenantAdmin ? 'admin' : await fetchEffectiveModulePerm(session.user.id, societeId, 'rh')
@@ -131,7 +131,7 @@ export default function PaiePage() {
 
   async function fetchMesBulletins() {
     setBulletinsLoading(true)
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('rh_bulletins_paie')
       .select('id, employe_id, mois, annee, nom_fichier, taille_kb, created_at, storage_path')
       .eq('employe_id', myEmployeId!)
@@ -157,7 +157,7 @@ export default function PaiePage() {
         .eq('societe_id', societeId)
         .eq('statut', 'actif')
         .order('nom', { ascending: true }),
-      supabase
+      (supabase as any)
         .from('rh_bulletins_paie')
         .select('id, employe_id, mois, annee, nom_fichier, taille_kb, created_at, storage_path')
         .eq('societe_id', societeId)
@@ -209,7 +209,7 @@ export default function PaiePage() {
     }
 
     // Upsert : si bulletin existant pour ce mois → update, sinon insert
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase as any)
       .from('rh_bulletins_paie')
       .select('id')
       .eq('employe_id', uploadEmploye.id)
@@ -218,7 +218,7 @@ export default function PaiePage() {
       .maybeSingle()
 
     if (existing) {
-      await supabase
+      await (supabase as any)
         .from('rh_bulletins_paie')
         .update({
           storage_path: path,
@@ -228,7 +228,7 @@ export default function PaiePage() {
         })
         .eq('id', existing.id)
     } else {
-      await supabase.from('rh_bulletins_paie').insert({
+      await (supabase as any).from('rh_bulletins_paie').insert({
         tenant_id:    fullTenantId,
         societe_id:   societeId,
         employe_id:   uploadEmploye.id,
@@ -266,7 +266,7 @@ export default function PaiePage() {
   async function handleDelete() {
     if (!deleteId) return
     setDeleting(true)
-    const { error } = await supabase.from('rh_bulletins_paie').delete().eq('id', deleteId)
+    const { error } = await (supabase as any).from('rh_bulletins_paie').delete().eq('id', deleteId)
     if (error) toast.error(t('paie_delete_error'))
     else {
       toast.success(t('paie_delete_success'))

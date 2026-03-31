@@ -16,12 +16,12 @@ import dayjs from 'dayjs'
 interface Profile {
   id: string
   full_name: string | null
-  email: string | null
+  email?: string | null
   phone: string | null
-  role: string
-  is_active: boolean
+  role: string | null
+  is_active: boolean | null
   last_login_at: string | null
-  created_at: string
+  created_at: string | null
 }
 
 interface Societe {
@@ -131,7 +131,7 @@ export default function UtilisateursPage() {
     else if (tenantRes.data) setMaxLicences(Number(tenantRes.data.max_licences) || 0)
 
     if (usersRes.error) toast.error(t('toast_load_error'))
-    else setUsers(usersRes.data || [])
+    else setUsers((usersRes.data as Profile[]) || [])
 
     setLoading(false)
   }
@@ -209,7 +209,8 @@ export default function UtilisateursPage() {
     setShowCreateModal(true)
   }
 
-  function getRoleBadge(role: string) {
+  function getRoleBadge(role: string | null) {
+    if (!role) return { label: '—', cls: 'bg-slate-100 text-slate-600' }
     const map: Record<string, { label: string; cls: string }> = {
       super_admin: { label: t('role_super_admin'), cls: 'bg-purple-100 text-purple-700' },
       tenant_admin: { label: t('role_tenant_admin'), cls: 'bg-indigo-100 text-indigo-700' },
@@ -346,7 +347,7 @@ export default function UtilisateursPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${u.role === 'tenant_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>
-                              {(u.full_name || '?')[0].toUpperCase()}
+                              {(u.full_name || u.email || '?')[0].toUpperCase()}
                             </div>
                             <div>
                               <div className="font-bold text-slate-800">{u.full_name || '—'}</div>
@@ -723,7 +724,7 @@ function UserDetailModal({ user, onClose, t }: UserDetailModalProps) {
             <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t('detail_created_at')}</p>
-              <p className="text-sm font-semibold text-slate-700">{dayjs(user.created_at).format('DD MMM YYYY')}</p>
+              <p className="text-sm font-semibold text-slate-700">{user.created_at ? dayjs(user.created_at).format('DD MMM YYYY') : '—'}</p>
             </div>
           </div>
         </div>
@@ -732,7 +733,8 @@ function UserDetailModal({ user, onClose, t }: UserDetailModalProps) {
   )
 }
 
-function getRoleBadgeStatic(role: string, t: ReturnType<typeof useTranslations>) {
+function getRoleBadgeStatic(role: string | null, t: ReturnType<typeof useTranslations>) {
+  if (!role) return { label: '—', cls: 'bg-slate-100 text-slate-600' }
   const map: Record<string, { label: string; cls: string }> = {
     super_admin: { label: t('role_super_admin'), cls: 'bg-purple-100 text-purple-700' },
     tenant_admin: { label: t('role_tenant_admin'), cls: 'bg-indigo-100 text-indigo-700' },

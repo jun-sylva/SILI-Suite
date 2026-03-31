@@ -209,9 +209,9 @@ export default function RessourcesPage() {
       }
 
       // IDs des assignees uniques
-      const assigneeIds: string[] = [...new Set(
+      const assigneeIds: string[] = Array.from(new Set(
         tachesRaw.filter((t: any) => t.assignee_id).map((t: any) => t.assignee_id as string)
-      )]
+      ))
 
       if (assigneeIds.length === 0) {
         setCharges([])

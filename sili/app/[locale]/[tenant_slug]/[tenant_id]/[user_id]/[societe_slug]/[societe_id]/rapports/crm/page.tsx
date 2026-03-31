@@ -457,22 +457,21 @@ export default function RapportCrmPage() {
 
   async function exportPDF() {
     const period = monthLabel(year, month)
-    let doc: React.ReactElement
+    let blob: Blob
     let filename: string
     if (tab === 'leads') {
-      doc = <LeadsDoc rows={leads} period={period} />
+      blob = await pdf(<LeadsDoc rows={leads} period={period} />).toBlob()
       filename = `rapport-crm-leads-${period}.pdf`
     } else if (tab === 'opps') {
-      doc = <OppsDoc rows={opps} period={period} />
+      blob = await pdf(<OppsDoc rows={opps} period={period} />).toBlob()
       filename = `rapport-crm-opportunites-${period}.pdf`
     } else if (tab === 'devis') {
-      doc = <DevisDoc rows={devis} period={period} />
+      blob = await pdf(<DevisDoc rows={devis} period={period} />).toBlob()
       filename = `rapport-crm-devis-${period}.pdf`
     } else {
-      doc = <FacturesDoc rows={factures} period={period} />
+      blob = await pdf(<FacturesDoc rows={factures} period={period} />).toBlob()
       filename = `rapport-crm-factures-${period}.pdf`
     }
-    const blob = await pdf(doc).toBlob()
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href = url; a.download = filename; a.click()

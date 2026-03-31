@@ -105,7 +105,7 @@ export default function MesRequetesPage() {
   // ── Chargement ────────────────────────────────────────────────────────────
 
   const loadRequests = useCallback(async (userId: string) => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('workflow_requests')
       .select(`
         id, titre, type_demande, description, statut, priorite,
@@ -131,7 +131,7 @@ export default function MesRequetesPage() {
         .from('profiles').select('role, tenant_id').eq('id', uid).single()
       if (!profile) return
 
-      const tid = profile.tenant_id
+      const tid = profile.tenant_id ?? ''
       setCurrentTenantId(tid)
 
       // Charger les gestionnaires de cette société
@@ -278,7 +278,7 @@ export default function MesRequetesPage() {
   async function openDetail(req: WorkflowRequest) {
     setDetailRequest(req)
     setLoadingComments(true)
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('workflow_comments')
       .select('id, action, contenu, created_at, author_profile:author_id(full_name)')
       .eq('request_id', req.id)

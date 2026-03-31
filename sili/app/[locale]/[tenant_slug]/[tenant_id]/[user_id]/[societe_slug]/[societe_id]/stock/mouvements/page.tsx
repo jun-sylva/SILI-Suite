@@ -158,7 +158,14 @@ export default function MouvementsPage() {
     })
 
     if (error) { toast.error(error.message); setSaving(false); return }
-    await writeLog({ action: `stock_mouvement_${mType}`, table_name: 'stock_mouvements', details: { article: art.designation, quantite: qte } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       `stock_mouvement_${mType}`,
+      resourceType: 'stock_mouvements',
+      resourceId:   mArticle,
+      metadata:     { article: art.designation, quantite: qte }
+    })
 
     // Notifications rupture / sous minimum après sortie
     if (mType === 'sortie') {

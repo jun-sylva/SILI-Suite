@@ -223,7 +223,14 @@ export default function ArticlesPage() {
     }
 
     if (error) { toast.error(error.message); setSaving(false); return }
-    await writeLog({ action: editing ? 'stock_article_update' : 'stock_article_create', table_name: 'stock_articles', details: { reference: fRef } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       editing ? 'stock_article_update' : 'stock_article_create',
+      resourceType: 'stock_articles',
+      resourceId:   editing?.id,
+      metadata:     { reference: fRef }
+    })
     toast.success(t('article_saved'))
     setShowForm(false)
     await loadArticles()
@@ -234,7 +241,14 @@ export default function ArticlesPage() {
     if (!confirm(`${a.is_active ? 'Désactiver' : 'Réactiver'} "${a.designation}" ?`)) return
     await (supabase as any).from('stock_articles').update({ is_active: !a.is_active, updated_at: new Date().toISOString() }).eq('id', a.id)
     if (a.is_active) {
-      await writeLog({ action: 'stock_article_delete', table_name: 'stock_articles', details: { id: a.id, reference: a.reference, designation: a.designation } })
+      await writeLog({
+        tenantId:     fullTenantId,
+        userId:       currentUserId,
+        action:       'stock_article_delete',
+        resourceType: 'stock_articles',
+        resourceId:   a.id,
+        metadata:     { reference: a.reference, designation: a.designation }
+      })
     }
     await loadArticles()
   }
@@ -265,7 +279,14 @@ export default function ArticlesPage() {
     })
 
     if (error) { toast.error(error.message); setMouvSaving(false); return }
-    await writeLog({ action: `stock_mouvement_${mouvType}`, table_name: 'stock_mouvements', details: { article: mouvArt.designation, quantite: qte } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       `stock_mouvement_${mouvType}`,
+      resourceType: 'stock_mouvements',
+      resourceId:   mouvArt.id,
+      metadata:     { article: mouvArt.designation, quantite: qte }
+    })
 
     // Notifications rupture / sous minimum après sortie
     if (mouvType === 'sortie') {

@@ -116,11 +116,11 @@ export default function SecuriteBackupPage() {
     setLoadingAudit(true)
     const { data } = await supabase
       .from('audit_logs')
-      .select('id, user_id, action, resource_type, resource_id, ip_address, created_at, profiles(full_name)')
+      .select('id, user_id, action, resource_type, resource_id, ip_address, created_at, profiles!user_id(full_name)')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .limit(50)
-    setAuditLogs((data as AuditLog[]) || [])
+    setAuditLogs((data as any) || [])
     setLoadingAudit(false)
   }, [])
 
@@ -131,14 +131,14 @@ export default function SecuriteBackupPage() {
       .from('user_module_permissions')
       .select(`
         user_id, societe_id, module, permission,
-        profiles(full_name),
+        profiles!user_id(full_name),
         societes(raison_sociale)
       `)
-      .neq('permission', 'none')
+      .neq('permission', 'aucun')
       .order('module')
     // Filter by tenant (join via societes.tenant_id not directly possible — filter client-side)
     // We rely on RLS to scope data correctly
-    setPermissions((data as Permission[]) || [])
+    setPermissions((data as any) || [])
     setLoadingPerms(false)
   }, [])
 
@@ -147,10 +147,10 @@ export default function SecuriteBackupPage() {
     setLoadingBackups(true)
     const { data } = await supabase
       .from('tenant_backups')
-      .select('id, status, size_mb, created_at, expires_at, completed_at, triggered_by, profiles(full_name)')
+      .select('id, status, size_mb, created_at, expires_at, completed_at, triggered_by, profiles!triggered_by(full_name)')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
-    setBackups((data as Backup[]) || [])
+    setBackups((data as any) || [])
     setLoadingBackups(false)
   }, [])
 

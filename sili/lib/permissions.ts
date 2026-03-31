@@ -22,16 +22,16 @@ export async function fetchEffectiveModulePerm(
   module: string,
 ): Promise<PermissionLevel> {
   const [{ data: indiv }, { data: memberships }] = await Promise.all([
-    supabase.from('user_module_permissions').select('permission')
+    (supabase as any).from('user_module_permissions').select('permission')
       .eq('user_id', userId).eq('societe_id', societeId).eq('module', module).maybeSingle(),
-    supabase.from('user_group_members').select('group_id').eq('user_id', userId),
+    (supabase as any).from('user_group_members').select('group_id').eq('user_id', userId),
   ])
 
   let maxRank = PERM_RANK[(indiv?.permission as PermissionLevel) ?? 'aucun']
 
   if (memberships && memberships.length > 0) {
     const groupIds = memberships.map((m: any) => m.group_id)
-    const { data: gPerms } = await supabase
+    const { data: gPerms } = await (supabase as any)
       .from('user_group_permissions')
       .select('permission')
       .in('group_id', groupIds)
@@ -57,17 +57,14 @@ export async function getEffectivePermission(
   societeId: string,
 ): Promise<PermissionLevel> {
   // ── 1. Permission individuelle (via RPC existant) ───────────────────────
-  const { data: indivRaw, error: indivErr } = await supabase.rpc('get_user_permission', {
-    p_module:     module,
-    p_societe_id: societeId,
-  })
+  const { data: indivRaw, error: indivErr } = await (supabase as any).rpc('get_user_permission', { p_module: module, p_societe_id: societeId })
   const indivLevel: PermissionLevel = indivErr ? 'aucun' : ((indivRaw as PermissionLevel) ?? 'aucun')
 
   // ── 2. Groupes de l'utilisateur ─────────────────────────────────────────
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return indivLevel
 
-  const { data: memberships } = await supabase
+  const { data: memberships } = await (supabase as any)
     .from('user_group_members')
     .select('group_id')
     .eq('user_id', user.id)
@@ -76,7 +73,7 @@ export async function getEffectivePermission(
 
   // ── 3. Permissions des groupes pour ce module + société ─────────────────
   const groupIds = memberships.map((m: any) => m.group_id)
-  const { data: groupPerms } = await supabase
+  const { data: groupPerms } = await (supabase as any)
     .from('user_group_permissions')
     .select('permission')
     .in('group_id', groupIds)

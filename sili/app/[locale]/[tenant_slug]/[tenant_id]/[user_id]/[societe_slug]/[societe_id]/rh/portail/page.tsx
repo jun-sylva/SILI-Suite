@@ -147,7 +147,7 @@ export default function PortailPage() {
       .single()
     if (!profile) return
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
 
     const { data: soc } = await supabase
       .from('societes')
@@ -159,7 +159,7 @@ export default function PortailPage() {
     const { data: tenant } = await supabase
       .from('tenants')
       .select('timezone')
-      .eq('id', profile.tenant_id)
+      .eq('id', profile.tenant_id ?? '')
       .maybeSingle()
     if (tenant?.timezone) setTimezone(tenant.timezone)
 
@@ -268,7 +268,7 @@ export default function PortailPage() {
       .order('created_at', { ascending: false })
       .limit(5)
     if (error) console.error('[portail fetchConges]', error.message)
-    setMyConges(data ?? [])
+    setMyConges((data as any) ?? [])
   }
 
   async function handleCongeSubmit() {
@@ -291,7 +291,7 @@ export default function PortailPage() {
 
     setSavingConge(true)
 
-    const payload: Record<string, unknown> = {
+    const payload: any = {
       tenant_id:  fullTenantId,
       societe_id: societeId,
       employe_id: selected.id,

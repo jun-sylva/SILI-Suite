@@ -19,7 +19,7 @@ export function useClients() {
   return useQuery({
     queryKey: ['clients', currentSociete?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('vente_clients')
         .select('*')
         .eq('societe_id', currentSociete!.id)
@@ -39,7 +39,7 @@ export function useCreateClient() {
   return useMutation({
     mutationFn: async (data: Partial<VenteClient>) => {
       if (!currentSociete) throw new Error("Société non sélectionnée")
-      const { data: client, error } = await supabase
+      const { data: client, error } = await (supabase as any)
         .from('vente_clients')
         .insert({ ...data, societe_id: currentSociete.id, tenant_id: currentSociete.tenant_id })
         .select()

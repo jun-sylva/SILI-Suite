@@ -20,11 +20,11 @@ interface Societe {
   raison_sociale: string
   sigle: string | null
   ville: string | null
-  pays: string
-  devise: string
+  pays: string | null
+  devise: string | null
   storage_gb: number
-  is_active: boolean
-  created_at: string
+  is_active: boolean | null
+  created_at: string | null
 }
 
 interface SocieteDetail {
@@ -34,20 +34,20 @@ interface SocieteDetail {
   logo_url: string | null
   adresse: string | null
   ville: string | null
-  pays: string
+  pays: string | null
   telephone: string | null
   email: string | null
   site_web: string | null
   numero_contribuable: string | null
   numero_rccm: string | null
   capital_social: number | null
-  devise: string
+  devise: string | null
   secteur_activite: string | null
   forme_juridique: string | null
   exercice_fiscal_debut: string | null
   storage_gb: number
-  is_active: boolean
-  created_at: string
+  is_active: boolean | null
+  created_at: string | null
   updated_at: string | null
 }
 
@@ -251,8 +251,8 @@ export default function SocietesPage() {
       raison_sociale: s.raison_sociale,
       sigle: s.sigle || '',
       ville: s.ville || 'Yaoundé',
-      pays: s.pays,
-      devise: s.devise,
+      pays: s.pays || 'Cameroun',
+      devise: s.devise || 'XAF',
       storage_gb: String(s.storage_gb),
     })
     setDropdownOpen(null)
@@ -379,8 +379,8 @@ export default function SocietesPage() {
                         <div className="font-bold text-slate-800">{s.raison_sociale}</div>
                         {s.sigle && <div className="text-[11px] text-slate-400 font-mono mt-0.5">{s.sigle}</div>}
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{s.ville || '—'}, {s.pays}</td>
-                      <td className="px-6 py-4 text-slate-600 font-mono text-xs font-bold">{s.devise}</td>
+                      <td className="px-6 py-4 text-slate-600">{s.ville || '—'}, {s.pays ?? '—'}</td>
+                      <td className="px-6 py-4 text-slate-600 font-mono text-xs font-bold">{s.devise ?? '—'}</td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600">
                           <HardDrive className="h-3.5 w-3.5 text-slate-400" />
@@ -392,7 +392,7 @@ export default function SocietesPage() {
                           {s.is_active ? t('status_active') : t('status_inactive')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-500">{dayjs(s.created_at).format('DD MMM YYYY')}</td>
+                      <td className="px-6 py-4 text-slate-500">{s.created_at ? dayjs(s.created_at).format('DD MMM YYYY') : '—'}</td>
                       <td className="px-6 py-4 text-center relative" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-2">
                           <Link

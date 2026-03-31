@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
 import { Loader2, Server, Shield, HardHat, FileText, ShoppingCart, MessageSquare, Building2, PackageSearch, Users, CircleDollarSign } from 'lucide-react'
 
-type SysModule = { id: string; key: string; name: string; description: string; icon: string; is_active: boolean }
+type SysModule = { id: string; key: string; name: string; description: string | null; icon: string | null; is_active: boolean | null }
 
 const IconMap: Record<string, any> = { ShoppingCart, PackageSearch, Building2, Users, HardHat, CircleDollarSign, MessageSquare, FileText, Shield }
 
@@ -62,7 +62,7 @@ export default function SuperAdminModulesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {modules.map((mod) => {
-          const IconComponent = IconMap[mod.icon] || Server
+          const IconComponent = (mod.icon && IconMap[mod.icon]) || Server
           return (
             <div key={mod.id} className={`relative flex flex-col p-6 rounded-2xl border transition-all duration-300 ${mod.is_active ? 'bg-white border-slate-200 shadow-sm hover:shadow-md' : 'bg-slate-50/50 border-slate-100 opacity-60 grayscale-[0.5]'}`}>
               <div className="flex items-start justify-between mb-5">

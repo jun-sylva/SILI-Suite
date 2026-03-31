@@ -36,7 +36,7 @@ export default function RHDashboard() {
       .single()
     if (!profile) return
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
     if (isTenantAdmin) {

@@ -87,8 +87,8 @@ export default function BuilderPage() {
       // Suppression : admin ou tenant_admin seulement
       setCanDelete(isTenantAdmin || perm === 'admin')
 
-      setFullTenantId(profile.tenant_id)
-      await loadTemplates(profile.tenant_id)
+      setFullTenantId(profile.tenant_id ?? '')
+      await loadTemplates(profile.tenant_id ?? '')
       setLoading(false)
     }
     init()

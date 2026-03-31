@@ -145,13 +145,13 @@ export default function SocieteUsersPage() {
       router.push('/login'); return
     }
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
     setCurrentUserId(session.user.id)
 
     await Promise.all([
       fetchModules(),
-      fetchUsers(profile.tenant_id),
-      fetchGroups(profile.tenant_id),
+      fetchUsers(profile.tenant_id ?? ''),
+      fetchGroups(profile.tenant_id ?? ''),
     ])
     setLoading(false)
   }
@@ -245,7 +245,7 @@ export default function SocieteUsersPage() {
       [userId]: { ...prev[userId], [moduleKey]: level },
     }))
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_module_permissions')
       .upsert(
         {
@@ -283,7 +283,7 @@ export default function SocieteUsersPage() {
       updated_at: new Date().toISOString(),
     }))
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_module_permissions')
       .upsert(rows, { onConflict: 'user_id,societe_id,module' })
 
@@ -453,7 +453,7 @@ export default function SocieteUsersPage() {
         const { data: e } = await supabase.from('rh_employes').select('prenom, nom').eq('id', m.employe_id).single()
         display_name = e ? `${e.prenom} ${e.nom}` : m.employe_id.substring(0, 8)
       }
-      enriched.push({ ...m, display_name })
+      enriched.push({ ...m, display_name, role: m.role as MemberRole })
     }
     setMembers(enriched)
   }
@@ -536,7 +536,7 @@ export default function SocieteUsersPage() {
       [groupId]: { ...prev[groupId], [moduleKey]: level },
     }))
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_group_permissions')
       .upsert(
         {

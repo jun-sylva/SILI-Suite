@@ -146,7 +146,14 @@ export default function ArticleDetailPage() {
     }).eq('id', articleId)
 
     if (error) { toast.error(error.message); setSaving(false); return }
-    await writeLog({ action: 'stock_article_update', table_name: 'stock_articles', details: { id: articleId } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       'stock_article_update',
+      resourceType: 'stock_articles',
+      resourceId:   articleId,
+      metadata:     { id: articleId }
+    })
     toast.success(t('article_saved'))
     setEditing(false)
     await loadArticle()
@@ -173,7 +180,14 @@ export default function ArticleDetailPage() {
     })
 
     if (error) { toast.error(error.message); setMouvSaving(false); return }
-    await writeLog({ action: `stock_mouvement_${mouvType}`, table_name: 'stock_mouvements', details: { article: article.designation, quantite: qte } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       `stock_mouvement_${mouvType}`,
+      resourceType: 'stock_mouvements',
+      resourceId:   articleId,
+      metadata:     { article: article.designation, quantite: qte }
+    })
 
     // Notifications rupture / sous minimum après sortie ou ajustement vers le bas
     const estSortie = mouvType === 'sortie' || (mouvType === 'ajustement' && stockApres < stockAvant)

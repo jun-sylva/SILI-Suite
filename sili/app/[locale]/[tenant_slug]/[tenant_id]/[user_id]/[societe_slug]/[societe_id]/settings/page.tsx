@@ -75,8 +75,8 @@ export default function SocieteSettingsPage() {
     setFullTenantId(tenantId ?? '')
 
     await Promise.all([
-      fetchModules(tenantId),
-      fetchSharing(tenantId),
+      fetchModules(tenantId ?? ''),
+      fetchSharing(tenantId ?? ''),
     ])
     setLoading(false)
   }

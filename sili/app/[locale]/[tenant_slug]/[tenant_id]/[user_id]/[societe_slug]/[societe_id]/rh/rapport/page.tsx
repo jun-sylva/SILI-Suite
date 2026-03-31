@@ -130,7 +130,7 @@ export default function RapportPage() {
         .eq('societe_id', societeId)
         .gte('date', firstDay)
         .lte('date', lastDay),
-      supabase
+      (supabase as any)
         .from('rh_bulletins_paie')
         .select('employe_id')
         .eq('societe_id', societeId)
@@ -145,7 +145,7 @@ export default function RapportPage() {
 
     setEmployes(empRes.data ?? [])
     setPresences(presRes.data ?? [])
-    setBulletinIds(new Set((bulRes.data ?? []).map(b => b.employe_id)))
+    setBulletinIds(new Set((bulRes.data ?? []).map((b: any) => b.employe_id)))
     setPendingConges(congesRes.count ?? 0)
     setDataLoading(false)
   }

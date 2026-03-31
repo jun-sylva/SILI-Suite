@@ -109,7 +109,7 @@ export default function AssigneesPage() {
 
     if (adminMode) {
       // Admin / tenant_admin : toutes les requêtes de la société
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('workflow_requests')
         .select(baseSelect)
         .eq('societe_id', societeId)
@@ -118,14 +118,14 @@ export default function AssigneesPage() {
     } else {
       // Gestionnaire : requêtes directement assignées + requêtes de ses groupes
       const [directRes, groupRes] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('workflow_requests')
           .select(baseSelect)
           .eq('societe_id', societeId)
           .eq('assigned_to', uid)
           .order('created_at', { ascending: false }),
         groupIds.length > 0
-          ? supabase
+          ? (supabase as any)
               .from('workflow_requests')
               .select(baseSelect)
               .eq('societe_id', societeId)
@@ -161,7 +161,7 @@ export default function AssigneesPage() {
       const { data: profile } = await supabase
         .from('profiles').select('role, tenant_id').eq('id', uid).single()
       if (!profile) return
-      const tid = profile.tenant_id
+      const tid = profile.tenant_id ?? ''
       setCurrentTenantId(tid)
 
       const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
@@ -304,7 +304,7 @@ export default function AssigneesPage() {
   async function openDetail(req: WorkflowRequest) {
     setDetailRequest(req)
     setLoadingComments(true)
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('workflow_comments')
       .select('id, action, contenu, created_at, author_profile:author_id(full_name)')
       .eq('request_id', req.id)

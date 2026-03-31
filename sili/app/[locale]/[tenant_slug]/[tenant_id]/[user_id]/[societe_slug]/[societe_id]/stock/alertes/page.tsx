@@ -143,7 +143,13 @@ export default function AlertesPage() {
     })
 
     if (error) { toast.error(error.message); setSaving(false); return }
-    await writeLog({ action: 'stock_reapprovisionnement', table_name: 'stock_mouvements', details: { article: reapproArt.designation, quantite: qte } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       'stock_reapprovisionnement',
+      resourceType: 'stock_mouvements',
+      metadata:     { article: reapproArt.designation, quantite: qte }
+    })
     await notifyGestionnairesStock(
       'Réapprovisionnement enregistré',
       `${fmtQte(qte)} ${reapproArt.unite} de "${reapproArt.designation}" (${reapproArt.reference}) ont été réceptionnés. Stock : ${fmtQte(stockApres)} ${reapproArt.unite}.`,

@@ -114,7 +114,7 @@ export default function TemplateEditorPage() {
       if (!profile || (profile.role !== 'tenant_admin' && profile.role !== 'super_admin')) {
         router.push(base); return
       }
-      const tid = profile.tenant_id
+      const tid = profile.tenant_id ?? ''
       setFullTenantId(tid)
 
       // Charger utilisateurs et groupes pour les assignations
@@ -136,9 +136,10 @@ export default function TemplateEditorPage() {
 
         setNom(tpl.nom)
         setDescription(tpl.description ?? '')
-        setTypeProcess(tpl.type_process)
+        setTypeProcess(tpl.type_process as TypeProcess)
         setIsGlobal(!tpl.societe_id)
-        setFields((tpl.form_schema ?? []).map((f: any) => ({
+        const schema = (tpl.form_schema as any) ?? []
+        setFields(schema.map((f: any) => ({
           ...f,
           options: Array.isArray(f.options) ? f.options.join('\n') : (f.options ?? ''),
         })))

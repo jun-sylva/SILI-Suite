@@ -12,9 +12,9 @@ interface Societe {
   id: string
   raison_sociale: string
   sigle: string | null
-  devise: string
-  is_active: boolean
-  created_at: string
+  devise: string | null
+  is_active: boolean | null
+  created_at: string | null
 }
 
 interface TenantInfo {
@@ -217,11 +217,11 @@ export default function ReportingPage() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="bg-slate-50 rounded-xl p-3">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('company_devise')}</p>
-                    <p className="font-bold text-slate-700 font-mono mt-1">{s.devise}</p>
+                    <p className="font-bold text-slate-700 font-mono mt-1">{s.devise ?? '-'}</p>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-3">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('company_created')}</p>
-                    <p className="font-bold text-slate-700 mt-1">{dayjs(s.created_at).format('DD/MM/YYYY')}</p>
+                    <p className="font-bold text-slate-700 mt-1">{s.created_at ? dayjs(s.created_at).format('DD/MM/YYYY') : '-'}</p>
                   </div>
                 </div>
               </div>

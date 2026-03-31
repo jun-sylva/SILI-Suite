@@ -16,16 +16,16 @@ interface Tenant {
   id: string
   name: string
   slug: string
-  status: string
+  status: string | null
   max_societes: number
   max_licences: number
   max_storage_gb: number
-  created_at: string
+  created_at: string | null
 }
 
 interface TenantModule {
   module: string
-  is_active: boolean
+  is_active: boolean | null
 }
 
 interface ProfilePrefs {
@@ -149,7 +149,7 @@ export default function TenantSettingsPage() {
   const infoFields = tenant ? [
     { label: t('field_name'), value: tenant.name },
     { label: t('field_slug'), value: `/${tenant.slug}`, mono: true },
-    { label: t('field_created'), value: dayjs(tenant.created_at).format('DD MMMM YYYY') },
+    { label: t('field_created'), value: tenant.created_at ? dayjs(tenant.created_at).format('DD MMMM YYYY') : '-' },
   ] : []
 
   return (

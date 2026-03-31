@@ -137,7 +137,13 @@ export default function InventairePage() {
       )
     }
 
-    await writeLog({ action: 'stock_inventaire_create', table_name: 'stock_inventaires', details: { titre: nTitre } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       'stock_inventaire_create',
+      resourceType: 'stock_inventaires',
+      metadata:     { titre: nTitre }
+    })
     toast.success(t('inventaire_saved'))
     setShowNew(false)
     await loadInventaires()
@@ -196,7 +202,14 @@ export default function InventairePage() {
       statut: 'valide', validated_by: currentUserId, validated_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq('id', selected.id)
 
-    await writeLog({ action: 'stock_inventaire_validate', table_name: 'stock_inventaires', details: { id: selected.id, titre: selected.titre, nb_ajustements: lignesEcart.length } })
+    await writeLog({
+      tenantId:     fullTenantId,
+      userId:       currentUserId,
+      action:       'stock_inventaire_validate',
+      resourceType: 'stock_inventaires',
+      resourceId:   selected.id,
+      metadata:     { titre: selected.titre, nb_ajustements: lignesEcart.length }
+    })
     await notifyGestionnairesStock(
       'Inventaire validé',
       `L'inventaire "${selected.titre}" a été validé avec ${lignesEcart.length} ajustement(s) généré(s).`,

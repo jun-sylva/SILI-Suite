@@ -179,7 +179,7 @@ export default function PresencesPage() {
 
     if (!profile) return
 
-    setFullTenantId(profile.tenant_id)
+    setFullTenantId(profile.tenant_id ?? '')
     setCurrentUserId(session.user.id)
 
     const isTenantAdmin = profile.role === 'tenant_admin' || profile.role === 'super_admin'
@@ -197,7 +197,7 @@ export default function PresencesPage() {
     const { data: tsData } = await supabase
       .from('tenants')
       .select('timezone')
-      .eq('id', profile.tenant_id)
+      .eq('id', profile.tenant_id ?? '')
       .maybeSingle()
     if (tsData?.timezone) setTimezone(tsData.timezone)
 
@@ -401,7 +401,7 @@ export default function PresencesPage() {
 
     setSavingConge(true)
 
-    const payload: Record<string, unknown> = {
+    const payload: any = {
       tenant_id:   fullTenantId,
       societe_id:  societeId,
       employe_id:  myEmployeId,

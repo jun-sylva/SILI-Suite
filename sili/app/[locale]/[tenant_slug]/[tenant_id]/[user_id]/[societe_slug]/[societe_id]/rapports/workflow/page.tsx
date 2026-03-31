@@ -465,7 +465,9 @@ export default function RapportsWorkflowPage() {
       downloadCSV([header, ...rows], `rapport_requetes_${reportData.period}.csv`)
     } else if (reportData.type === 'par_assigne') {
       const header = ['Assigné', 'Total', 'En attente', 'Approuvées', 'Refusées', 'Taux (%)']
-      const rows   = reportData.rows.map(r => [r.assigne_a, r.total, r.en_attente, r.approuve, r.refuse, r.taux])
+      const rows   = reportData.rows.map(r => [
+        r.assigne_a, String(r.total), String(r.en_attente), String(r.approuve), String(r.refuse), String(r.taux)
+      ])
       downloadCSV([header, ...rows], `rapport_assignes_${reportData.period}.csv`)
     } else if (reportData.type === 'processus') {
       const header = ['Titre', 'Modèle', 'Type', 'Statut', 'Progression', 'Initiateur', 'Date']
