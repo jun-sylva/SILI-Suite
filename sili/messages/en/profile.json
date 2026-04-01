@@ -1,0 +1,34 @@
+{
+  "title": "My Profile",
+  "subtitle": "Your personal information and account activity.",
+  "edit_btn": "Edit",
+  "account_settings_btn": "Account Settings",
+  "btn_save": "Save",
+  "btn_cancel": "Cancel",
+
+  "section_identity_title": "Personal Information",
+  "section_identity_subtitle": "Your full name and contact details.",
+  "field_full_name": "Full name",
+  "field_email": "Email address",
+  "field_phone": "Phone number",
+  "field_email_hint": "Your email address is managed by your authentication.",
+  "placeholder_full_name": "e.g. John Doe",
+  "placeholder_phone": "e.g. +237 600 000 000",
+
+  "section_account_title": "Account & Activity",
+  "section_account_subtitle": "Role, status and login history.",
+  "field_role": "Role",
+  "field_status": "Status",
+  "field_created": "Member since",
+  "field_last_login": "Last login",
+
+  "role_tenant_admin": "Administrator",
+  "role_tenant_user": "User",
+  "role_super_admin": "Super Administrator",
+  "status_active": "Active",
+  "status_inactive": "Inactive",
+
+  "toast_save_success": "Profile updated successfully",
+  "toast_save_error": "Error updating profile",
+  "never": "Never"
+}

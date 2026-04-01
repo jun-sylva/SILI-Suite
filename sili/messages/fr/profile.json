@@ -1,0 +1,34 @@
+{
+  "title": "Mon Profil",
+  "subtitle": "Vos informations personnelles et activité du compte.",
+  "edit_btn": "Modifier",
+  "account_settings_btn": "Paramètres du compte",
+  "btn_save": "Enregistrer",
+  "btn_cancel": "Annuler",
+
+  "section_identity_title": "Informations personnelles",
+  "section_identity_subtitle": "Votre nom complet et vos coordonnées.",
+  "field_full_name": "Nom complet",
+  "field_email": "Adresse e-mail",
+  "field_phone": "Téléphone",
+  "field_email_hint": "L'adresse e-mail est gérée par votre authentification.",
+  "placeholder_full_name": "ex. Jean Dupont",
+  "placeholder_phone": "ex. +237 600 000 000",
+
+  "section_account_title": "Compte & Activité",
+  "section_account_subtitle": "Rôle, statut et historique de connexion.",
+  "field_role": "Rôle",
+  "field_status": "Statut",
+  "field_created": "Membre depuis",
+  "field_last_login": "Dernière connexion",
+
+  "role_tenant_admin": "Administrateur",
+  "role_tenant_user": "Utilisateur",
+  "role_super_admin": "Super Administrateur",
+  "status_active": "Actif",
+  "status_inactive": "Inactif",
+
+  "toast_save_success": "Profil mis à jour avec succès",
+  "toast_save_error": "Erreur lors de la mise à jour du profil",
+  "never": "Jamais"
+}

@@ -1,0 +1,41 @@
+{
+  "title": "Account Settings",
+  "subtitle": "Manage your preferences and account security.",
+
+  "tab_preferences": "Preferences",
+  "tab_security": "Security",
+
+  "section_preferences_title": "Language & Currency",
+  "section_preferences_subtitle": "Customize your language and currency experience.",
+  "field_language": "Preferred language",
+  "field_currency": "Preferred currency",
+  "btn_save_prefs": "Save preferences",
+  "toast_prefs_success": "Preferences saved successfully",
+  "toast_prefs_error": "Error saving preferences",
+
+  "section_security_title": "Change Password",
+  "section_security_subtitle": "Use a strong password of at least 8 characters.",
+  "field_current_password": "Current password",
+  "field_new_password": "New password",
+  "field_confirm_password": "Confirm new password",
+  "placeholder_current": "Your current password",
+  "placeholder_new": "New password",
+  "placeholder_confirm": "Confirm new password",
+  "btn_change_password": "Change password",
+  "toast_pwd_success": "Password updated successfully",
+  "toast_pwd_error": "Error changing password",
+  "toast_pwd_mismatch": "Passwords do not match",
+  "toast_pwd_wrong_current": "Current password is incorrect",
+
+  "pwd_strength_label": "Password strength",
+  "pwd_weak": "Weak",
+  "pwd_medium": "Medium",
+  "pwd_strong": "Strong",
+  "pwd_very_strong": "Very strong",
+  "req_length": "At least 8 characters",
+  "req_uppercase": "One uppercase letter",
+  "req_number": "One number",
+  "req_special": "One special character (!@#$...)",
+
+  "back_to_profile": "Back to profile"
+}

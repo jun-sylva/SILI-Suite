@@ -1,0 +1,41 @@
+{
+  "title": "Paramètres du compte",
+  "subtitle": "Gérez vos préférences et la sécurité de votre compte.",
+
+  "tab_preferences": "Préférences",
+  "tab_security": "Sécurité",
+
+  "section_preferences_title": "Langue & Devise",
+  "section_preferences_subtitle": "Personnalisez votre expérience linguistique et monétaire.",
+  "field_language": "Langue préférée",
+  "field_currency": "Devise préférée",
+  "btn_save_prefs": "Enregistrer les préférences",
+  "toast_prefs_success": "Préférences enregistrées avec succès",
+  "toast_prefs_error": "Erreur lors de la sauvegarde des préférences",
+
+  "section_security_title": "Changer le mot de passe",
+  "section_security_subtitle": "Utilisez un mot de passe fort d'au moins 8 caractères.",
+  "field_current_password": "Mot de passe actuel",
+  "field_new_password": "Nouveau mot de passe",
+  "field_confirm_password": "Confirmer le nouveau mot de passe",
+  "placeholder_current": "Votre mot de passe actuel",
+  "placeholder_new": "Nouveau mot de passe",
+  "placeholder_confirm": "Confirmez le nouveau mot de passe",
+  "btn_change_password": "Changer le mot de passe",
+  "toast_pwd_success": "Mot de passe mis à jour avec succès",
+  "toast_pwd_error": "Erreur lors du changement de mot de passe",
+  "toast_pwd_mismatch": "Les mots de passe ne correspondent pas",
+  "toast_pwd_wrong_current": "Mot de passe actuel incorrect",
+
+  "pwd_strength_label": "Force du mot de passe",
+  "pwd_weak": "Faible",
+  "pwd_medium": "Moyen",
+  "pwd_strong": "Fort",
+  "pwd_very_strong": "Très fort",
+  "req_length": "Au moins 8 caractères",
+  "req_uppercase": "Une lettre majuscule",
+  "req_number": "Un chiffre",
+  "req_special": "Un caractère spécial (!@#$...)",
+
+  "back_to_profile": "Retour au profil"
+}

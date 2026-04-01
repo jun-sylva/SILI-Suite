@@ -44,6 +44,8 @@ export default getRequestConfig(async ({requestLocale}) => {
     'stock',
     'workflow',
     'workflow_builder',
+    'profile',
+    'compte',
   ];
   const messages: Record<string, any> = {};
 

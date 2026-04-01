@@ -45,7 +45,11 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
   const profileDropdownRef = useRef<HTMLDivElement>(null)
   const societeDropdownRef = useRef<HTMLDivElement>(null)
 
+  const societeSlug = params.societe_slug as string | undefined
+  const isCompanyLevel = !!currentSocieteId
+
   const tenantBase = `/${tenantSlug}/${tenantId}/${userId}`
+  const societeBase = isCompanyLevel && societeSlug ? `${tenantBase}/${societeSlug}/${currentSocieteId}` : ''
 
   // Fetch profile + societes
   useEffect(() => {
@@ -221,14 +225,14 @@ export function Header({ setIsMobileOpen }: { setIsMobileOpen?: (val: boolean) =
                 </div>
                 <div className="p-1.5 space-y-0.5">
                   <button
-                    onClick={() => { setIsProfileOpen(false); router.push(tenantBase + '/profile') }}
+                    onClick={() => { setIsProfileOpen(false); router.push((isCompanyLevel ? societeBase : tenantBase) + '/profile') }}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <User className="h-4 w-4 text-slate-400" />
                     {t('my_profile')}
                   </button>
                   <button
-                    onClick={() => { setIsProfileOpen(false); router.push(tenantBase + '/settings') }}
+                    onClick={() => { setIsProfileOpen(false); router.push((isCompanyLevel ? societeBase : tenantBase) + '/compte') }}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     <Settings className="h-4 w-4 text-slate-400" />
