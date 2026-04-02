@@ -311,6 +311,7 @@ Requiert `SUPABASE_SERVICE_ROLE_KEY` dans `.env.local` ✅ (clé configurée).
 | `20260330_planning_add_to_module_key_enum.sql` | `ALTER TYPE module_key ADD VALUE IF NOT EXISTS 'planning'` — ajoute `planning` à l'enum Postgres utilisé par `tenant_modules.module` | ✅ |
 | `20260330_crm_tables.sql` | 8 tables CRM : `crm_contacts`, `crm_activites`, `crm_sequences`, `crm_devis`, `crm_devis_lignes`, `crm_factures`, `crm_factures_lignes`, `crm_paiements` + triggers numérotation auto + trigger recalcul paiements factures + RLS + indexes | ✅ |
 | `20260331_stock_module.sql` | RLS activée sur `stock_articles` + `stock_mouvements` + trigger `trg_stock_recalc` (recalcule `stock_actuel` après INSERT mouvement) + CREATE `stock_inventaires` + `stock_inventaire_lignes` (colonne `ecart` calculée GENERATED STORED) + RLS toutes tables | ✅ |
+| `20260331_plan_assignes.sql` | `plan_tache_assignes` (tache_id, user_id\|group_id, tenant_id) + `plan_jalon_assignes` (jalon_id, user_id\|group_id, tenant_id) — multi-assignation tâches et jalons planning + RLS (tenant_id) | ✅ |
 
 ---
 
@@ -417,15 +418,21 @@ Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journ
 **Projets** (`planning/projets/page.tsx`) :
 - Toggle vue : **Kanban** (colonnes : brouillon / actif / en_pause / terminé) / **Liste** (tableau)
 - Carte projet : dot couleur, titre, badge priorité, barre progression, date_fin, avatar responsable
+- **Drag-and-drop Kanban** (2026-04-01) : native HTML5, `draggable={canManage}`, update optimiste avec rollback sur erreur Supabase
 - Panel détail (slide-in) : mini-kanban tâches (4 colonnes) + liste jalons
-- CRUD : Projet (titre, desc, statut, priorité, couleur picker, dates, responsable) · Tâche rapide · Jalon
+- CRUD : Projet (titre, desc, statut, priorité, couleur picker, dates, responsable) · Tâche · Jalon
+- **Multi-assignation tâches (2026-04-01)** : modal tâche + champ `AssigneeSelect` (multi-select utilisateurs + groupes ayant accès au module planning). Sources : `user_module_permissions` + `user_group_permissions WHERE module='planning' AND societe_id=?`. Sauvegarde dans `plan_tache_assignes`.
+- **Multi-assignation jalons (2026-04-01)** : idem pour jalons. Sauvegarde dans `plan_jalon_assignes`.
+- **Gestion post-création** (2026-04-01) : cliquer le titre d'une tâche ou d'un jalon ouvre un modal détail → ajouter/supprimer des assignés. Avatars (max 3 + "+N") affichés sur les cartes/lignes.
 - `writeLog` pour `projet_created` + `projet_updated`
-- `(supabase as any)` pour `plan_projets`, `plan_taches`, `plan_jalons`
+- `(supabase as any)` pour `plan_projets`, `plan_taches`, `plan_jalons`, `plan_tache_assignes`, `plan_jalon_assignes`
 
 **Calendrier** (`planning/calendrier/page.tsx`) :
 - 3 modes : **Mois** (grille), **Semaine** (7 colonnes), **Jour** (liste)
-- Sources d'événements : `plan_evenements` (CRUD complet) + jalons `plan_jalons` (lecture seule) + congés RH (conditionnel, voir ci-dessous)
+- Sources d'événements : `plan_evenements` (CRUD complet) + jalons `plan_jalons` (lecture seule) + congés RH (conditionnel, voir ci-dessous) + **échéances tâches** + **fins de projets**
 - **Intégration RH (conditionnelle)** : vérifie `societe_modules WHERE module = 'rh' AND is_active = true` → si actif, charge `rh_conges WHERE statut = 'approuve'` et les affiche en gris avec badge "Congés approuvés (RH)" dans la légende
+- **Échéances tâches** (2026-04-01) : `plan_taches WHERE societe_id = ? AND statut ≠ 'fait' AND date_echeance IN [from, to]` → affiché en rouge (#ef4444) avec préfixe 📋
+- **Fins de projets** (2026-04-01) : `plan_projets WHERE societe_id = ? AND statut NOT IN ('termine','annule') AND date_fin IN [from, to]` → affiché avec couleur du projet + préfixe 🎯
 - Modal événement : titre, type, dates, description, lien_meet (si réunion), all_day checkbox
 - Types : reunion (#3b82f6), formation (#8b5cf6), deadline (#ef4444), rappel (#f59e0b), conge_equipe (#14b8a6)
 
@@ -466,6 +473,10 @@ Ces logs sont consultables via la page **Sécurité & Backup** → onglet "Journ
 | `event_created` | `plan_evenements` | `calendrier/page.tsx` | — |
 | `event_updated` | `plan_evenements` | `calendrier/page.tsx` | — |
 | `event_deleted` | `plan_evenements` | `calendrier/page.tsx` | — |
+
+**Tables supplémentaires (2026-04-01)** :
+- `plan_tache_assignes` : id, tache_id (FK → plan_taches CASCADE), tenant_id, user_id (FK → profiles, nullable), group_id (FK → user_groups, nullable) — contrainte : l'un OU l'autre, contrainte UNIQUE (tache_id, user_id, group_id). RLS par tenant_id.
+- `plan_jalon_assignes` : id, jalon_id (FK → plan_jalons CASCADE), tenant_id, user_id (nullable), group_id (nullable) — même structure. RLS par tenant_id.
 
 Notification **"Tâche complétée"** : insérée dans `public.notifications` (tenant_id, user_id = responsable_id, type = 'info') — skippée si responsable = acteur courant.
 
@@ -764,6 +775,13 @@ Helper `notifyGestionnairesStock(titre, message, type)` dupliqué dans chaque fi
 - [x] `20260328_fix_user_group_members_rls.sql` ✅
 - [x] `20260328_unique_group_member.sql` ✅
 - [x] `20260328_rh_conges_rls.sql` ✅
+- [x] `20260329_rh_employes_situation_familiale.sql` ✅
+- [x] `20260330_planning_module.sql` ✅
+- [x] `20260330_planning_enable_sys_module.sql` ✅
+- [x] `20260330_planning_add_to_module_key_enum.sql` ✅
+- [x] `20260330_crm_tables.sql` ✅
+- [x] `20260331_stock_module.sql` ✅
+- [x] `20260331_plan_assignes.sql` ✅
 
 ### Environnement
 - [x] **`SUPABASE_SERVICE_ROLE_KEY`** ajoutée dans `.env.local` ✅

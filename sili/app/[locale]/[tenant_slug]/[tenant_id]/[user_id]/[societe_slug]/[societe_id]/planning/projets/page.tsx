@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabase } from '@/lib/supabase/client'
@@ -8,8 +8,8 @@ import { fetchEffectiveModulePerm } from '@/lib/permissions'
 import { toast } from 'sonner'
 import {
   FolderKanban, Plus, Loader2, X, Pencil, Trash2,
-  ChevronRight, Flag, Users, CalendarDays, LayoutList, Kanban,
-  CheckCircle2, Clock, AlertTriangle,
+  ChevronRight, ChevronDown, Flag, CalendarDays, LayoutList, Kanban,
+  Users, Check, UserPlus,
 } from 'lucide-react'
 import { writeLog } from '@/lib/audit'
 
@@ -34,6 +34,12 @@ interface Projet {
   taches_faites:    number
 }
 
+interface AssigneeItem {
+  id:     string
+  user?:  { id: string; full_name: string }
+  group?: { id: string; nom: string }
+}
+
 interface Tache {
   id:            string
   titre:         string
@@ -41,6 +47,7 @@ interface Tache {
   priorite:      Priorite
   date_echeance: string | null
   assigne:       { full_name: string } | null
+  assignes:      AssigneeItem[]
 }
 
 interface Jalon {
@@ -48,6 +55,7 @@ interface Jalon {
   titre:      string
   date_cible: string
   statut:     'en_attente' | 'atteint' | 'manque'
+  assignes:   AssigneeItem[]
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -76,6 +84,83 @@ const PRIORITE_COLOR: Record<Priorite, string> = {
 }
 const COULEURS = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6']
 
+// ── AssigneeSelect ─────────────────────────────────────────────────────────────
+
+function AssigneeSelect({
+  users, groups, selectedUsers, selectedGroups, onToggleUser, onToggleGroup, placeholder,
+}: {
+  users:         { id: string; full_name: string }[]
+  groups:        { id: string; nom: string }[]
+  selectedUsers:  string[]
+  selectedGroups: string[]
+  onToggleUser:  (id: string) => void
+  onToggleGroup: (id: string) => void
+  placeholder:   string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+  const total = selectedUsers.length + selectedGroups.length
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        <Users className="h-4 w-4 text-slate-400 shrink-0" />
+        <span className="flex-1 text-slate-500">{total > 0 ? `${total} assigné${total > 1 ? 's' : ''}` : placeholder}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl z-50 max-h-52 overflow-y-auto">
+          {users.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase bg-slate-50 sticky top-0">Utilisateurs</div>
+              {users.map(u => {
+                const checked = selectedUsers.includes(u.id)
+                return (
+                  <button key={u.id} type="button" onClick={() => onToggleUser(u.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${checked ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <div className={`h-6 w-6 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${checked ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-100 text-slate-500'}`}>
+                      {u.full_name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase()}
+                    </div>
+                    <span className="flex-1 truncate">{u.full_name}</span>
+                    {checked && <Check className="h-3.5 w-3.5 text-indigo-600 shrink-0" />}
+                  </button>
+                )
+              })}
+            </>
+          )}
+          {groups.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase bg-slate-50 border-t border-slate-100 sticky top-0">Groupes</div>
+              {groups.map(g => {
+                const checked = selectedGroups.includes(g.id)
+                return (
+                  <button key={g.id} type="button" onClick={() => onToggleGroup(g.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${checked ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <div className={`h-6 w-6 rounded-lg text-[10px] font-bold flex items-center justify-center shrink-0 ${checked ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-100 text-slate-500'}`}>G</div>
+                    <span className="flex-1 truncate">{g.nom}</span>
+                    {checked && <Check className="h-3.5 w-3.5 text-indigo-600 shrink-0" />}
+                  </button>
+                )
+              })}
+            </>
+          )}
+          {users.length === 0 && groups.length === 0 && (
+            <p className="px-3 py-4 text-sm text-slate-400 text-center">Aucun accès planning configuré</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProjetsPage() {
@@ -90,6 +175,10 @@ export default function ProjetsPage() {
   const [canDelete,     setCanDelete]     = useState(false)
   const [fullTenantId,  setFullTenantId]  = useState('')
   const [currentUserId, setCurrentUserId] = useState('')
+
+  // Drag-and-drop
+  const [draggedProjetId,  setDraggedProjetId]  = useState<string | null>(null)
+  const [dragOverCol,      setDragOverCol]      = useState<ProjetStatut | null>(null)
 
   // Modal projet
   const [showProjetModal, setShowProjetModal] = useState(false)
@@ -123,6 +212,18 @@ export default function ProjetsPage() {
   const [jDate,    setJDate]    = useState('')
   const [savingJalon, setSavingJalon] = useState(false)
 
+  // Assignation planning
+  const [planningUsers,  setPlanningUsers]  = useState<{ id: string; full_name: string }[]>([])
+  const [planningGroups, setPlanningGroups] = useState<{ id: string; nom: string }[]>([])
+  const [tAssigneUsers,  setTAssigneUsers]  = useState<string[]>([])
+  const [tAssigneGroups, setTAssigneGroups] = useState<string[]>([])
+  const [jAssigneUsers,  setJAssigneUsers]  = useState<string[]>([])
+  const [jAssigneGroups, setJAssigneGroups] = useState<string[]>([])
+
+  // Détail tâche (post-création)
+  const [selectedTache, setSelectedTache] = useState<Tache | null>(null)
+  const [selectedJalon, setSelectedJalon] = useState<Jalon | null>(null)
+
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -143,9 +244,29 @@ export default function ProjetsPage() {
       }
 
       await loadProjets()
+      await loadPlanningAccessors()
       setLoading(false)
     }
     init()
+  }, [societeId])
+
+  const loadPlanningAccessors = useCallback(async () => {
+    const [{ data: userPerms }, { data: groupPerms }] = await Promise.all([
+      (supabase as any)
+        .from('user_module_permissions')
+        .select('user_id, profile:profiles!user_id(id, full_name)')
+        .eq('societe_id', societeId)
+        .eq('module', 'planning')
+        .neq('permission', 'aucun'),
+      (supabase as any)
+        .from('user_group_permissions')
+        .select('group_id, grp:user_groups!group_id(id, nom)')
+        .eq('societe_id', societeId)
+        .eq('module', 'planning')
+        .neq('permission', 'aucun'),
+    ])
+    setPlanningUsers(((userPerms ?? []) as any[]).map((p: any) => p.profile).filter(Boolean))
+    setPlanningGroups(((groupPerms ?? []) as any[]).map((p: any) => p.grp).filter(Boolean))
   }, [societeId])
 
   const loadProjets = useCallback(async () => {
@@ -182,8 +303,32 @@ export default function ProjetsPage() {
       (supabase as any).from('plan_taches').select('id, titre, statut, priorite, date_echeance, assigne:profiles!assigne_a(full_name)').eq('projet_id', projet.id).order('ordre'),
       (supabase as any).from('plan_jalons').select('id, titre, date_cible, statut').eq('projet_id', projet.id).order('date_cible'),
     ])
-    setTaches(tRes.data ?? [])
-    setJalons(jRes.data ?? [])
+
+    const tacheIds = (tRes.data ?? []).map((t: any) => t.id)
+    const jalonIds = (jRes.data ?? []).map((j: any) => j.id)
+
+    const [taRes, jaRes] = await Promise.all([
+      tacheIds.length > 0
+        ? (supabase as any).from('plan_tache_assignes').select('id, tache_id, user_id, user:profiles!user_id(id, full_name), group_id, grp:user_groups!group_id(id, nom)').in('tache_id', tacheIds)
+        : { data: [] },
+      jalonIds.length > 0
+        ? (supabase as any).from('plan_jalon_assignes').select('id, jalon_id, user_id, user:profiles!user_id(id, full_name), group_id, grp:user_groups!group_id(id, nom)').in('jalon_id', jalonIds)
+        : { data: [] },
+    ])
+
+    const tacheAssignesMap: Record<string, AssigneeItem[]> = {}
+    for (const ta of (taRes.data ?? [])) {
+      if (!tacheAssignesMap[ta.tache_id]) tacheAssignesMap[ta.tache_id] = []
+      tacheAssignesMap[ta.tache_id].push({ id: ta.id, user: ta.user ?? undefined, group: ta.grp ?? undefined })
+    }
+    const jalonAssignesMap: Record<string, AssigneeItem[]> = {}
+    for (const ja of (jaRes.data ?? [])) {
+      if (!jalonAssignesMap[ja.jalon_id]) jalonAssignesMap[ja.jalon_id] = []
+      jalonAssignesMap[ja.jalon_id].push({ id: ja.id, user: ja.user ?? undefined, group: ja.grp ?? undefined })
+    }
+
+    setTaches((tRes.data ?? []).map((t: any) => ({ ...t, assignes: tacheAssignesMap[t.id] ?? [] })))
+    setJalons((jRes.data ?? []).map((j: any) => ({ ...j, assignes: jalonAssignesMap[j.id] ?? [] })))
     setLoadingDetail(false)
   }
 
@@ -239,6 +384,22 @@ export default function ProjetsPage() {
     await loadProjets()
   }
 
+  async function updateProjetStatut(projetId: string, newStatut: ProjetStatut) {
+    const projet = projets.find(p => p.id === projetId)
+    if (!projet || projet.statut === newStatut) return
+    // Optimistic update
+    setProjets(prev => prev.map(p => p.id === projetId ? { ...p, statut: newStatut } : p))
+    if (detailProjet?.id === projetId) setDetailProjet(prev => prev ? { ...prev, statut: newStatut } : prev)
+    const { error } = await (supabase as any).from('plan_projets').update({ statut: newStatut, updated_at: new Date().toISOString() }).eq('id', projetId)
+    if (error) {
+      // Rollback
+      setProjets(prev => prev.map(p => p.id === projetId ? { ...p, statut: projet.statut } : p))
+      toast.error(t('toast_error'))
+    } else {
+      await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'projet_updated', resourceType: 'plan_projets', resourceId: projetId, metadata: { titre: projet.titre, nouveau_statut: newStatut } })
+    }
+  }
+
   async function saveTache() {
     if (!tTitre.trim() || !detailProjet) return
     setSavingTache(true)
@@ -250,7 +411,17 @@ export default function ProjetsPage() {
     if (error) { toast.error(t('toast_error')); setSavingTache(false); return }
     toast.success(t('toast_tache_created'))
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'tache_created', resourceType: 'plan_taches', resourceId: newTache?.id, metadata: { titre: tTitre.trim(), projet_titre: detailProjet.titre, projet_id: detailProjet.id } })
+
+    if (newTache?.id && (tAssigneUsers.length > 0 || tAssigneGroups.length > 0)) {
+      const rows = [
+        ...tAssigneUsers.map(uid => ({ tache_id: newTache.id, user_id: uid, tenant_id: fullTenantId })),
+        ...tAssigneGroups.map(gid => ({ tache_id: newTache.id, group_id: gid, tenant_id: fullTenantId })),
+      ]
+      await (supabase as any).from('plan_tache_assignes').insert(rows)
+    }
+
     setShowTacheModal(false); setTTitre(''); setTPriorite('normale'); setTEcheance('')
+    setTAssigneUsers([]); setTAssigneGroups([])
     setSavingTache(false)
     await loadDetail(detailProjet)
   }
@@ -291,9 +462,45 @@ export default function ProjetsPage() {
     if (error) { toast.error(t('toast_error')); setSavingJalon(false); return }
     toast.success(t('toast_jalon_created'))
     await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'jalon_created', resourceType: 'plan_jalons', resourceId: newJalon?.id, metadata: { titre: jTitre.trim(), date_cible: jDate, projet_titre: detailProjet.titre, projet_id: detailProjet.id } })
+
+    if (newJalon?.id && (jAssigneUsers.length > 0 || jAssigneGroups.length > 0)) {
+      const rows = [
+        ...jAssigneUsers.map(uid => ({ jalon_id: newJalon.id, user_id: uid, tenant_id: fullTenantId })),
+        ...jAssigneGroups.map(gid => ({ jalon_id: newJalon.id, group_id: gid, tenant_id: fullTenantId })),
+      ]
+      await (supabase as any).from('plan_jalon_assignes').insert(rows)
+    }
+
     setShowJalonModal(false); setJTitre(''); setJDate('')
+    setJAssigneUsers([]); setJAssigneGroups([])
     setSavingJalon(false)
     await loadDetail(detailProjet)
+  }
+
+  async function addTacheAssignee(tacheId: string, userId?: string, groupId?: string) {
+    const row: any = { tache_id: tacheId, tenant_id: fullTenantId }
+    if (userId)  row.user_id  = userId
+    if (groupId) row.group_id = groupId
+    await (supabase as any).from('plan_tache_assignes').insert(row)
+    if (detailProjet) await loadDetail(detailProjet)
+  }
+
+  async function removeTacheAssignee(assigneId: string) {
+    await (supabase as any).from('plan_tache_assignes').delete().eq('id', assigneId)
+    if (detailProjet) await loadDetail(detailProjet)
+  }
+
+  async function addJalonAssignee(jalonId: string, userId?: string, groupId?: string) {
+    const row: any = { jalon_id: jalonId, tenant_id: fullTenantId }
+    if (userId)  row.user_id  = userId
+    if (groupId) row.group_id = groupId
+    await (supabase as any).from('plan_jalon_assignes').insert(row)
+    if (detailProjet) await loadDetail(detailProjet)
+  }
+
+  async function removeJalonAssignee(assigneId: string) {
+    await (supabase as any).from('plan_jalon_assignes').delete().eq('id', assigneId)
+    if (detailProjet) await loadDetail(detailProjet)
   }
 
   const selectCls = 'block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500'
@@ -335,19 +542,41 @@ export default function ProjetsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {KANBAN_COLS.map(col => {
             const colProjets = projets.filter(p => p.statut === col)
+            const isOver = dragOverCol === col
             return (
-              <div key={col} className="space-y-3">
+              <div
+                key={col}
+                className="space-y-3"
+                onDragOver={e => { e.preventDefault(); setDragOverCol(col) }}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={e => {
+                  e.preventDefault()
+                  setDragOverCol(null)
+                  if (draggedProjetId && canManage) updateProjetStatut(draggedProjetId, col)
+                  setDraggedProjetId(null)
+                }}
+              >
                 <div className="flex items-center gap-2 px-1">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${STATUT_PROJET_COLOR[col]}`}>{STATUT_PROJET_LABELS[col]}</span>
                   <span className="text-xs text-slate-400">{colProjets.length}</span>
                 </div>
+                {/* Zone de dépôt visible quand on survole avec un projet */}
+                <div className={`min-h-[4px] rounded-xl transition-all ${isOver && draggedProjetId ? 'min-h-[60px] border-2 border-dashed border-indigo-300 bg-indigo-50/50' : ''}`} />
                 {colProjets.map(p => {
                   const pct = p.taches_total > 0 ? Math.round((p.taches_faites / p.taches_total) * 100) : 0
+                  const isDragging = draggedProjetId === p.id
                   return (
                     <div
                       key={p.id}
-                      onClick={() => loadDetail(p)}
-                      className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:shadow-md hover:border-indigo-200 transition-all space-y-3 group"
+                      draggable={canManage}
+                      onDragStart={() => setDraggedProjetId(p.id)}
+                      onDragEnd={() => { setDraggedProjetId(null); setDragOverCol(null) }}
+                      onClick={() => !isDragging && loadDetail(p)}
+                      className={`bg-white rounded-xl border p-4 space-y-3 group transition-all ${
+                        isDragging
+                          ? 'opacity-40 scale-95 cursor-grabbing border-indigo-300 shadow-lg'
+                          : 'border-slate-200 hover:shadow-md hover:border-indigo-200 cursor-grab'
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -479,16 +708,26 @@ export default function ProjetsPage() {
                           </div>
                           {colTaches.map(tache => (
                             <div key={tache.id} className="bg-white rounded-lg p-2.5 shadow-sm space-y-1.5">
-                              <p className="text-xs font-medium text-slate-900 leading-tight">{tache.titre}</p>
-                              <div className="flex items-center justify-between">
+                              <p
+                                className="text-xs font-medium text-slate-900 leading-tight cursor-pointer hover:text-indigo-600 transition-colors"
+                                onClick={() => setSelectedTache(tache)}
+                              >{tache.titre}</p>
+                              <div className="flex items-center justify-between gap-1">
                                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${PRIORITE_COLOR[tache.priorite]}`}>{tache.priorite}</span>
+                                <div className="flex items-center gap-0.5 ml-auto">
+                                  {tache.assignes.slice(0, 3).map(a => (
+                                    <div key={a.id} title={a.user?.full_name ?? a.group?.nom}
+                                      className="h-4 w-4 rounded-full bg-indigo-100 text-indigo-700 text-[8px] font-bold flex items-center justify-center">
+                                      {a.user ? a.user.full_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() : 'G'}
+                                    </div>
+                                  ))}
+                                  {tache.assignes.length > 3 && <span className="text-[8px] text-slate-400">+{tache.assignes.length - 3}</span>}
+                                </div>
                                 {canManage && col.id !== 'fait' && (
                                   <button
                                     onClick={() => updateTacheStatut(tache.id, col.id === 'todo' ? 'en_cours' : col.id === 'en_cours' ? 'revue' : 'fait')}
-                                    className="text-[10px] text-indigo-500 hover:text-indigo-700 font-semibold"
-                                  >
-                                    →
-                                  </button>
+                                    className="text-[10px] text-indigo-500 hover:text-indigo-700 font-semibold shrink-0"
+                                  >→</button>
                                 )}
                               </div>
                             </div>
@@ -522,13 +761,29 @@ export default function ProjetsPage() {
                         const isPast = new Date(j.date_cible) < new Date()
                         return (
                           <div key={j.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <Flag className={`h-4 w-4 ${j.statut === 'atteint' ? 'text-emerald-500' : isPast ? 'text-red-400' : 'text-amber-400'}`} />
+                            <Flag className={`h-4 w-4 shrink-0 ${j.statut === 'atteint' ? 'text-emerald-500' : isPast ? 'text-red-400' : 'text-amber-400'}`} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900">{j.titre}</p>
-                              <p className="text-xs text-slate-400">{new Date(j.date_cible).toLocaleDateString('fr-FR')}</p>
+                              <p
+                                className="text-sm font-medium text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors"
+                                onClick={() => setSelectedJalon(j)}
+                              >{j.titre}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-xs text-slate-400">{new Date(j.date_cible).toLocaleDateString('fr-FR')}</p>
+                                {j.assignes.length > 0 && (
+                                  <div className="flex items-center gap-0.5">
+                                    {j.assignes.slice(0, 3).map(a => (
+                                      <div key={a.id} title={a.user?.full_name ?? a.group?.nom}
+                                        className="h-4 w-4 rounded-full bg-indigo-100 text-indigo-700 text-[8px] font-bold flex items-center justify-center">
+                                        {a.user ? a.user.full_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() : 'G'}
+                                      </div>
+                                    ))}
+                                    {j.assignes.length > 3 && <span className="text-[8px] text-slate-400">+{j.assignes.length - 3}</span>}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             {canManage && (
-                              <button onClick={() => deleteJalon(j.id)} className="p-1 text-slate-300 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                              <button onClick={() => deleteJalon(j.id)} className="p-1 text-slate-300 hover:text-red-400 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                             )}
                           </div>
                         )
@@ -627,6 +882,16 @@ export default function ProjetsPage() {
                   <input type="date" value={tEcheance} onChange={e => setTEcheance(e.target.value)} className={inputCls} />
                 </div>
               </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Assignés</label>
+                <AssigneeSelect
+                  users={planningUsers} groups={planningGroups}
+                  selectedUsers={tAssigneUsers} selectedGroups={tAssigneGroups}
+                  onToggleUser={id => setTAssigneUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  onToggleGroup={id => setTAssigneGroups(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  placeholder="Assigner à..."
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowTacheModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">{t('btn_cancel')}</button>
@@ -651,6 +916,16 @@ export default function ProjetsPage() {
             <div className="space-y-3">
               <input value={jTitre} onChange={e => setJTitre(e.target.value)} className={inputCls} placeholder={t('placeholder_jalon_titre')} />
               <input type="date" value={jDate} onChange={e => setJDate(e.target.value)} className={inputCls} />
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Assignés</label>
+                <AssigneeSelect
+                  users={planningUsers} groups={planningGroups}
+                  selectedUsers={jAssigneUsers} selectedGroups={jAssigneGroups}
+                  onToggleUser={id => setJAssigneUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  onToggleGroup={id => setJAssigneGroups(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                  placeholder="Assigner à..."
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowJalonModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">{t('btn_cancel')}</button>
@@ -658,6 +933,114 @@ export default function ProjetsPage() {
                 {savingJalon && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t('btn_add')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal détail tâche — gestion assignés post-création */}
+      {selectedTache && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedTache(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${PRIORITE_COLOR[selectedTache.priorite]}`}>{selectedTache.priorite}</span>
+                <h2 className="font-bold text-slate-900 truncate">{selectedTache.titre}</h2>
+              </div>
+              <button onClick={() => setSelectedTache(null)}><X className="h-5 w-5 text-slate-400 shrink-0" /></button>
+            </div>
+            {selectedTache.date_echeance && (
+              <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Échéance : {new Date(selectedTache.date_echeance).toLocaleDateString('fr-FR')}
+              </p>
+            )}
+            <div>
+              <p className="text-xs font-semibold text-slate-600 mb-2">Assignés</p>
+              {selectedTache.assignes.length === 0 ? (
+                <p className="text-xs text-slate-400 mb-2">Aucun assigné</p>
+              ) : (
+                <div className="space-y-1 mb-2">
+                  {selectedTache.assignes.map(a => (
+                    <div key={a.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-50">
+                      <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {a.user ? a.user.full_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() : 'G'}
+                      </div>
+                      <span className="flex-1 text-sm text-slate-700 truncate">{a.user?.full_name ?? a.group?.nom}</span>
+                      {canManage && (
+                        <button onClick={() => { removeTacheAssignee(a.id); setSelectedTache(prev => prev ? { ...prev, assignes: prev.assignes.filter(x => x.id !== a.id) } : prev) }}
+                          className="p-0.5 text-slate-300 hover:text-red-400">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {canManage && (
+                <AssigneeSelect
+                  users={planningUsers.filter(u => !selectedTache.assignes.some(a => a.user?.id === u.id))}
+                  groups={planningGroups.filter(g => !selectedTache.assignes.some(a => a.group?.id === g.id))}
+                  selectedUsers={[]} selectedGroups={[]}
+                  onToggleUser={uid => { addTacheAssignee(selectedTache.id, uid); setSelectedTache(null) }}
+                  onToggleGroup={gid => { addTacheAssignee(selectedTache.id, undefined, gid); setSelectedTache(null) }}
+                  placeholder="Ajouter un assigné..."
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal détail jalon — gestion assignés post-création */}
+      {selectedJalon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedJalon(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <Flag className="h-4 w-4 text-amber-400 shrink-0" />
+                <h2 className="font-bold text-slate-900 truncate">{selectedJalon.titre}</h2>
+              </div>
+              <button onClick={() => setSelectedJalon(null)}><X className="h-5 w-5 text-slate-400 shrink-0" /></button>
+            </div>
+            <p className="flex items-center gap-1.5 text-xs text-slate-500">
+              <CalendarDays className="h-3.5 w-3.5" />
+              Date cible : {new Date(selectedJalon.date_cible).toLocaleDateString('fr-FR')}
+            </p>
+            <div>
+              <p className="text-xs font-semibold text-slate-600 mb-2">Assignés</p>
+              {selectedJalon.assignes.length === 0 ? (
+                <p className="text-xs text-slate-400 mb-2">Aucun assigné</p>
+              ) : (
+                <div className="space-y-1 mb-2">
+                  {selectedJalon.assignes.map(a => (
+                    <div key={a.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-50">
+                      <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {a.user ? a.user.full_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() : 'G'}
+                      </div>
+                      <span className="flex-1 text-sm text-slate-700 truncate">{a.user?.full_name ?? a.group?.nom}</span>
+                      {canManage && (
+                        <button onClick={() => { removeJalonAssignee(a.id); setSelectedJalon(prev => prev ? { ...prev, assignes: prev.assignes.filter(x => x.id !== a.id) } : prev) }}
+                          className="p-0.5 text-slate-300 hover:text-red-400">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {canManage && (
+                <AssigneeSelect
+                  users={planningUsers.filter(u => !selectedJalon.assignes.some(a => a.user?.id === u.id))}
+                  groups={planningGroups.filter(g => !selectedJalon.assignes.some(a => a.group?.id === g.id))}
+                  selectedUsers={[]} selectedGroups={[]}
+                  onToggleUser={uid => { addJalonAssignee(selectedJalon.id, uid); setSelectedJalon(null) }}
+                  onToggleGroup={gid => { addJalonAssignee(selectedJalon.id, undefined, gid); setSelectedJalon(null) }}
+                  placeholder="Ajouter un assigné..."
+                />
+              )}
             </div>
           </div>
         </div>

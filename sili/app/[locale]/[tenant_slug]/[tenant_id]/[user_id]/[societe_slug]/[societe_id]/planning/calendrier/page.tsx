@@ -38,8 +38,10 @@ const TYPE_CONFIG: Record<TypeEvenement, { label: string; color: string }> = {
   conge_equipe: { label: 'Congé équipe',  color: '#14b8a6' },
 }
 
-const CONGE_COLOR  = '#94a3b8'
-const JALON_COLOR  = '#f59e0b'
+const CONGE_COLOR           = '#94a3b8'
+const JALON_COLOR           = '#f59e0b'
+const TACHE_DEADLINE_COLOR  = '#ef4444'
+const PROJET_DEADLINE_COLOR = '#8b5cf6'
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate()
@@ -167,6 +169,40 @@ export default function CalendrierPage() {
         id: j.id, titre: `🏁 ${j.titre}`, type: 'deadline',
         date_debut: `${j.date_cible}T00:00:00`, date_fin: `${j.date_cible}T23:59:59`,
         all_day: true, couleur: j.projet?.couleur ?? JALON_COLOR, description: null, lien_meet: null, source: 'jalon',
+      })
+    }
+
+    // Deadlines tâches
+    const { data: taches } = await (supabase as any)
+      .from('plan_taches')
+      .select('id, titre, date_echeance, priorite')
+      .eq('societe_id', societeId)
+      .neq('statut', 'fait')
+      .gte('date_echeance', fromStr)
+      .lte('date_echeance', toStr)
+      .not('date_echeance', 'is', null)
+    for (const t of (taches ?? [])) {
+      all.push({
+        id: `tache-${t.id}`, titre: `📋 ${t.titre}`, type: 'deadline',
+        date_debut: `${t.date_echeance}T00:00:00`, date_fin: `${t.date_echeance}T23:59:59`,
+        all_day: true, couleur: TACHE_DEADLINE_COLOR, description: null, lien_meet: null, source: 'jalon',
+      })
+    }
+
+    // Deadlines projets (date_fin)
+    const { data: projets } = await (supabase as any)
+      .from('plan_projets')
+      .select('id, titre, couleur, date_fin')
+      .eq('societe_id', societeId)
+      .not('statut', 'in', '("termine","annule")')
+      .gte('date_fin', fromStr)
+      .lte('date_fin', toStr)
+      .not('date_fin', 'is', null)
+    for (const p of (projets ?? [])) {
+      all.push({
+        id: `projet-${p.id}`, titre: `🎯 ${p.titre}`, type: 'deadline',
+        date_debut: `${p.date_fin}T00:00:00`, date_fin: `${p.date_fin}T23:59:59`,
+        all_day: true, couleur: p.couleur ?? PROJET_DEADLINE_COLOR, description: null, lien_meet: null, source: 'jalon',
       })
     }
 
@@ -335,6 +371,14 @@ export default function CalendrierPage() {
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: JALON_COLOR }} />
             Jalons projets
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TACHE_DEADLINE_COLOR }} />
+            Échéances tâches
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PROJET_DEADLINE_COLOR }} />
+            Fins de projets
           </div>
         </div>
       </div>
