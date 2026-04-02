@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Bell, Check, CheckCheck, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 
 interface Notification {
   id: string
@@ -53,31 +54,36 @@ export function NotificationBell() {
 
   // Chargement initial + souscription realtime
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
       const uid = data.user.id
       setUserId(uid)
       fetchNotifications(uid)
 
-      // Realtime : nouvelles notifications
-      const channel = supabase
-        .channel('notifications-' + uid)
+      channel = supabase
+        .channel('notif-' + uid)
         .on(
           'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${uid}`,
-          },
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
           (payload) => {
-            setNotifications(prev => [payload.new as Notification, ...prev].slice(0, 20))
+            const notif = payload.new as Notification
+            setNotifications(prev => [notif, ...prev].slice(0, 20))
+            // Toast non-intrusif : visible même en cours de saisie
+            toast.message(notif.titre, {
+              description: notif.message,
+              duration: 6000,
+            })
           }
         )
         .subscribe()
-
-      return () => { supabase.removeChannel(channel) }
     })
+
+    // Cleanup correctement enregistré par React
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [fetchNotifications])
 
   // Clic extérieur

@@ -133,15 +133,31 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen, isCollapsed, setIsColla
     })
   }, [])
 
-  // Charge les modules actifs de la société courante
+  // Charge les modules actifs + souscription realtime sur societe_modules
   useEffect(() => {
     if (!societeId) { setActiveModules([]); return }
-    supabase
-      .from('societe_modules')
-      .select('module')
-      .eq('societe_id', societeId)
-      .eq('is_active', true)
-      .then(({ data }) => setActiveModules(data?.map(r => r.module) ?? []))
+
+    function reload() {
+      supabase
+        .from('societe_modules')
+        .select('module')
+        .eq('societe_id', societeId)
+        .eq('is_active', true)
+        .then(({ data }) => setActiveModules(data?.map(r => r.module) ?? []))
+    }
+
+    reload()
+
+    const channel = supabase
+      .channel('sidebar-modules-' + societeId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'societe_modules', filter: `societe_id=eq.${societeId}` },
+        () => reload()
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [societeId])
 
   // Pour tenant_user : charge ses permissions effectives (individuelle + groupes)
