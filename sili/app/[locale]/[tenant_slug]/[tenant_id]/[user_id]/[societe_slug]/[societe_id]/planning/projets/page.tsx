@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import {
   FolderKanban, Plus, Loader2, X, Pencil, Trash2,
   ChevronRight, ChevronDown, Flag, CalendarDays, LayoutList, Kanban,
-  Users, Check, UserPlus,
+  Users, Check,
 } from 'lucide-react'
 import { writeLog } from '@/lib/audit'
 
@@ -418,6 +418,40 @@ export default function ProjetsPage() {
         ...tAssigneGroups.map(gid => ({ tache_id: newTache.id, group_id: gid, tenant_id: fullTenantId })),
       ]
       await (supabase as any).from('plan_tache_assignes').insert(rows)
+
+      // Notifier les utilisateurs directs assignés
+      const directUsers = tAssigneUsers.filter(uid => uid !== currentUserId)
+      if (directUsers.length > 0) {
+        await supabase.from('notifications').insert(
+          directUsers.map(uid => ({
+            tenant_id: fullTenantId,
+            user_id:   uid,
+            type:      'info',
+            titre:     'Tâche assignée',
+            message:   `Vous avez été assigné à la tâche "${tTitre.trim()}" sur le projet "${detailProjet.titre}".`,
+          }))
+        )
+      }
+      // Notifier les membres (user_id) des groupes assignés
+      if (tAssigneGroups.length > 0) {
+        const { data: members } = await (supabase as any)
+          .from('user_group_members')
+          .select('user_id')
+          .in('group_id', tAssigneGroups)
+          .not('user_id', 'is', null)
+        const groupUserIds = (members ?? []).map((m: any) => m.user_id).filter((uid: string) => uid !== currentUserId)
+        if (groupUserIds.length > 0) {
+          await supabase.from('notifications').insert(
+            groupUserIds.map((uid: string) => ({
+              tenant_id: fullTenantId,
+              user_id:   uid,
+              type:      'info',
+              titre:     'Tâche assignée via groupe',
+              message:   `Votre groupe a été assigné à la tâche "${tTitre.trim()}" sur le projet "${detailProjet.titre}".`,
+            }))
+          )
+        }
+      }
     }
 
     setShowTacheModal(false); setTTitre(''); setTPriorite('normale'); setTEcheance('')
@@ -469,6 +503,40 @@ export default function ProjetsPage() {
         ...jAssigneGroups.map(gid => ({ jalon_id: newJalon.id, group_id: gid, tenant_id: fullTenantId })),
       ]
       await (supabase as any).from('plan_jalon_assignes').insert(rows)
+
+      // Notifier les utilisateurs directs assignés
+      const directUsers = jAssigneUsers.filter(uid => uid !== currentUserId)
+      if (directUsers.length > 0) {
+        await supabase.from('notifications').insert(
+          directUsers.map(uid => ({
+            tenant_id: fullTenantId,
+            user_id:   uid,
+            type:      'info',
+            titre:     'Jalon assigné',
+            message:   `Vous avez été assigné au jalon "${jTitre.trim()}" sur le projet "${detailProjet.titre}" (date cible : ${new Date(jDate).toLocaleDateString('fr-FR')}).`,
+          }))
+        )
+      }
+      // Notifier les membres des groupes assignés
+      if (jAssigneGroups.length > 0) {
+        const { data: members } = await (supabase as any)
+          .from('user_group_members')
+          .select('user_id')
+          .in('group_id', jAssigneGroups)
+          .not('user_id', 'is', null)
+        const groupUserIds = (members ?? []).map((m: any) => m.user_id).filter((uid: string) => uid !== currentUserId)
+        if (groupUserIds.length > 0) {
+          await supabase.from('notifications').insert(
+            groupUserIds.map((uid: string) => ({
+              tenant_id: fullTenantId,
+              user_id:   uid,
+              type:      'info',
+              titre:     'Jalon assigné via groupe',
+              message:   `Votre groupe a été assigné au jalon "${jTitre.trim()}" sur le projet "${detailProjet.titre}" (date cible : ${new Date(jDate).toLocaleDateString('fr-FR')}).`,
+            }))
+          )
+        }
+      }
     }
 
     setShowJalonModal(false); setJTitre(''); setJDate('')
@@ -482,6 +550,32 @@ export default function ProjetsPage() {
     if (userId)  row.user_id  = userId
     if (groupId) row.group_id = groupId
     await (supabase as any).from('plan_tache_assignes').insert(row)
+
+    const tache = taches.find(t => t.id === tacheId)
+    if (tache) {
+      if (userId && userId !== currentUserId) {
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId, user_id: userId, type: 'info',
+          titre: 'Tâche assignée',
+          message: `Vous avez été assigné à la tâche "${tache.titre}" sur le projet "${detailProjet?.titre}".`,
+        })
+      }
+      if (groupId) {
+        const { data: members } = await (supabase as any)
+          .from('user_group_members').select('user_id').eq('group_id', groupId).not('user_id', 'is', null)
+        const ids = (members ?? []).map((m: any) => m.user_id).filter((uid: string) => uid !== currentUserId)
+        if (ids.length > 0) {
+          await supabase.from('notifications').insert(
+            ids.map((uid: string) => ({
+              tenant_id: fullTenantId, user_id: uid, type: 'info',
+              titre: 'Tâche assignée via groupe',
+              message: `Votre groupe a été assigné à la tâche "${tache.titre}" sur le projet "${detailProjet?.titre}".`,
+            }))
+          )
+        }
+      }
+    }
+
     if (detailProjet) await loadDetail(detailProjet)
   }
 
@@ -495,6 +589,32 @@ export default function ProjetsPage() {
     if (userId)  row.user_id  = userId
     if (groupId) row.group_id = groupId
     await (supabase as any).from('plan_jalon_assignes').insert(row)
+
+    const jalon = jalons.find(j => j.id === jalonId)
+    if (jalon) {
+      if (userId && userId !== currentUserId) {
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId, user_id: userId, type: 'info',
+          titre: 'Jalon assigné',
+          message: `Vous avez été assigné au jalon "${jalon.titre}" sur le projet "${detailProjet?.titre}" (date cible : ${new Date(jalon.date_cible).toLocaleDateString('fr-FR')}).`,
+        })
+      }
+      if (groupId) {
+        const { data: members } = await (supabase as any)
+          .from('user_group_members').select('user_id').eq('group_id', groupId).not('user_id', 'is', null)
+        const ids = (members ?? []).map((m: any) => m.user_id).filter((uid: string) => uid !== currentUserId)
+        if (ids.length > 0) {
+          await supabase.from('notifications').insert(
+            ids.map((uid: string) => ({
+              tenant_id: fullTenantId, user_id: uid, type: 'info',
+              titre: 'Jalon assigné via groupe',
+              message: `Votre groupe a été assigné au jalon "${jalon.titre}" sur le projet "${detailProjet?.titre}" (date cible : ${new Date(jalon.date_cible).toLocaleDateString('fr-FR')}).`,
+            }))
+          )
+        }
+      }
+    }
+
     if (detailProjet) await loadDetail(detailProjet)
   }
 

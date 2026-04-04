@@ -268,6 +268,25 @@ export default function SocieteUsersPage() {
       }))
     } else {
       await writeLog({ tenantId: fullTenantId, userId: currentUserId, action: 'user_permission_modified', resourceType: 'user_module_permissions', resourceId: userId, metadata: { module: moduleKey, level } })
+      // Notifier l'utilisateur concerné (sauf si c'est soi-même)
+      if (userId !== currentUserId) {
+        const MODULE_LABELS: Record<string, string> = {
+          vente: 'Ventes', achat: 'Achats', stock: 'Stock', rh: 'RH',
+          crm: 'CRM', comptabilite: 'Comptabilité', teams: 'Teams',
+          rapports: 'Rapports', workflow: 'Workflow', planning: 'Planification',
+        }
+        const PERM_LABELS: Record<string, string> = {
+          aucun: 'Aucun accès', lecteur: 'Lecteur', contributeur: 'Contributeur',
+          gestionnaire: 'Gestionnaire', admin: 'Administrateur',
+        }
+        await supabase.from('notifications').insert({
+          tenant_id: fullTenantId,
+          user_id:   userId,
+          type:      level === 'aucun' ? 'warning' : 'info',
+          titre:     'Permissions mises à jour',
+          message:   `Votre accès au module "${MODULE_LABELS[moduleKey] ?? moduleKey}" a été mis à jour : ${PERM_LABELS[level] ?? level}.`,
+        })
+      }
     }
   }
 
